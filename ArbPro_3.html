@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ArbPro">
+<meta name="theme-color" content="#0a0a0f">
+<title>ArbPro</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #12121a;
+    --bg3: #1a1a26;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0f0f8;
+    --text2: #8888aa;
+    --text3: #4444666;
+    --accent: #6c63ff;
+    --accent2: #8b85ff;
+    --green: #00e676;
+    --green-bg: rgba(0,230,118,0.08);
+    --red: #ff4e6a;
+    --red-bg: rgba(255,78,106,0.08);
+    --amber: #ffb74d;
+    --amber-bg: rgba(255,183,77,0.08);
+    --purple: #ce93d8;
+    --purple-bg: rgba(206,147,216,0.08);
+    --blue: #64b5f6;
+    --blue-bg: rgba(100,181,246,0.08);
+    --orange: #ff7043;
+    --orange-bg: rgba(255,112,67,0.08);
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bot: env(safe-area-inset-bottom, 0px);
+    --r: 12px;
+    --r2: 8px;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font); }
+
+  /* LAYOUT */
+  #app { display: flex; flex-direction: column; height: 100%; height: 100dvh; }
+  #header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: calc(var(--safe-top) + 10px) 16px 10px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  #header-title { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+  #header-title span { color: var(--accent); }
+  #content { flex: 1; overflow-y: auto; overscroll-behavior: contain; }
+  #nav {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding-bottom: var(--safe-bot);
+    flex-shrink: 0;
+  }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    gap: 3px; padding: 10px 4px; background: none; border: none;
+    color: var(--text2); cursor: pointer; font-size: 10px; font-family: var(--font); font-weight: 500;
+    transition: color .15s;
+  }
+  .nav-btn svg { width: 22px; height: 22px; }
+  .nav-btn.active { color: var(--accent2); }
+  .nav-btn.active svg { filter: drop-shadow(0 0 6px var(--accent)); }
+
+  /* PAGES */
+  .page { display: none; padding: 14px; padding-bottom: 24px; min-height: 100%; }
+  .page.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 14px; margin-bottom: 10px;
+  }
+  .card-title { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px; }
+
+  /* TIPO SELECTOR */
+  .tipo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .tipo-btn {
+    padding: 12px 8px; border: 1.5px solid var(--border2); border-radius: var(--r);
+    background: var(--bg3); cursor: pointer; text-align: center; transition: all .15s;
+  }
+  .tipo-btn.sel.sb { border-color: var(--accent); background: rgba(108,99,255,.1); }
+  .tipo-btn.sel.an { border-color: var(--orange); background: var(--orange-bg); }
+  .tipo-btn-icon { font-size: 22px; display: block; margin-bottom: 4px; }
+  .tipo-btn-label { font-size: 13px; font-weight: 700; display: block; color: var(--text); }
+  .tipo-btn.sel.sb .tipo-btn-label { color: var(--accent2); }
+  .tipo-btn.sel.an .tipo-btn-label { color: var(--orange); }
+  .tipo-btn-desc { font-size: 10px; color: var(--text2); display: block; margin-top: 2px; }
+
+  /* INPUTS */
+  .field-label { font-size: 11px; font-weight: 600; color: var(--text2); margin-bottom: 5px; margin-top: 12px; text-transform: uppercase; letter-spacing: .06em; }
+  .field-label:first-child { margin-top: 0; }
+  input, select {
+    width: 100%; padding: 11px 13px; font-size: 15px;
+    border: 1px solid var(--border2); border-radius: var(--r2);
+    background: var(--bg3); color: var(--text); font-family: var(--font);
+    outline: none; transition: border-color .15s;
+    -webkit-appearance: none;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  input::placeholder { color: var(--text2); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+  /* BUTTONS */
+  .btn-primary {
+    width: 100%; padding: 14px; font-size: 15px; font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; border: none; border-radius: var(--r); cursor: pointer;
+    margin-top: 14px; letter-spacing: -0.2px;
+    box-shadow: 0 4px 20px rgba(108,99,255,.3);
+  }
+  .btn-primary.orange { background: linear-gradient(135deg, var(--orange), #ff8a65); box-shadow: 0 4px 20px rgba(255,112,67,.3); }
+  .btn-sm {
+    padding: 5px 11px; font-size: 11px; font-weight: 600; background: var(--bg3);
+    border: 1px solid var(--border2); border-radius: 99px; color: var(--text2); cursor: pointer;
+  }
+  .btn-sm.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-sm.red { color: var(--red); border-color: rgba(255,78,106,.3); }
+  .btn-sm.green-c { color: var(--green); border-color: rgba(0,230,118,.3); }
+  .btn-sm.purple-c { color: var(--purple); border-color: rgba(206,147,216,.3); }
+
+  /* TOGGLES */
+  /* OPTION BUTTONS (substituem toggles nas casas) */
+  .opt-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-bottom: 10px; }
+  .opt-btn {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 8px 4px; border-radius: var(--r2); border: 1.5px solid var(--border2);
+    background: var(--bg3); cursor: pointer; font-family: var(--font);
+    transition: all .15s; text-align: center; gap: 2px;
+  }
+  .opt-btn:active { transform: scale(.96); }
+  .opt-btn-icon { font-size: 16px; line-height: 1; }
+  .opt-btn-label { font-size: 10px; font-weight: 700; color: var(--text2); letter-spacing: .02em; line-height: 1.2; }
+  /* estados ativos por cor */
+  .opt-btn.sel-blue  { border-color: var(--blue);   background: rgba(100,181,246,.18); }
+  .opt-btn.sel-blue  .opt-btn-label { color: var(--blue); }
+  .opt-btn.sel-purple{ border-color: var(--purple); background: rgba(206,147,216,.18); }
+  .opt-btn.sel-purple .opt-btn-label { color: var(--purple); }
+  .opt-btn.sel-green { border-color: var(--green);  background: rgba(0,230,118,.15); }
+  .opt-btn.sel-green  .opt-btn-label { color: var(--green); }
+  .proc-panel {
+    background: rgba(0,230,118,.05); border: 1px solid rgba(0,230,118,.2);
+    border-radius: var(--r2); padding: 10px; margin-top: 6px; display: none;
+  }
+
+  /* CASA BLOCK */
+  .casa-block {
+    background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: var(--r); padding: 12px; margin-top: 10px; transition: border-color .2s;
+  }
+  .casa-block.is-ref { border-color: var(--accent); }
+  .casa-block.has-proc { border-color: var(--green); }
+  .casa-block-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .casa-block-title { font-size: 12px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: .06em; }
+  .add-casa-btn {
+    width: 100%; padding: 10px; font-size: 13px; font-weight: 600;
+    border: 1.5px dashed var(--border2); border-radius: var(--r2);
+    background: none; color: var(--text2); cursor: pointer; margin-top: 10px;
+    letter-spacing: -0.1px;
+  }
+  .stake-sug { font-size: 11px; color: var(--blue); margin-top: 4px; display: none; font-family: var(--mono); }
+
+  /* PAINEL RETORNO */
+  .retorno-panel { margin-top: 12px; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--r); overflow: hidden; display: none; }
+  .retorno-header { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; padding: 8px 10px; background: rgba(255,255,255,.03); }
+  .retorno-header span { font-size: 10px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+  .retorno-header span:not(:first-child) { text-align: right; }
+  .retorno-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; padding: 9px 10px; border-top: 1px solid var(--border); }
+  .retorno-row.is-ref-row { background: rgba(108,99,255,.06); }
+  .retorno-casa { font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .retorno-val { font-size: 12px; font-family: var(--mono); text-align: right; color: var(--text); }
+  .retorno-net { font-size: 12px; font-family: var(--mono); font-weight: 700; text-align: right; }
+
+  /* CHIPS */
+  .chips-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; min-height: 22px; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; background: var(--blue-bg); border: 1px solid rgba(100,181,246,.2); border-radius: 99px; font-size: 12px; font-weight: 600; color: var(--blue); }
+  .chip .rm { background: none; border: none; color: var(--blue); cursor: pointer; font-size: 14px; line-height: 1; padding: 0; opacity: .7; }
+  .chip.purple { background: var(--purple-bg); border-color: rgba(206,147,216,.2); color: var(--purple); }
+  .chip.green { background: var(--green-bg); border-color: rgba(0,230,118,.2); color: var(--green); }
+  .chip.orange { background: var(--orange-bg); border-color: rgba(255,112,67,.2); color: var(--orange); }
+  .chip.ref { background: rgba(108,99,255,.12); border-color: rgba(108,99,255,.3); color: var(--accent2); }
+  .sug-row { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+  .sug-btn { padding: 3px 9px; font-size: 11px; font-weight: 600; background: var(--bg3); border: 1px solid var(--border2); border-radius: 99px; color: var(--text2); cursor: pointer; }
+
+  /* DROPDOWNS */
+  .search-wrap { position: relative; }
+  .dropdown {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: var(--r2); z-index: 999; max-height: 200px; overflow-y: auto;
+    display: none; box-shadow: 0 8px 32px rgba(0,0,0,.5);
+  }
+  .dropdown.open { display: block; }
+  .dropdown-opt { padding: 11px 13px; font-size: 14px; cursor: pointer; border-bottom: 1px solid var(--border); }
+  .dropdown-opt:last-child { border-bottom: none; }
+  .dropdown-opt:hover { background: var(--bg3); }
+
+  /* BADGES */
+  .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 700; }
+  .badge.won { background: var(--green-bg); color: var(--green); border: 1px solid rgba(0,230,118,.2); }
+  .badge.lost { background: var(--red-bg); color: var(--red); border: 1px solid rgba(255,78,106,.2); }
+  .badge.pend { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(255,183,77,.2); }
+  .badge.sb { background: rgba(108,99,255,.1); color: var(--accent2); border: 1px solid rgba(108,99,255,.2); }
+  .badge.an { background: var(--orange-bg); color: var(--orange); border: 1px solid rgba(255,112,67,.2); }
+  .badge.fb { background: var(--purple-bg); color: var(--purple); border: 1px solid rgba(206,147,216,.2); }
+  .badge.proc { background: var(--green-bg); color: var(--green); border: 1px solid rgba(0,230,118,.2); }
+  .badge.ref { background: rgba(108,99,255,.1); color: var(--accent2); border: 1px solid rgba(108,99,255,.2); }
+
+  /* ENTRY ROWS */
+  .entry { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 13px; margin-bottom: 8px; }
+  .entry-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 6px; }
+  .entry-name { font-size: 14px; font-weight: 700; flex: 1; line-height: 1.3; }
+  .entry-detail { font-size: 12px; color: var(--text2); margin-top: 3px; line-height: 1.5; }
+  .entry-actions { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
+
+  /* RC TABLE */
+  .rc-table { border: 1px solid var(--border); border-radius: var(--r2); overflow: hidden; margin-top: 8px; }
+  .rc-hdr { display: grid; grid-template-columns: 1fr 1fr 1fr 80px; gap: 4px; padding: 6px 10px; background: rgba(255,255,255,.03); }
+  .rc-hdr span { font-size: 10px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+  .rc-hdr span:not(:first-child) { text-align: right; }
+  .rc-row { display: grid; grid-template-columns: 1fr 1fr 1fr 80px; gap: 4px; padding: 8px 10px; border-top: 1px solid var(--border); align-items: center; }
+  .rc-casa { font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rc-val { font-size: 12px; font-family: var(--mono); text-align: right; }
+  .rc-net { font-size: 12px; font-family: var(--mono); font-weight: 700; text-align: right; }
+  .rc-act { display: flex; justify-content: flex-end; }
+
+  /* AN RESULT */
+  .an-result { background: linear-gradient(135deg, rgba(255,112,67,.15), rgba(255,138,101,.08)); border: 1px solid rgba(255,112,67,.25); border-radius: var(--r); padding: 13px; margin-top: 12px; display: none; }
+  .an-result-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .an-result-row:last-child { margin-bottom: 0; }
+  .an-result-label { font-size: 11px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+  .an-result-val { font-size: 18px; font-weight: 700; font-family: var(--mono); }
+
+  /* METRICS */
+  .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .metric { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 14px; }
+  .metric-label { font-size: 10px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+  .metric-val { font-size: 22px; font-weight: 700; font-family: var(--mono); }
+  .metric-val.green { color: var(--green); }
+  .metric-val.red { color: var(--red); }
+  .metric-val.purple { color: var(--purple); }
+  .metric-val.blue { color: var(--blue); }
+
+  /* FILTER PILLS */
+  .filter-bar { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 2px; }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .fpill { padding: 6px 14px; font-size: 12px; font-weight: 600; border: 1px solid var(--border2); border-radius: 99px; background: var(--bg3); color: var(--text2); cursor: pointer; white-space: nowrap; }
+  .fpill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* JOGOS */
+  .comp-bar { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 10px; }
+  .comp-bar::-webkit-scrollbar { display: none; }
+  .cpill { padding: 5px 12px; font-size: 11px; font-weight: 700; border-radius: 99px; background: var(--bg3); border: 1px solid var(--border2); color: var(--text2); cursor: pointer; white-space: nowrap; }
+  .cpill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .day-label { font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: .08em; margin: 14px 0 6px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .match { display: flex; align-items: center; justify-content: space-between; padding: 11px 13px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2); margin-bottom: 6px; cursor: pointer; transition: border-color .15s, background .15s; }
+  .match:active, .match:hover { background: var(--bg3); border-color: var(--accent); }
+  .match.selected { border-color: var(--green); background: var(--green-bg); }
+  .match-teams { font-size: 13px; font-weight: 700; flex: 1; }
+  .match-comp { font-size: 10px; color: var(--text2); margin-top: 2px; font-weight: 600; }
+  .match-hora { font-size: 13px; font-weight: 700; font-family: var(--mono); color: var(--accent2); flex-shrink: 0; margin-left: 8px; }
+  .match-live { font-size: 9px; font-weight: 700; color: var(--red); background: var(--red-bg); padding: 2px 6px; border-radius: 99px; margin-left: 6px; animation: blink 1.2s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  /* JOGO BANNER */
+  .jogo-banner { display: flex; align-items: center; gap: 10px; padding: 10px 13px; background: var(--green-bg); border: 1px solid rgba(0,230,118,.25); border-radius: var(--r2); margin-bottom: 12px; }
+  .jogo-banner-text { font-size: 13px; font-weight: 600; color: var(--green); flex: 1; }
+  .jogo-banner-x { background: none; border: none; color: var(--green); cursor: pointer; font-size: 18px; line-height: 1; }
+
+  /* CARTEIRA */
+  .fb-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 13px; margin-bottom: 8px; }
+  .fb-card.usada { opacity: .45; }
+  .fb-valor { font-size: 24px; font-weight: 700; font-family: var(--mono); color: var(--purple); }
+  .fb-info { font-size: 12px; color: var(--text2); margin-top: 4px; }
+  .fb-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .fb-esp { display: flex; align-items: center; gap: 8px; margin-top: 7px; padding: 7px 10px; background: var(--green-bg); border: 1px solid rgba(0,230,118,.2); border-radius: var(--r2); }
+  .fb-esp-text { font-size: 12px; color: var(--green); flex: 1; }
+
+  /* ALERT */
+  .alert { display: flex; align-items: center; gap: 10px; padding: 10px 13px; border-radius: var(--r2); margin-bottom: 8px; }
+  .alert.warn { background: var(--amber-bg); border: 1px solid rgba(255,183,77,.25); }
+  .alert.danger { background: var(--red-bg); border: 1px solid rgba(255,78,106,.25); }
+  .alert-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .alert.warn .alert-text { color: var(--amber); }
+  .alert.danger .alert-text { color: var(--red); }
+
+  /* API KEY SETUP */
+  .setup-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 20px; min-height: 100%; text-align: center; }
+  .setup-icon { font-size: 48px; margin-bottom: 16px; }
+  .setup-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+  .setup-desc { font-size: 14px; color: var(--text2); line-height: 1.6; margin-bottom: 24px; }
+  .setup-steps { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 16px; width: 100%; text-align: left; margin-bottom: 20px; }
+  .setup-step { font-size: 13px; color: var(--text2); margin-bottom: 10px; line-height: 1.5; }
+  .setup-step:last-child { margin-bottom: 0; }
+  .setup-step strong { color: var(--text); }
+  .setup-step a { color: var(--accent2); text-decoration: none; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: calc(70px + var(--safe-bot) + 10px); left: 50%; transform: translateX(-50%) translateY(20px); background: var(--bg2); border: 1px solid var(--border2); border-radius: 99px; padding: 9px 20px; font-size: 13px; font-weight: 600; opacity: 0; pointer-events: none; transition: all .25s; z-index: 9999; white-space: nowrap; box-shadow: 0 4px 20px rgba(0,0,0,.5); }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* EMPTY */
+  .empty { text-align: center; color: var(--text2); font-size: 13px; padding: 32px 0; }
+  .empty-icon { font-size: 32px; margin-bottom: 8px; }
+
+  /* MISC */
+  .section-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .section-title { font-size: 15px; font-weight: 700; }
+  .divider { height: 1px; background: var(--border); margin: 12px 0; }
+  .loading-spin { display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .spinner { width: 24px; height: 24px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .api-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text2); }
+  .api-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text2); }
+  .api-dot.ok { background: var(--green); }
+  .api-dot.err { background: var(--red); }
+  .api-dot.load { background: var(--amber); animation: blink 1s infinite; }
+
+  /* CHANCE PARA DUPLO */
+  .cd-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; margin-top: 4px; }
+  .cd-btn {
+    padding: 10px 4px; border: 1px solid var(--border2); border-radius: var(--r2);
+    background: var(--bg3); cursor: pointer; text-align: center; transition: all .15s;
+    font-family: var(--font);
+  }
+  .cd-btn:active { transform: scale(.97); }
+  .cd-btn.sel { border-color: var(--accent); background: rgba(108,99,255,.15); }
+  .cd-lbl { font-size: 15px; font-weight: 800; display: block; color: var(--text); font-family: var(--mono); }
+  .cd-btn.sel .cd-lbl { color: var(--accent2); }
+  .cd-desc { font-size: 9px; color: var(--text2); display: block; margin-top: 2px; line-height: 1.3; }
+  .cd-btn.sel .cd-desc { color: rgba(139,133,255,.7); }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="header">
+    <div id="header-title">Arb<span>Pro</span></div>
+    <div class="api-status"><div class="api-dot" id="api-dot"></div><span id="api-status-txt">offline</span></div>
+  </div>
+  <div id="content">
+    <div id="alertas-container"></div>
+
+    <!-- PAGE NOVA -->
+    <div class="page active" id="page-nova">
+      <div id="jogo-banner" style="display:none" class="jogo-banner">
+        <span>✓</span>
+        <span class="jogo-banner-text" id="jogo-banner-text"></span>
+        <button class="jogo-banner-x" onclick="limparJogo()">×</button>
+      </div>
+
+      <div class="card">
+        <div class="tipo-grid" id="tipo-btns">
+          <button class="tipo-btn sel sb" data-val="surebet" onclick="selTipo(this)">
+            <span class="tipo-btn-icon">🔵</span>
+            <span class="tipo-btn-label">Surebet</span>
+            <span class="tipo-btn-desc">Sem risco de perda</span>
+          </button>
+          <button class="tipo-btn an" data-val="aposta_normal" onclick="selTipo(this)">
+            <span class="tipo-btn-icon">🟠</span>
+            <span class="tipo-btn-label">Aposta Normal</span>
+            <span class="tipo-btn-desc">Com risco de perda</span>
+          </button>
+        </div>
+        <div class="field-label">Evento / mercado</div>
+        <input type="text" id="f-evento" placeholder="Ex: Flamengo x Corinthians — 1X2">
+        <div class="field-label">Horário do evento</div>
+        <div class="row2" style="margin-top:0"><input type="date" id="f-data"><input type="time" id="f-hora"></div>
+
+        <div class="field-label">Chance Para Duplo</div>
+        <div class="cd-grid" id="cd-grid">
+          <button class="cd-btn sel" data-v="N/A" onclick="selCD(this)">
+            <span class="cd-lbl">N/A</span>
+            <span class="cd-desc">Não se aplica</span>
+          </button>
+          <button class="cd-btn" data-v="1" onclick="selCD(this)">
+            <span class="cd-lbl">1</span>
+            <span class="cd-desc">Casa ou Empate</span>
+          </button>
+          <button class="cd-btn" data-v="2" onclick="selCD(this)">
+            <span class="cd-lbl">2</span>
+            <span class="cd-desc">Fora ou Empate</span>
+          </button>
+          <button class="cd-btn" data-v="12" onclick="selCD(this)">
+            <span class="cd-lbl">12</span>
+            <span class="cd-desc">Casa ou Fora</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- APOSTA NORMAL -->
+      <div id="modo-an" style="display:none">
+        <div class="card" style="border-color: rgba(255,112,67,.3)">
+          <div class="card-title" style="color:var(--orange)">🟠 Aposta Normal</div>
+          <div class="field-label" style="margin-top:0">Casa de aposta</div>
+          <div class="search-wrap" id="wrap-an">
+            <input type="text" id="an-casa" placeholder="Buscar casa..." autocomplete="off">
+            <div class="dropdown" id="dd-an"></div>
+          </div>
+          <div class="field-label">Usuários</div>
+          <div class="sug-row" id="an-sug-row"></div>
+          <div style="display:flex;gap:6px;margin-bottom:8px">
+            <input type="text" id="an-user-inp" placeholder="Digitar usuário..." style="flex:1">
+            <button class="btn-sm" onclick="anAddUser()" style="white-space:nowrap;padding:0 14px">+ Add</button>
+          </div>
+          <div class="chips-row" id="an-chips"></div>
+          <div class="row2" style="margin-top:12px">
+            <div>
+              <div class="field-label" style="margin-top:0">Odd</div>
+              <input type="number" id="an-odd" placeholder="2.50" step="0.01" oninput="calcAN()">
+            </div>
+            <div>
+              <div class="field-label" style="margin-top:0">Valor (R$)</div>
+              <input type="number" id="an-stake" placeholder="100" oninput="calcAN()">
+            </div>
+          </div>
+          <div class="an-result" id="an-result">
+            <div class="an-result-row">
+              <span class="an-result-label">Retorno se ganhar</span>
+              <span class="an-result-val" id="an-retorno" style="color:var(--green)">—</span>
+            </div>
+            <div class="an-result-row">
+              <span class="an-result-label">Lucro líquido</span>
+              <span class="an-result-val" id="an-lucro" style="color:var(--green)">—</span>
+            </div>
+            <div class="an-result-row">
+              <span class="an-result-label">Se perder</span>
+              <span class="an-result-val" id="an-perda" style="color:var(--red)">—</span>
+            </div>
+          </div>
+        </div>
+        <button class="btn-primary orange" onclick="salvarAN()">Salvar aposta</button>
+      </div>
+
+      <!-- SUREBET -->
+      <div id="modo-sb">
+        <div id="casas-container"></div>
+        <button class="add-casa-btn" onclick="addCasa()">+ Adicionar casa</button>
+        <div class="retorno-panel" id="retorno-panel">
+          <div class="retorno-header">
+            <span>Casa</span><span>Retorno</span><span>Resultado</span>
+          </div>
+          <div id="retorno-grid"></div>
+        </div>
+        <button class="btn-primary" onclick="salvarSB()">Salvar entrada</button>
+      </div>
+    </div>
+
+    <!-- PAGE JOGOS -->
+    <div class="page" id="page-jogos">
+      <div id="jogos-api-setup" style="display:none">
+        <div class="setup-screen">
+          <div class="setup-icon">🔑</div>
+          <div class="setup-title">Configure a API de Jogos</div>
+          <div class="setup-desc">Chave gratuita da football-data.org — sem cartão, sem RapidAPI, funciona na hora.</div>
+          <div class="setup-steps">
+            <div class="setup-step">1. Acesse <a href="https://www.football-data.org/client/register" target="_blank"><strong>football-data.org/client/register</strong></a></div>
+            <div class="setup-step">2. Preencha nome e e-mail — <strong>confirme o e-mail recebido</strong></div>
+            <div class="setup-step">3. Acesse sua conta → <strong>My Account</strong> → copie o <strong>API Token</strong></div>
+            <div class="setup-step">4. Cole o token abaixo e salve</div>
+          </div>
+          <div class="field-label" style="width:100%;text-align:left">Seu API Token</div>
+          <input type="text" id="api-key-input" placeholder="Cole seu token aqui..." style="margin-bottom:12px">
+          <button class="btn-primary" onclick="salvarAPIKey()" style="margin-top:0">Salvar e buscar jogos</button>
+        </div>
+      </div>
+
+      <div id="jogos-content" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span class="section-title">Próximos jogos</span>
+          <div style="display:flex;gap:6px">
+            <button class="btn-sm" onclick="testarAPI()">🔍 Testar</button>
+            <button class="btn-sm" onclick="loadJogos(true)">↻ Atualizar</button>
+          </div>
+        </div>
+        <div id="debug-box" style="display:none;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);padding:10px;margin-bottom:10px;font-size:12px;font-family:var(--mono);color:var(--text2);word-break:break-all;white-space:pre-wrap"></div>
+        <input type="text" id="busca-jogo" placeholder="Buscar time ou competição..." style="margin-bottom:10px" oninput="renderJogos()">
+        <div class="comp-bar" id="comp-bar"></div>
+        <div id="jogos-lista"><div class="loading-spin"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
+    <!-- PAGE CARTEIRA -->
+    <div class="page" id="page-carteira">
+      <div class="card">
+        <div class="card-title">+ Adicionar freebet</div>
+        <div class="field-label" style="margin-top:0">Casa</div>
+        <div class="search-wrap" id="wrap-fb-casa">
+          <input type="text" id="fb-cart-casa" placeholder="Buscar casa..." autocomplete="off">
+          <div class="dropdown" id="dd-fb-casa"></div>
+        </div>
+        <div class="field-label">Usuário</div>
+        <div class="sug-row" id="fb-sug-row"></div>
+        <input type="text" id="fb-cart-conta" placeholder="Selecione ou digite...">
+        <div class="row2" style="margin-top:10px">
+          <div>
+            <div class="field-label" style="margin-top:0">Valor (R$)</div>
+            <input type="number" id="fb-cart-valor" placeholder="50.00">
+          </div>
+          <div>
+            <div class="field-label" style="margin-top:0">Tipo</div>
+            <div style="display:flex;gap:5px;margin-top:4px" id="fb-tipo-btns">
+              <button class="btn-sm active" data-v="SNR" onclick="selFBTipo(this)">SNR</button>
+              <button class="btn-sm" data-v="SR" onclick="selFBTipo(this)">SR</button>
+            </div>
+          </div>
+        </div>
+        <div class="field-label">Validade</div>
+        <input type="date" id="fb-cart-val">
+        <div class="field-label">Observação</div>
+        <input type="text" id="fb-cart-obs" placeholder="Ex: Ganhou no proc. Flamengo x Corinthians">
+        <button class="btn-primary" style="background:linear-gradient(135deg,#9c27b0,#ce93d8);box-shadow:0 4px 20px rgba(156,39,176,.3)" onclick="adicionarFB()">Adicionar freebet</button>
+      </div>
+      <div class="section-bar">
+        <span class="section-title">Minhas freebets</span>
+        <div style="display:flex;gap:5px">
+          <button class="btn-sm active" id="fb-f-disp" onclick="setFBFiltro('disp')">Disponíveis</button>
+          <button class="btn-sm" id="fb-f-usada" onclick="setFBFiltro('usada')">Usadas</button>
+          <button class="btn-sm" id="fb-f-todas" onclick="setFBFiltro('todas')">Todas</button>
+        </div>
+      </div>
+      <div id="fb-total" style="font-size:12px;color:var(--purple);font-weight:700;margin-bottom:10px;font-family:var(--mono)"></div>
+      <div id="carteira-lista"></div>
+    </div>
+
+    <!-- PAGE ENTRADAS -->
+    <div class="page" id="page-entradas">
+      <div class="section-bar">
+        <span class="section-title">Entradas</span>
+        <button class="btn-sm" onclick="exportCSV()">↓ CSV</button>
+      </div>
+      <div class="filter-bar" id="filter-bar-entradas">
+        <button class="fpill active" data-f="hoje" onclick="setFilter('entradas','hoje',this)">Hoje</button>
+        <button class="fpill" data-f="semana" onclick="setFilter('entradas','semana',this)">Semana</button>
+        <button class="fpill" data-f="mes" onclick="setFilter('entradas','mes',this)">Mês</button>
+        <button class="fpill" data-f="tudo" onclick="setFilter('entradas','tudo',this)">Tudo</button>
+      </div>
+      <div id="lista-entradas"></div>
+    </div>
+
+    <!-- PAGE RESUMO -->
+    <div class="page" id="page-resumo">
+      <div class="filter-bar" id="filter-bar-resumo">
+        <button class="fpill active" data-f="hoje" onclick="setFilter('resumo','hoje',this)">Hoje</button>
+        <button class="fpill" data-f="semana" onclick="setFilter('resumo','semana',this)">Semana</button>
+        <button class="fpill" data-f="mes" onclick="setFilter('resumo','mes',this)">Mês</button>
+        <button class="fpill" data-f="tudo" onclick="setFilter('resumo','tudo',this)">Tudo</button>
+      </div>
+      <div class="metrics-grid">
+        <div class="metric"><div class="metric-label">Entradas</div><div class="metric-val" id="m-count">0</div></div>
+        <div class="metric"><div class="metric-label">Investido</div><div class="metric-val" id="m-inv">R$ 0</div></div>
+        <div class="metric"><div class="metric-label">Lucro est.</div><div class="metric-val green" id="m-lucro">R$ 0</div></div>
+        <div class="metric"><div class="metric-label">ROI médio</div><div class="metric-val" id="m-roi">0%</div></div>
+      </div>
+      <div class="metrics-grid">
+        <div class="metric"><div class="metric-label">FBs disponíveis</div><div class="metric-val purple" id="m-fb-disp">0</div></div>
+        <div class="metric"><div class="metric-label">Valor FBs</div><div class="metric-val purple" id="m-fb-val">R$ 0</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title" id="resumo-label">Por entrada — hoje</div>
+        <div id="resumo-lista"></div>
+      </div>
+    </div>
+
+    <!-- PAGE USUÁRIOS -->
+    <div class="page" id="page-users">
+      <div class="card">
+        <div class="card-title">Adicionar usuário</div>
+        <div class="field-label" style="margin-top:0">Apelido</div>
+        <input type="text" id="mgr-apelido" placeholder="Ex: João, Maria, Conta 2...">
+        <button class="btn-primary" style="margin-top:10px" onclick="salvarConta()">Adicionar usuário</button>
+      </div>
+      <input type="text" id="busca-user" placeholder="Buscar usuário..." oninput="renderContas()" style="margin-bottom:8px">
+      <div class="card">
+        <div class="card-title" id="users-title">Usuários cadastrados</div>
+        <div id="contas-lista"></div>
+      </div>
+    </div>
+
+    <!-- PAGE CONFIG -->
+    <div class="page" id="page-config">
+      <div class="card">
+        <div class="card-title">⚙️ Configurações</div>
+        <div class="field-label" style="margin-top:0">API Token (football-data.org)</div>
+        <input type="text" id="cfg-api-key" placeholder="Cole sua chave aqui...">
+        <button class="btn-primary" style="margin-top:10px" onclick="salvarCfgAPIKey()">Salvar chave</button>
+        <div class="divider"></div>
+        <div class="field-label">Status da API</div>
+        <div style="font-size:13px;color:var(--text2)" id="cfg-api-status">Não configurada</div>
+        <div class="divider"></div>
+        <div class="card-title" style="margin-top:8px">ℹ️ Sobre</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.8">
+          <b style="color:var(--text)">ArbPro</b> — Dashboard de Arbitragem Esportiva<br>
+          Dados salvos localmente no dispositivo.<br>
+          Jogos via football-data.org (gratuito).<br><br>
+          <b style="color:var(--text)">🌍 Ligas principais:</b><br>
+          Premier League · La Liga · Bundesliga · Serie A · Ligue 1<br><br>
+          <b style="color:var(--text)">🏆 Copas nacionais:</b><br>
+          FA Cup · Copa da Liga ENG · Copa del Rey · DFB-Pokal · Coppa Italia · Coupe de France<br><br>
+          <b style="color:var(--text)">🌟 Europa:</b><br>
+          Champions League · Europa League · Conference League<br><br>
+          <b style="color:var(--text)">🌎 América do Sul:</b><br>
+          Libertadores · Sul-Americana<br><br>
+          <b style="color:var(--text)">🇧🇷 Brasil:</b><br>
+          Brasileirão Série A · Brasileirão Série B · Copa do Brasil
+        </div>
+        <div class="divider"></div>
+        <button class="btn-sm red" onclick="if(confirm('Apagar todos os dados?')){localStorage.clear();location.reload()}" style="width:100%;padding:12px;border-radius:var(--r)">⚠️ Limpar todos os dados</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <nav id="nav">
+    <button class="nav-btn active" id="nav-nova" onclick="navTo('nova',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      Nova
+    </button>
+    <button class="nav-btn" id="nav-jogos" onclick="navTo('jogos',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
+      Jogos
+    </button>
+    <button class="nav-btn" id="nav-carteira" onclick="navTo('carteira',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+      FBs
+    </button>
+    <button class="nav-btn" id="nav-entradas" onclick="navTo('entradas',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Entradas
+    </button>
+    <button class="nav-btn" id="nav-resumo" onclick="navTo('resumo',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Resumo
+    </button>
+    <button class="nav-btn" id="nav-users" onclick="navTo('users',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Usuários
+    </button>
+    <button class="nav-btn" id="nav-config" onclick="navTo('config',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Config
+    </button>
+  </nav>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONSTANTES ─────────────────────────────────────────────────────────────
+const SK='ap_v1', CK='ap_contas_v1', FBCK='ap_fb_v1', APIK='ap_apikey', JOGOK='ap_jogos_cache', JOGOTS='ap_jogos_ts';
+const ALL_CASAS=['Bet365','Betano','Superbet','Sportingbet','KTO','Novibet','BetMGM','Betnacional','Blaze','Betsson','Vbet','Pinnacle','Bwin','1xBet','Betboo','Brazino777','BR4bet','Multibet','BetBoom','Vera Bet','Bet7K','Bodog','Betcris','Dafabet','Betfair','Parimatch','Sportsbet.io','888sport','Unibet','William Hill','Betway','22bet','Melbet','Mostbet','Marathonbet','GGbet','BetWarrior','Codere','Galera.bet','Vai de Bet','EstrelaBet','Segurobet','Esporte da Sorte','Pagbet','Onabet','Wazamba','Rivalo','Betpix365','Brbet','Betsul','F12.bet','Lotogreen','Palms Bet','PlacarBet','R7 Bet','Realsbet','SaharaBet','Starda','TáBet','Top Bet','Toro Bet','Veloce Bet','XP Bet','Zebet','Cloudbet','DraftKings','Fonbet','Gigabet','Goldenbet','Ladbrokes','Maxbet','Megapari','Meridianbet','Mozzartbet','Netbet','Olimp','Premierbet','Rabona','Riobet','Rizk','Sportaza','Titanbet','Winbet','Wplay'];
+
+// IDs das competições na football-data.org (plano gratuito)
+const LEAGUE_IDS = {
+  // ── 5 Grandes Ligas ──────────────────────────────
+  PL:   'Premier League',
+  PD:   'La Liga',
+  BL1:  'Bundesliga',
+  SA:   'Serie A',
+  FL1:  'Ligue 1',
+  // ── Copas Nacionais ─────────────────────────────
+  FAC:  'FA Cup',          // Inglaterra
+  ELC:  'Copa da Liga ENG',// Football League Cup (Carabao Cup)
+  CDR:  'Copa del Rey',    // Espanha
+  DFB:  'DFB-Pokal',      // Alemanha
+  CIT:  'Coppa Italia',   // Itália
+  CDL:  'Coupe de France', // França
+  // ── Europa ──────────────────────────────────────
+  CL:   'Champions League',
+  EL:   'Europa League',
+  ECFL: 'Conference League',
+  // ── América do Sul ───────────────────────────────
+  CLI:  'Libertadores',
+  ASL:  'Sul-Americana',
+  // ── Brasil ───────────────────────────────────────
+  BSA:  'Brasileirão Série A',
+  BSB:  'Brasileirão Série B',
+  CDB:  'Copa do Brasil',
+};
+
+const COMP_CLASS = {
+  // ligas
+  'Premier League':      '#2e7d32',
+  'La Liga':             '#1565c0',
+  'Bundesliga':          '#f57f17',
+  'Serie A':             '#c62828',
+  'Ligue 1':             '#6a1b9a',
+  // copas nacionais
+  'FA Cup':              '#1b5e20',
+  'Copa da Liga ENG':    '#4caf50',
+  'Copa del Rey':        '#0d47a1',
+  'DFB-Pokal':           '#e65100',
+  'Coppa Italia':        '#b71c1c',
+  'Coupe de France':     '#4a148c',
+  // europa
+  'Champions League':    '#006064',
+  'Europa League':       '#ff6f00',
+  'Conference League':   '#00838f',
+  // sul-americana
+  'Libertadores':        '#283593',
+  'Sul-Americana':       '#e65100',
+  // brasil
+  'Brasileirão Série A': '#1b5e20',
+  'Brasileirão Série B': '#33691e',
+  'Copa do Brasil':      '#004d40',
+};
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let tipoSel='surebet', casaSeq=0, casaIds=[], casaUsers={}, refCasaId=null;
+let anUsers=[];
+let entries=ld(SK), contasSalvas=ld(CK), carteiraFB=ld(FBCK);
+let activeDD=null, filterEntradas='hoje', filterResumo='hoje', compFilter='all';
+let jogoSelecionado=null, fbFiltro='disp', fbTipoSel='SNR';
+let jogosData=[], loadingJogos=false;
+const periodoLabel={hoje:'hoje',semana:'esta semana',mes:'este mês',tudo:'todos'};
+
+function ld(k){try{return JSON.parse(localStorage.getItem(k)||'[]')}catch{return[]}}
+function sd(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+function ldS(k){return localStorage.getItem(k)||''}
+function sdS(k,v){localStorage.setItem(k,v)}
+
+// ── NAVIGATION ─────────────────────────────────────────────────────────────
+function navTo(page, btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  btn.classList.add('active');
+  if(page==='entradas') renderEntradas();
+  if(page==='resumo') renderResumo();
+  if(page==='users') renderContas();
+  if(page==='carteira'){renderCarteira();setTimeout(setupFBCasaDrop,50);}
+  if(page==='jogos') initJogos();
+  if(page==='config') initConfig();
+  checkAlertas();
+}
+
+// ── TIPO SELEÇÃO ───────────────────────────────────────────────────────────
+// ── CHANCE PARA DUPLO ──────────────────────────────────────────────────────
+let cdValue='N/A';
+function selCD(btn){
+  document.querySelectorAll('#cd-grid .cd-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  cdValue=btn.dataset.v;
+}
+function resetCD(){
+  cdValue='N/A';
+  document.querySelectorAll('#cd-grid .cd-btn').forEach(b=>b.classList.remove('sel'));
+  document.querySelector('#cd-grid .cd-btn[data-v="N/A"]')?.classList.add('sel');
+}
+
+function selTipo(btn){
+  document.querySelectorAll('#tipo-btns .tipo-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  tipoSel=btn.dataset.val;
+  const isSB=tipoSel==='surebet';
+  document.getElementById('modo-sb').style.display=isSB?'block':'none';
+  document.getElementById('modo-an').style.display=isSB?'none':'block';
+  if(!isSB) setupANCasaDrop();
+}
+
+// ── APOSTA NORMAL ──────────────────────────────────────────────────────────
+function setupANCasaDrop(){
+  const inp=document.getElementById('an-casa');
+  const dd=document.getElementById('dd-an');
+  const wrap=document.getElementById('wrap-an');
+  if(!inp||inp._anReady) return;
+  inp._anReady=true;
+  renderANSug();
+  function r(f){
+    const m=ALL_CASAS.filter(c=>!f||c.toLowerCase().includes(f.toLowerCase())).slice(0,12);
+    dd.innerHTML=m.map(n=>`<div class="dropdown-opt" onclick="event.stopPropagation();document.getElementById('an-casa').value='${n}';document.getElementById('dd-an').classList.remove('open');activeDD=null">${n}</div>`).join('')||`<div class="dropdown-opt" style="color:var(--text2)">Nenhuma encontrada</div>`;
+  }
+  inp.addEventListener('input',()=>{r(inp.value);dd.classList.add('open');activeDD=wrap});
+  inp.addEventListener('focus',()=>{r(inp.value);dd.classList.add('open');activeDD=wrap});
+}
+function renderANSug(){
+  const el=document.getElementById('an-sug-row');if(!el)return;
+  const todos=[...new Set(contasSalvas.map(c=>c.apelido))];
+  el.innerHTML=todos.map(u=>`<button class="sug-btn" onclick="anAddUserDirect('${u}')">${u}</button>`).join('');
+}
+function anAddUser(){const v=document.getElementById('an-user-inp').value.trim();if(!v)return;anAddUserDirect(v);document.getElementById('an-user-inp').value=''}
+function anAddUserDirect(u){if(anUsers.includes(u))return;anUsers.push(u);renderANChips()}
+function renderANChips(){const el=document.getElementById('an-chips');if(!el)return;el.innerHTML=anUsers.length?anUsers.map(u=>`<span class="chip">${u}<button class="rm" onclick="anUsers=anUsers.filter(x=>x!=='${u}');renderANChips()">×</button></span>`).join(''):'<span style="font-size:11px;color:var(--text2)">Nenhum usuário</span>'}
+function calcAN(){
+  const odd=parseFloat(document.getElementById('an-odd').value);
+  const stake=parseFloat(document.getElementById('an-stake').value);
+  const res=document.getElementById('an-result');
+  if(!odd||!stake){res.style.display='none';return}
+  const ret=odd*stake, lucro=ret-stake;
+  res.style.display='block';
+  document.getElementById('an-retorno').textContent=`R$ ${ret.toFixed(2)}`;
+  document.getElementById('an-lucro').textContent=`+R$ ${lucro.toFixed(2)}`;
+  document.getElementById('an-perda').textContent=`-R$ ${stake.toFixed(2)}`;
+}
+function salvarAN(){
+  const ev=document.getElementById('f-evento').value.trim();if(!ev){toast('Informe o evento');return}
+  const casa=document.getElementById('an-casa').value.trim();if(!casa){toast('Informe a casa');return}
+  const odd=parseFloat(document.getElementById('an-odd').value);
+  const stake=parseFloat(document.getElementById('an-stake').value);
+  if(!odd||!stake){toast('Informe odd e valor');return}
+  const ret=odd*stake, lucro=ret-stake;
+  const now=new Date();
+  entries.push({id:Date.now(),tipo:'aposta_normal',evento:ev,
+    casas:[{nome:casa,usuarios:anUsers.slice(),odd,stake,freebet:false,proc:false}],
+    total:stake,lucro,roi:lucro/stake*100,resultado:'pendente',
+    hora:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),data:now.toLocaleDateString('pt-BR'),
+    eventoData:document.getElementById('f-data').value||'',eventoHora:document.getElementById('f-hora').value||'',
+    chanceDuplo:cdValue,fbsEsperadas:[],fbAdicionadas:[]});
+  sd(SK,entries);
+  document.getElementById('f-evento').value='';document.getElementById('f-hora').value='';
+  document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
+  document.getElementById('an-casa').value='';document.getElementById('an-odd').value='';document.getElementById('an-stake').value='';
+  document.getElementById('an-result').style.display='none';
+  anUsers=[];renderANChips();resetCD();checkAlertas();renderResumo();toast('Aposta salva!');
+}
+
+// ── SUREBET: CASAS ─────────────────────────────────────────────────────────
+function setRefCasa(cid){
+  refCasaId=(refCasaId===cid)?null:cid;
+  casaIds.forEach(id=>{
+    document.getElementById('cb-'+id)?.classList.toggle('is-ref',id===refCasaId);
+    const chk=document.getElementById('ref-chk-'+id);if(chk)chk.checked=(id===refCasaId);
+  });
+  calcLucro();
+}
+
+function addCasa(){
+  casaSeq++;const cid=casaSeq;casaIds.push(cid);casaUsers[cid]=[];const num=casaIds.length;
+  const div=document.createElement('div');div.className='casa-block';div.id='cb-'+cid;
+
+  // header
+  const hdr=document.createElement('div');hdr.className='casa-block-hdr';
+  const ttl=document.createElement('span');ttl.className='casa-block-title';ttl.id='ct-'+cid;ttl.textContent='Casa '+num;hdr.appendChild(ttl);
+  if(num>3){const rb=document.createElement('button');rb.className='btn-sm red';rb.textContent='×';rb.style.cssText='padding:2px 8px;font-size:16px;line-height:1';rb.onclick=()=>removeCasa(cid);hdr.appendChild(rb);}
+  div.appendChild(hdr);
+
+  // opt-btn grid (ref / snr / proc)
+  const tg=document.createElement('div');tg.className='opt-grid';
+
+  const bRef=document.createElement('button');bRef.type='button';bRef.className='opt-btn';bRef.id='opt-ref-'+cid;
+  bRef.innerHTML='<span class="opt-btn-icon">🔵</span><span class="opt-btn-label">Aposta Referência</span>';
+  bRef.addEventListener('click',()=>{
+    const wasOn=bRef.classList.contains('sel-blue');
+    bRef.classList.toggle('sel-blue',!wasOn);
+    // hidden checkbox compat
+    let c2=document.getElementById('ref-chk-'+cid);if(!c2){c2=document.createElement('input');c2.type='checkbox';c2.id='ref-chk-'+cid;c2.style.display='none';div.appendChild(c2);}
+    c2.checked=!wasOn;
+    setRefCasa(cid);
+  });
+  tg.appendChild(bRef);
+
+  const bSnr=document.createElement('button');bSnr.type='button';bSnr.className='opt-btn';bSnr.id='opt-snr-'+cid;
+  bSnr.innerHTML='<span class="opt-btn-icon">💜</span><span class="opt-btn-label">Freebet SNR</span>';
+  bSnr.addEventListener('click',()=>{
+    bSnr.classList.toggle('sel-purple');
+    let c2=document.getElementById('fb-chk-'+cid);if(!c2){c2=document.createElement('input');c2.type='checkbox';c2.id='fb-chk-'+cid;c2.style.display='none';div.appendChild(c2);}
+    c2.checked=bSnr.classList.contains('sel-purple');
+    calcLucro();
+  });
+  tg.appendChild(bSnr);
+
+  const bProc=document.createElement('button');bProc.type='button';bProc.className='opt-btn';bProc.id='opt-proc-'+cid;
+  bProc.innerHTML='<span class="opt-btn-icon">🟢</span><span class="opt-btn-label">Proc. Freebet</span>';
+  bProc.addEventListener('click',()=>{
+    bProc.classList.toggle('sel-green');
+    const isOn=bProc.classList.contains('sel-green');
+    let c2=document.getElementById('proc-chk-'+cid);if(!c2){c2=document.createElement('input');c2.type='checkbox';c2.id='proc-chk-'+cid;c2.style.display='none';div.appendChild(c2);}
+    c2.checked=isOn;
+    const pp=document.getElementById('proc-panel-'+cid);if(pp)pp.style.display=isOn?'block':'none';
+    document.getElementById('cb-'+cid)?.classList.toggle('has-proc',isOn);
+  });
+  tg.appendChild(bProc);
+  div.appendChild(tg);
+
+  // proc panel
+  const pp=document.createElement('div');pp.className='proc-panel';pp.id='proc-panel-'+cid;
+  pp.innerHTML=`<div class="field-label" style="margin-top:0;color:var(--green)">Valor da FB que irei receber (R$)</div>
+    <div class="row2"><input type="number" id="proc-valor-${cid}" placeholder="50.00" step="0.01">
+    <div><div class="field-label" style="margin-top:0;color:var(--green)">Tipo</div>
+    <div style="display:flex;gap:5px;margin-top:4px" id="proc-tipo-${cid}">
+    <button class="btn-sm active" data-v="SNR" onclick="selProcTipo(${cid},this)">SNR</button>
+    <button class="btn-sm" data-v="SR" onclick="selProcTipo(${cid},this)">SR</button>
+    </div></div></div>
+    <div class="field-label" style="color:var(--green)">Validade</div><input type="date" id="proc-val-${cid}">`;
+  div.appendChild(pp);
+
+  // search casa
+  const sw=document.createElement('div');sw.className='search-wrap';sw.id='wrap-'+cid;
+  const inp=document.createElement('input');inp.type='text';inp.id='nome-'+cid;inp.placeholder='Buscar casa...';inp.autocomplete='off';inp.style.marginBottom='6px';
+  const dd=document.createElement('div');dd.className='dropdown';dd.id='dd-'+cid;
+  sw.appendChild(inp);sw.appendChild(dd);div.appendChild(sw);
+
+  // users
+  const ul=document.createElement('div');ul.className='field-label';ul.textContent='Usuários';div.appendChild(ul);
+  const sr=document.createElement('div');sr.className='sug-row';sr.id='user-sug-'+cid;div.appendChild(sr);
+  const ir=document.createElement('div');ir.style.cssText='display:flex;gap:6px;margin-bottom:8px';
+  const ui=document.createElement('input');ui.type='text';ui.id='user-inp-'+cid;ui.placeholder='Digitar usuário...';
+  const ub=document.createElement('button');ub.className='btn-sm';ub.textContent='+Add';ub.style='padding:0 12px;white-space:nowrap';
+  ub.onclick=()=>{const v=document.getElementById('user-inp-'+cid).value.trim();if(v){addU(cid,v);document.getElementById('user-inp-'+cid).value=''}};
+  ir.appendChild(ui);ir.appendChild(ub);div.appendChild(ir);
+  const ch=document.createElement('div');ch.className='chips-row';ch.id='user-chips-'+cid;ch.innerHTML='<span style="font-size:11px;color:var(--text2)">Nenhum usuário</span>';div.appendChild(ch);
+
+  // odd + stake
+  const rw=document.createElement('div');rw.className='row2';rw.style.marginTop='10px';
+  rw.innerHTML=`<div><div class="field-label" style="margin-top:0">Odd</div><input type="number" id="odd-${cid}" placeholder="2.10" step="0.01"></div><div><div class="field-label" style="margin-top:0">Stake (R$)</div><input type="number" id="stake-${cid}" placeholder="100"></div>`;
+  div.appendChild(rw);
+  const ss=document.createElement('div');ss.className='stake-sug';ss.id='stake-sug-'+cid;div.appendChild(ss);
+
+  document.getElementById('casas-container').appendChild(div);
+
+  // dropdown casa
+  function ddR(f){
+    const m=ALL_CASAS.filter(c=>!f||c.toLowerCase().includes(f.toLowerCase())).slice(0,12);
+    dd.innerHTML=m.map(n=>`<div class="dropdown-opt" onclick="event.stopPropagation();document.getElementById('nome-${cid}').value='${n}';document.getElementById('dd-${cid}').classList.remove('open');activeDD=null;renderUserSug(${cid})">${n}</div>`).join('')||`<div class="dropdown-opt" style="color:var(--text2)">Nenhuma encontrada</div>`;
+  }
+  inp.addEventListener('input',()=>{ddR(inp.value);dd.classList.add('open');activeDD=sw;calcLucro()});
+  inp.addEventListener('focus',()=>{ddR(inp.value);dd.classList.add('open');activeDD=sw});
+  document.getElementById('odd-'+cid).addEventListener('input',calcLucro);
+  document.getElementById('stake-'+cid).addEventListener('input',calcLucro);
+  renderUserSug(cid);calcLucro();
+}
+
+function mkToggle(id,label,cls,cb){
+  const row=document.createElement('label');row.className='toggle-row';
+  const chk=document.createElement('input');chk.type='checkbox';chk.id=id;
+  const lbl=document.createElement('span');lbl.className=`toggle-label ${cls}`;lbl.textContent=label;
+  row.appendChild(chk);row.appendChild(lbl);chk.addEventListener('change',cb);return row;
+}
+
+function selProcTipo(cid,btn){
+  document.getElementById('proc-tipo-'+cid)?.querySelectorAll('.btn-sm').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function addU(cid,ap){if(!casaUsers[cid])casaUsers[cid]=[];if(casaUsers[cid].includes(ap))return;casaUsers[cid].push(ap);renderChips(cid)}
+function remU(cid,ap){casaUsers[cid]=casaUsers[cid].filter(u=>u!==ap);renderChips(cid)}
+function renderChips(cid){const el=document.getElementById('user-chips-'+cid);if(!el)return;const u=casaUsers[cid]||[];el.innerHTML=u.length?u.map(x=>`<span class="chip">${x}<button class="rm" onclick="remU(${cid},'${x}')">×</button></span>`).join(''):'<span style="font-size:11px;color:var(--text2)">Nenhum usuário</span>'}
+function renderUserSug(cid){const el=document.getElementById('user-sug-'+cid);if(!el)return;const todos=[...new Set(contasSalvas.map(c=>c.apelido))];el.innerHTML=todos.map(u=>`<button class="sug-btn" onclick="addU(${cid},'${u}')">${u}</button>`).join('')}
+function removeCasa(cid){document.getElementById('cb-'+cid)?.remove();casaIds=casaIds.filter(i=>i!==cid);if(refCasaId===cid)refCasaId=null;delete casaUsers[cid];renumber();calcLucro()}
+function renumber(){casaIds.forEach((cid,i)=>{const t=document.getElementById('ct-'+cid);if(t)t.textContent='Casa '+(i+1)})}
+
+function calcLucro(){
+  const casas=casaIds.map(cid=>{
+    const odd=parseFloat(document.getElementById('odd-'+cid)?.value)||0;
+    const stake=parseFloat(document.getElementById('stake-'+cid)?.value)||0;
+    const isFB=document.getElementById('fb-chk-'+cid)?.checked;
+    const nome=document.getElementById('nome-'+cid)?.value.trim()||('Casa '+(casaIds.indexOf(cid)+1));
+    return{cid,nome,odd,stake,isFB,isRef:cid===refCasaId};
+  });
+  // stake sugerida
+  const ref=casas.find(c=>c.isRef&&c.odd>0&&c.stake>0);
+  if(ref){
+    const retRef=ref.isFB?(ref.odd-1)*ref.stake:ref.odd*ref.stake;
+    casas.forEach(c=>{
+      if(c.cid===ref.cid){document.getElementById('stake-sug-'+c.cid).style.display='none';return}
+      if(!c.odd)return;
+      const s=c.isFB?retRef/(c.odd-1):retRef/c.odd;
+      const el=document.getElementById('stake-sug-'+c.cid);
+      if(el){el.textContent='↳ Sugerido: R$ '+s.toFixed(2);el.style.display='block'}
+    });
+  } else {casaIds.forEach(cid=>{const s=document.getElementById('stake-sug-'+cid);if(s)s.style.display='none'})}
+  // painel
+  const valid=casas.every(c=>c.odd>0&&c.stake>0);
+  const pv=document.getElementById('retorno-panel');const rg=document.getElementById('retorno-grid');
+  if(!valid||!casas.length){pv.style.display='none';return}
+  pv.style.display='block';
+  rg.innerHTML=casas.map((c,i)=>{
+    const rb=c.isFB?(c.odd-1)*c.stake:c.odd*c.stake;
+    const outros=casas.reduce((a,x,j)=>a+(i===j||x.isFB?0:x.stake),0);
+    const liq=rb-(c.isFB?0:c.stake)-outros;
+    const isPos=liq>=0;
+    return `<div class="retorno-row${c.isRef?' is-ref-row':''}">
+      <div class="retorno-casa">${c.nome}${c.isRef?'<span class="chip ref" style="margin-left:4px;padding:1px 6px;font-size:10px">ref</span>':''}</div>
+      <div class="retorno-val">R$ ${rb.toFixed(2)}</div>
+      <div class="retorno-net" style="color:${isPos?'var(--green)':'var(--red)'}">${isPos?'+':''}${liq.toFixed(2)}</div>
+    </div>`;
+  }).join('');
+}
+
+function salvarSB(){
+  const ev=document.getElementById('f-evento').value.trim();if(!ev){toast('Informe o evento');return}
+  const casas=[],retornos=[];let ts=0,ok=true,fbsEsp=[];
+  casaIds.forEach(cid=>{
+    const nome=document.getElementById('nome-'+cid)?.value.trim();
+    const odd=parseFloat(document.getElementById('odd-'+cid)?.value);
+    const stake=parseFloat(document.getElementById('stake-'+cid)?.value);
+    const isFB=document.getElementById('fb-chk-'+cid)?.checked;
+    const isProc=document.getElementById('proc-chk-'+cid)?.checked;
+    const isRef=cid===refCasaId;
+    const usuarios=casaUsers[cid]||[];
+    if(!nome||!odd||!stake){ok=false;return}
+    casas.push({nome,usuarios,odd,stake,freebet:isFB,proc:isProc,ref:isRef});
+    if(!isFB)ts+=stake;
+    retornos.push(isFB?(odd-1)*stake:odd*stake);
+    if(isProc){const v=parseFloat(document.getElementById('proc-valor-'+cid)?.value);if(v){const tb=document.getElementById('proc-tipo-'+cid)?.querySelector('.btn-sm.active');fbsEsp.push({casa:nome,usuarios,valor:v,tipo:tb?.dataset.v||'SNR',validade:document.getElementById('proc-val-'+cid)?.value||''})}}
+  });
+  if(!ok||casas.length<2){toast('Preencha ao menos 2 casas');return}
+  const lucro=Math.min(...retornos)-ts,roi=ts>0?lucro/ts*100:0;
+  const now=new Date();
+  entries.push({id:Date.now(),tipo:'surebet',evento:ev,casas,total:ts,lucro,roi,resultado:'pendente',
+    hora:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),data:now.toLocaleDateString('pt-BR'),
+    eventoData:document.getElementById('f-data').value||'',eventoHora:document.getElementById('f-hora').value||'',
+    chanceDuplo:cdValue,fbsEsperadas:fbsEsp,fbAdicionadas:[]});
+  sd(SK,entries);
+  // reset
+  document.getElementById('f-evento').value='';document.getElementById('f-hora').value='';
+  document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
+  casaIds.forEach(cid=>{
+    document.getElementById('nome-'+cid).value='';document.getElementById('odd-'+cid).value='';document.getElementById('stake-'+cid).value='';
+    ['fb-chk-','proc-chk-','ref-chk-'].forEach(p=>{const el=document.getElementById(p+cid);if(el)el.checked=false});
+    const pp=document.getElementById('proc-panel-'+cid);if(pp)pp.style.display='none';
+    document.getElementById('cb-'+cid)?.classList.remove('is-ref','has-proc');
+    const pv=document.getElementById('proc-valor-'+cid);if(pv)pv.value='';
+    const ss=document.getElementById('stake-sug-'+cid);if(ss)ss.style.display='none';
+    casaUsers[cid]=[];renderChips(cid);
+    // reset botões visuais opt-btn
+    document.getElementById('opt-ref-'+cid)?.classList.remove('sel-blue');
+    document.getElementById('opt-snr-'+cid)?.classList.remove('sel-purple');
+    document.getElementById('opt-proc-'+cid)?.classList.remove('sel-green');
+  });
+  refCasaId=null;document.getElementById('retorno-panel').style.display='none';
+  document.getElementById('jogo-banner').style.display='none';jogoSelecionado=null;
+  resetCD();checkAlertas();renderResumo();toast('Entrada salva!');
+}
+
+// ── JOGOS API ──────────────────────────────────────────────────────────────
+function initJogos(){
+  const apiKey=ldS(APIK);
+  if(!apiKey){
+    document.getElementById('jogos-api-setup').style.display='flex';
+    document.getElementById('jogos-content').style.display='none';
+    return;
+  }
+  document.getElementById('jogos-api-setup').style.display='none';
+  document.getElementById('jogos-content').style.display='block';
+  const cached=ld(JOGOK);const ts=parseInt(ldS(JOGOTS)||'0');
+  if(cached.length&&Date.now()-ts<3600000){
+    jogosData=cached;renderJogos();updateAPIStatus('ok');return;
+  }
+  loadJogos(false);
+}
+function salvarAPIKey(){
+  const k=document.getElementById('api-key-input').value.trim();
+  if(!k){toast('Cole seu token');return}
+  sdS(APIK,k);initJogos();
+}
+function salvarCfgAPIKey(){
+  const k=document.getElementById('cfg-api-key').value.trim();
+  if(!k){toast('Cole seu token');return}
+  sdS(APIK,k);toast('Token salvo!');initConfig();
+}
+function initConfig(){
+  const k=ldS(APIK);
+  document.getElementById('cfg-api-key').value=k;
+  document.getElementById('cfg-api-status').textContent=k?'Configurado ✓':'Não configurado';
+}
+
+// ── FETCH COM PROXY CORS ──────────────────────────────────────────────────
+// Tenta direto primeiro (celular nativo funciona), cai no proxy se CORS
+async function fetchAPI(url, apiKey){
+  // football-data.org suporta CORS nativamente com Access-Control-Allow-Origin: *
+  // Não precisa de proxy — chama direto com o header correto
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'X-Auth-Token': apiKey
+    }
+  });
+  return response;
+}
+
+async function loadJogos(force=false){
+  if(loadingJogos)return;
+  const apiKey=ldS(APIK);if(!apiKey)return;
+  loadingJogos=true;
+  document.getElementById('jogos-lista').innerHTML='<div class="loading-spin"><div class="spinner"></div></div>';
+  updateAPIStatus('load');
+
+  const today=new Date();
+  const end=new Date(today);end.setDate(end.getDate()+7);
+  const fmt=d=>d.toISOString().slice(0,10);
+  const dateFrom=fmt(today);
+  const dateTo=fmt(end);
+
+  // IDs numéricos das competições (football-data.org v4)
+  // plano gratuito: ligas principais + copas cobertas
+  const compIds=[
+    2021, // Premier League
+    2014, // La Liga
+    2002, // Bundesliga
+    2019, // Serie A
+    2015, // Ligue 1
+    2001, // Champions League
+    2018, // Europa League
+    2137, // Conference League
+    2055, // Copa do Brasil
+    2013, // Libertadores
+    2152, // Sul-Americana
+    2016, // Championship ENG
+    2017, // Portuguesa (Primeira Liga)
+    2003, // Eredivisie
+  ].join(',');
+
+  const results=[];
+  try{
+    const url=`https://api.football-data.org/v4/matches?competitions=${compIds}&dateFrom=${dateFrom}&dateTo=${dateTo}`;
+    const r=await fetchAPI(url,apiKey);
+
+    if(r.status===400||r.status===403||r.status===429){
+      // tenta buscar cada competição individualmente
+      updateAPIStatus('load');
+      await loadJogosIndividual(apiKey,dateFrom,dateTo,results);
+    } else if(r.ok){
+      const data=await r.json();
+      if(data.matches){
+        data.matches.forEach(m=>processMatch(m,results));
+      }
+    } else {
+      // fallback individual
+      await loadJogosIndividual(apiKey,dateFrom,dateTo,results);
+    }
+  }catch(e){
+    console.warn('Erro fetch unificado:',e);
+    // fallback individual
+    await loadJogosIndividual(apiKey,dateFrom,dateTo,results);
+  }
+
+  if(!results.length){
+    updateAPIStatus('err');
+    document.getElementById('jogos-lista').innerHTML=`
+      <div class="empty">
+        <div class="empty-icon">😕</div>
+        <div style="margin-bottom:8px">Nenhum jogo encontrado</div>
+        <div style="font-size:12px;color:var(--text2)">Verifique se seu token está correto na aba ⚙️ Config</div>
+      </div>`;
+    loadingJogos=false;return;
+  }
+
+  jogosData=results.sort((a,b)=>a.data.localeCompare(b.data)||a.hora.localeCompare(b.hora));
+  sd(JOGOK,jogosData);sdS(JOGOTS,Date.now().toString());
+  renderJogos();updateAPIStatus('ok');
+  loadingJogos=false;
+}
+
+async function loadJogosIndividual(apiKey,dateFrom,dateTo,results){
+  const codes=Object.keys(LEAGUE_IDS);
+  for(const code of codes){
+    try{
+      const url=`https://api.football-data.org/v4/competitions/${code}/matches?dateFrom=${dateFrom}&dateTo=${dateTo}`;
+      const r=await fetchAPI(url,apiKey);
+      if(r.status===403){toast('Token inválido — verifique em Config');return}
+      if(r.ok){
+        const data=await r.json();
+        if(data.matches) data.matches.forEach(m=>{
+          // injeta o código da competição pois /v4/competitions retorna sem ele no objeto raiz
+          processMatch(m,results,code);
+        });
+      }
+    }catch(e){console.warn('Comp individual',code,e)}
+    await new Promise(x=>setTimeout(x,300));
+  }
+}
+
+function processMatch(m,results,fallbackCode){
+  try{
+    const utc=new Date(m.utcDate);
+    // BRT = UTC-3
+    const brt=new Date(utc.getTime()-3*60*60*1000);
+    const dataStr=brt.toISOString().slice(0,10);
+    const horaStr=brt.toISOString().slice(11,16);
+    const status=m.status||'';
+    const isLive=['IN_PLAY','PAUSED','EXTRA_TIME','PENALTY_SHOOTOUT'].includes(status);
+
+    // identificar competição pelo objeto embedded ou pelo fallbackCode
+    const compName=getCompName(m,fallbackCode);
+    if(!compName)return; // competição não monitorada
+
+    results.push({
+      id:m.id,
+      comp:compName,
+      data:dataStr,
+      hora:horaStr,
+      home:m.homeTeam?.shortName||m.homeTeam?.name||'?',
+      away:m.awayTeam?.shortName||m.awayTeam?.name||'?',
+      status,isLive,
+      goalsH:m.score?.fullTime?.home??null,
+      goalsA:m.score?.fullTime?.away??null,
+    });
+  }catch(e){console.warn('processMatch err',e)}
+}
+
+function getCompName(m,fallbackCode){
+  // tenta pelo objeto competition.code no match
+  const code=m.competition?.code||fallbackCode;
+  if(code && LEAGUE_IDS[code]) return LEAGUE_IDS[code];
+
+  // tenta pelo nome
+  const nome=m.competition?.name||'';
+  const byName=Object.values(LEAGUE_IDS).find(v=>nome.toLowerCase().includes(v.toLowerCase().slice(0,8)));
+  return byName||null;
+}
+
+async function testarAPI(){
+  const apiKey = ldS(APIK);
+  const box = document.getElementById('debug-box');
+  box.style.display = 'block';
+  box.style.color = 'var(--text2)';
+  box.style.fontSize = '12px';
+
+  if(!apiKey){
+    box.textContent = '❌ Nenhum token configurado.\nVá em ⚙️ Config e insira seu token da football-data.org';
+    box.style.color = 'var(--red)'; return;
+  }
+
+  box.textContent = 'Token encontrado: ' + apiKey.slice(0,6) + '...' + apiKey.slice(-4) + '\n';
+  box.textContent += 'Iniciando diagnóstico...\n\n';
+
+  const hoje = new Date().toISOString().slice(0,10);
+  const fim  = new Date(Date.now() + 7*864e5).toISOString().slice(0,10);
+  const url  = `https://api.football-data.org/v4/competitions/PL/matches?dateFrom=${hoje}&dateTo=${fim}`;
+
+  box.textContent += 'URL: ' + url + '\n\n';
+
+  // Passo 1: fetch simples direto
+  box.textContent += '⏳ Passo 1: Chamando API diretamente...\n';
+  try {
+    const r = await fetch(url, {
+      method: 'GET',
+      headers: { 'X-Auth-Token': apiKey }
+    });
+
+    box.textContent += 'HTTP Status: ' + r.status + ' ' + r.statusText + '\n';
+
+    const body = await r.text();
+
+    if(r.status === 200){
+      let data;
+      try { data = JSON.parse(body); } catch(e) { data = null; }
+      const qty = data?.matches?.length ?? 0;
+      box.style.color = 'var(--green)';
+      box.textContent += '\n✅ API funcionando!\nJogos encontrados: ' + qty + '\n';
+      if(qty === 0) box.textContent += '(Zero jogos = sem rodadas neste período)\n';
+      box.textContent += '\nCarregando todos os jogos...';
+      loadingJogos = false;
+      loadJogos(true);
+
+    } else if(r.status === 401 || r.status === 403){
+      box.style.color = 'var(--red)';
+      box.textContent += '\n❌ Token inválido ou sem permissão (erro ' + r.status + ')\n';
+      box.textContent += 'Resposta: ' + body.slice(0,300) + '\n\n';
+      box.textContent += 'Solução: Vá em ⚙️ Config, apague o token e cole novamente.';
+
+    } else if(r.status === 429){
+      box.style.color = 'var(--amber)';
+      box.textContent += '\n⚠️ Muitas requisições (erro 429)\nAguarde 1 minuto e tente novamente.';
+
+    } else {
+      box.style.color = 'var(--red)';
+      box.textContent += '\n❌ Erro inesperado: ' + r.status + '\n' + body.slice(0,300);
+    }
+
+  } catch(e) {
+    box.style.color = 'var(--red)';
+    box.textContent += '\n❌ Exceção ao chamar API:\n' + e.name + ': ' + e.message + '\n\n';
+
+    // Diagnóstico adicional
+    box.textContent += '--- Diagnóstico ---\n';
+    box.textContent += 'Conexão com internet: ';
+    try {
+      const ping = await fetch('https://www.google.com/favicon.ico', {mode:'no-cors'});
+      box.textContent += 'OK\n';
+    } catch(e2) {
+      box.textContent += 'SEM CONEXÃO\n';
+    }
+    box.textContent += 'Origem do app: ' + window.location.origin + '\n';
+    box.textContent += 'Protocolo: ' + window.location.protocol + '\n\n';
+
+    if(window.location.protocol === 'file:'){
+      box.textContent += '⚠️ App aberto como arquivo local (file://).\nAbra pelo GitHub Pages ou servidor HTTPS.';
+    } else {
+      box.textContent += 'O app está em HTTPS mas ainda falhou.\nPossível bloqueio de rede ou token incorreto.';
+    }
+  }
+}
+
+
+
+function updateAPIStatus(s){
+  const dot=document.getElementById('api-dot');const txt=document.getElementById('api-status-txt');
+  if(!dot)return;
+  dot.className='api-dot '+(s==='ok'?'ok':s==='load'?'load':'err');
+  txt.textContent=s==='ok'?'online':s==='load'?'buscando...':'offline';
+}
+
+function renderJogos(){
+  const busca=(document.getElementById('busca-jogo')?.value||'').toLowerCase();
+  const hoje=new Date();hoje.setHours(0,0,0,0);
+  const limite=new Date(hoje);limite.setDate(hoje.getDate()+5);
+  const comps=[...new Set(jogosData.map(j=>j.comp))];
+  // comp bar
+  const cb=document.getElementById('comp-bar');
+  if(cb){
+    cb.innerHTML=`<button class="cpill ${compFilter==='all'?'active':''}" onclick="compFilter='all';renderJogos()">Todos</button>`+
+      comps.map(c=>{const abbr={'Premier League':'Premier','La Liga':'La Liga','Bundesliga':'Bundes.','Serie A':'Serie A','Ligue 1':'Ligue 1','Champions League':'Champions','Europa League':'Europa L.','Conference League':'Conference','FA Cup':'FA Cup','Copa da Liga ENG':'Carabao Cup','Copa del Rey':'Copa Rey','DFB-Pokal':'DFB-Pokal','Coppa Italia':'Coppa It.','Coupe de France':'Coupe FR','Libertadores':'Liberta.','Sul-Americana':'Sul-Am.','Brasileirão Série A':'Brasileirão A','Brasileirão Série B':'Brasileirão B','Copa do Brasil':'Copa BR'}[c]||c;const color=COMP_CLASS[c]||'#666';const isSel=compFilter===c;return `<button class="cpill ${isSel?'active':''}" style="border-color:${color};${isSel?`background:${color};color:#fff`:''}" onclick="compFilter='${c}';renderJogos()">${abbr}</button>`}).join('');
+  }
+  const filtered=jogosData.filter(j=>{
+    if(compFilter!=='all'&&j.comp!==compFilter)return false;
+    if(busca&&!(j.home+' '+j.away+' '+j.comp).toLowerCase().includes(busca))return false;
+    const p=j.data.split('-');const d=new Date(p[0],p[1]-1,p[2]);return d>=hoje&&d<=limite;
+  });
+  const porDia={};filtered.forEach(j=>{if(!porDia[j.data])porDia[j.data]=[];porDia[j.data].push(j)});
+  const dias=Object.keys(porDia).sort();
+  const el=document.getElementById('jogos-lista');
+  if(!dias.length){el.innerHTML='<div class="empty"><div class="empty-icon">📅</div>Nenhum jogo encontrado para este período.</div>';return}
+  const fmtDia=d=>{const p=d.split('-');const dt=new Date(p[0],p[1]-1,p[2]);const dias=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];const m=['jan','fev','mar','abr','mai','jun','jul','ago'];return `${dias[dt.getDay()]} ${parseInt(p[2])}/${m[parseInt(p[1])-1]}`};
+  el.innerHTML=dias.map(dia=>{
+    const js=porDia[dia].sort((a,b)=>a.hora.localeCompare(b.hora));
+    return `<div class="day-label">${fmtDia(dia)}</div>`+js.map(j=>{
+      const isLive=j.isLive||false;
+      const isSel=jogoSelecionado?.id===j.id;
+      return `<div class="match ${isSel?'selected':''}" onclick="selJogo(${JSON.stringify(j).replace(/"/g,'&quot;')})">
+        <div style="flex:1;min-width:0">
+          <div class="match-teams">${j.home} × ${j.away}${isLive?`<span class="match-live">AO VIVO${j.goalsH!==null?` ${j.goalsH}-${j.goalsA}`:''}</span>`:''}</div>
+          <div class="match-comp" style="color:${COMP_CLASS[j.comp]||'var(--text2)'}">${j.comp}</div>
+        </div>
+        <div class="match-hora">${j.hora}</div>
+      </div>`;
+    }).join('');
+  }).join('');
+}
+
+function selJogo(j){
+  jogoSelecionado=j;
+  document.getElementById('f-evento').value=`${j.home} x ${j.away} — ${j.comp}`;
+  document.getElementById('f-data').value=j.data;
+  document.getElementById('f-hora').value=j.hora;
+  document.getElementById('jogo-banner-text').textContent=`${j.home} x ${j.away} · ${j.hora}`;
+  document.getElementById('jogo-banner').style.display='flex';
+  navTo('nova',document.getElementById('nav-nova'));
+  toast('Jogo preenchido!');renderJogos();
+}
+function limparJogo(){jogoSelecionado=null;document.getElementById('jogo-banner').style.display='none';document.getElementById('f-evento').value='';document.getElementById('f-data').value=new Date().toISOString().slice(0,10);document.getElementById('f-hora').value=''}
+
+// ── CARTEIRA ───────────────────────────────────────────────────────────────
+function selFBTipo(btn){document.querySelectorAll('#fb-tipo-btns .btn-sm').forEach(b=>b.classList.remove('active'));btn.classList.add('active');fbTipoSel=btn.dataset.v}
+function setFBFiltro(f){fbFiltro=f;['disp','usada','todas'].forEach(x=>{const el=document.getElementById('fb-f-'+x);if(el)el.classList.toggle('active',x===f)});renderCarteira()}
+function setupFBCasaDrop(){
+  const inp=document.getElementById('fb-cart-casa');const dd=document.getElementById('dd-fb-casa');const wrap=document.getElementById('wrap-fb-casa');
+  if(!inp||inp._fbReady)return;inp._fbReady=true;
+  function r(f){const m=ALL_CASAS.filter(c=>!f||c.toLowerCase().includes(f.toLowerCase())).slice(0,12);dd.innerHTML=m.map(n=>`<div class="dropdown-opt" onclick="event.stopPropagation();document.getElementById('fb-cart-casa').value='${n}';document.getElementById('dd-fb-casa').classList.remove('open');activeDD=null;renderFBSug()">${n}</div>`).join('')||`<div class="dropdown-opt" style="color:var(--text2)">Nenhuma</div>`}
+  inp.addEventListener('input',()=>{r(inp.value);dd.classList.add('open');activeDD=wrap});inp.addEventListener('focus',()=>{r(inp.value);dd.classList.add('open');activeDD=wrap});
+}
+function renderFBSug(){const el=document.getElementById('fb-sug-row');if(!el)return;const todos=[...new Set(contasSalvas.map(c=>c.apelido))];el.innerHTML=todos.map(u=>`<button class="sug-btn" onclick="document.getElementById('fb-cart-conta').value='${u}'">${u}</button>`).join('')}
+function adicionarFB(){
+  const casa=document.getElementById('fb-cart-casa').value.trim();
+  const conta=document.getElementById('fb-cart-conta').value.trim();
+  const valor=parseFloat(document.getElementById('fb-cart-valor').value);
+  const validade=document.getElementById('fb-cart-val').value;
+  const obs=document.getElementById('fb-cart-obs').value.trim();
+  if(!casa||!valor){toast('Preencha casa e valor');return}
+  carteiraFB.push({id:Date.now(),casa,conta:conta||'—',valor,tipo:fbTipoSel,validade,obs,status:'disponivel',data:new Date().toLocaleDateString('pt-BR')});
+  sd(FBCK,carteiraFB);
+  ['fb-cart-casa','fb-cart-conta','fb-cart-valor','fb-cart-val','fb-cart-obs'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fb-sug-row').innerHTML='';
+  toast('Freebet adicionada!');renderCarteira();renderResumo();
+}
+function renderCarteira(){
+  const el=document.getElementById('carteira-lista');
+  const f=carteiraFB.filter(x=>fbFiltro==='disp'?x.status==='disponivel':fbFiltro==='usada'?x.status==='usada':true);
+  const disp=carteiraFB.filter(x=>x.status==='disponivel');
+  const tot=document.getElementById('fb-total');
+  if(tot)tot.textContent=`${disp.length} disponível(is) · Total: R$ ${disp.reduce((a,x)=>a+x.valor,0).toFixed(2)}`;
+  if(!f.length){el.innerHTML='<div class="empty"><div class="empty-icon">💜</div>Nenhuma freebet nesta categoria.</div>';return}
+  el.innerHTML=f.map(f=>{
+    const isU=f.status==='usada';
+    return `<div class="fb-card ${isU?'usada':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div class="fb-valor">R$ ${f.valor.toFixed(2)}</div>
+        <span class="badge ${isU?'pend':'fb'}">${isU?'Usada':'Disponível'}</span>
+      </div>
+      <div class="fb-info">${f.casa} · <span class="chip purple" style="font-size:11px;padding:1px 7px">${f.conta}</span> · <span class="chip" style="background:var(--purple-bg);color:var(--purple);border-color:rgba(206,147,216,.2);font-size:10px;padding:1px 7px">${f.tipo}</span></div>
+      ${f.obs?`<div class="fb-info" style="margin-top:4px">📝 ${f.obs}</div>`:''}
+      ${f.validade?`<div class="fb-info">⏳ Válida até ${f.validade.split('-').reverse().join('/')}</div>`:''}
+      <div class="fb-info">Adicionada: ${f.data}</div>
+      <div class="fb-actions">
+        ${!isU?`<button class="btn-sm purple-c" onclick="fbSetStatus(${f.id},'usada')">Marcar usada</button>`:`<button class="btn-sm" onclick="fbSetStatus(${f.id},'disponivel')">Restaurar</button>`}
+        <button class="btn-sm red" onclick="fbRem(${f.id})">Remover</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function fbSetStatus(id,s){carteiraFB.forEach(f=>{if(f.id===id)f.status=s});sd(FBCK,carteiraFB);renderCarteira();renderResumo()}
+function fbRem(id){carteiraFB=carteiraFB.filter(f=>f.id!==id);sd(FBCK,carteiraFB);renderCarteira();renderResumo()}
+
+// ── ENTRADAS ───────────────────────────────────────────────────────────────
+function todayStr(){return new Date().toLocaleDateString('pt-BR')}
+function filterE(arr,f){
+  if(f==='hoje')return arr.filter(e=>e.data===todayStr());
+  if(f==='semana'){const n=new Date();n.setHours(0,0,0,0);const s=new Date(n);s.setDate(n.getDate()-n.getDay());return arr.filter(e=>{const p=e.data.split('/');const d=new Date(p[2],p[1]-1,p[0]);return d>=s})}
+  if(f==='mes'){const n=new Date();return arr.filter(e=>{const p=e.data.split('/');return parseInt(p[1])===n.getMonth()+1&&parseInt(p[2])===n.getFullYear()})}
+  return arr;
+}
+function setFilter(page,f,btn){
+  document.querySelectorAll(`#filter-bar-${page} .fpill`).forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  if(page==='entradas'){filterEntradas=f;renderEntradas()}
+  if(page==='resumo'){filterResumo=f;renderResumo()}
+}
+function calcRPC(casas){
+  return casas.map((c,i)=>{
+    const rb=c.freebet?(c.odd-1)*c.stake:c.odd*c.stake;
+    const outros=casas.reduce((a,x,j)=>a+(i===j||x.freebet?0:x.stake),0);
+    const liq=rb-(c.freebet?0:c.stake)-outros;
+    return{nome:c.nome,isFB:c.freebet||false,isRef:c.ref||false,stake:c.stake,odd:c.odd,rb,liq};
+  });
+}
+function renderEntradas(){
+  const el=document.getElementById('lista-entradas');
+  const f=filterE(entries,filterEntradas);
+  if(!f.length){el.innerHTML='<div class="empty"><div class="empty-icon">📋</div>Nenhuma entrada para este período.</div>';return}
+  el.innerHTML=f.slice().reverse().map(e=>{
+    const bc=e.resultado==='ganho'?'won':e.resultado==='perdido'?'lost':'pend';
+    const bl=e.resultado==='ganho'?'Ganho':e.resultado==='perdido'?'Perdido':'Pendente';
+    const ti=e.tipo==='surebet'?{icon:'🔵',label:'Surebet'}:{icon:'🟠',label:'Aposta Normal'};
+    const cs=e.casas.map(c=>{
+      const tags=(c.freebet?'<span class="badge fb" style="font-size:9px;padding:1px 5px">FB</span>':'')+(c.proc?'<span class="badge proc" style="font-size:9px;padding:1px 5px">Proc</span>':'')+(c.ref?'<span class="badge ref" style="font-size:9px;padding:1px 5px">ref</span>':'');
+      const users=(c.usuarios?.length)?c.usuarios.map(u=>`<span class="chip" style="font-size:10px;padding:1px 6px">${u}</span>`).join(''):'';
+      return `${c.nome}${tags}${users} <span style="font-family:var(--mono);color:var(--accent2)">@${c.odd}</span>`;
+    }).join(' · ');
+    const evInfo=e.eventoData&&e.eventoHora?`<div class="entry-detail">⏰ ${e.eventoData.split('-').slice(1).reverse().join('/')} às ${e.eventoHora}</div>`:'';
+    const cdInfo=e.chanceDuplo&&e.chanceDuplo!=='N/A'?`<div class="entry-detail">🎯 Chance Para Duplo: <span style="font-family:var(--mono);font-weight:700;color:var(--accent2)">${e.chanceDuplo}</span></div>`:'';
+    // rc table
+    let rcHtml='';
+    if(e.tipo==='surebet'){
+      const rcs=calcRPC(e.casas);
+      rcHtml=`<div class="rc-table">
+        <div class="rc-hdr"><span>Casa</span><span>Retorno</span><span>Resultado</span><span>Bateu?</span></div>
+        ${rcs.map((r,i)=>`<div class="rc-row">
+          <div class="rc-casa">${r.nome}${r.isFB?'<span class="badge fb" style="font-size:9px;padding:1px 5px;margin-left:3px">FB</span>':''}${r.isRef?'<span class="badge ref" style="font-size:9px;padding:1px 5px;margin-left:3px">ref</span>':''}</div>
+          <div class="rc-val">R$ ${r.rb.toFixed(2)}</div>
+          <div class="rc-net" style="color:${r.liq>=0?'var(--green)':'var(--red)'}">${r.liq>=0?'+':''}${r.liq.toFixed(2)}</div>
+          <div class="rc-act"><button class="btn-sm ${e.casaGanhadora===i?'green-c active':''}" onclick="marcarCG(${e.id},${i})">${e.casaGanhadora===i?'✓ Bateu':'Bateu?'}</button></div>
+        </div>`).join('')}
+      </div>`;
+    } else {
+      const c=e.casas[0];const ret=c.odd*c.stake;const luc=ret-c.stake;
+      rcHtml=`<div style="display:flex;gap:8px;margin-top:8px;padding:10px;background:var(--bg3);border-radius:var(--r2);flex-wrap:wrap">
+        <div><div style="font-size:10px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.06em">Se ganhar</div><div style="font-size:15px;font-weight:700;font-family:var(--mono);color:var(--green)">R$ ${ret.toFixed(2)}</div></div>
+        <div><div style="font-size:10px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.06em">Lucro</div><div style="font-size:15px;font-weight:700;font-family:var(--mono);color:var(--green)">+R$ ${luc.toFixed(2)}</div></div>
+        <div><div style="font-size:10px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.06em">Se perder</div><div style="font-size:15px;font-weight:700;font-family:var(--mono);color:var(--red)">-R$ ${c.stake.toFixed(2)}</div></div>
+      </div>`;
+    }
+    // freebets esperadas
+    let fbInfo='';
+    (e.fbsEsperadas||[]).forEach((fb,idx)=>{
+      const ja=(e.fbAdicionadas||[]).includes(idx);
+      fbInfo+=`<div class="fb-esp">
+        <span>🟢</span>
+        <span class="fb-esp-text">FB esperada em <b>${fb.casa}</b>: R$ ${fb.valor.toFixed(2)} (${fb.tipo})</span>
+        ${e.resultado==='ganho'&&!ja?`<button class="btn-sm purple-c" onclick="addFBProc(${e.id},${idx})">+ Carteira</button>`:''}
+        ${ja?'<span style="font-size:11px;color:var(--green)">✓</span>':''}
+      </div>`;
+    });
+    const lucroDisp=e.lucro>=0?`+R$ ${e.lucro.toFixed(2)}`:`-R$ ${Math.abs(e.lucro).toFixed(2)}`;
+    return `<div class="entry">
+      <div class="entry-top">
+        <div class="entry-name">${e.evento}</div>
+        <span class="badge ${bc}">${bl}</span>
+      </div>
+      <div class="entry-detail">${e.data} ${e.hora} · ${ti.icon} ${ti.label}</div>
+      ${evInfo}
+      ${cdInfo}
+      <div class="entry-detail" style="line-height:2;margin-top:4px">${cs}</div>
+      <div class="entry-detail" style="font-family:var(--mono);margin-top:4px">Inv: R$ ${e.total.toFixed(0)} · <span style="color:${e.lucro>=0?'var(--green)':'var(--red)'}">${lucroDisp}</span>${e.total>0?` · ROI ${e.roi.toFixed(1)}%`:''}</div>
+      ${rcHtml}${fbInfo}
+      <div class="entry-actions">
+        ${['ganho','perdido','pendente'].map(r=>`<button class="btn-sm ${e.resultado===r?r==='ganho'?'green-c active':r==='perdido'?'red active':'active':''}" onclick="setRes(${e.id},'${r}')">${r==='ganho'?'Ganho':r==='perdido'?'Perdido':'Pendente'}</button>`).join('')}
+        <button class="btn-sm red" onclick="delEntry(${e.id})">Remover</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function marcarCG(id,i){entries.forEach(e=>{if(e.id===id)e.casaGanhadora=e.casaGanhadora===i?null:i});sd(SK,entries);renderEntradas()}
+function addFBProc(eid,idx){
+  const e=entries.find(x=>x.id===eid);if(!e||!e.fbsEsperadas[idx])return;
+  const fb=e.fbsEsperadas[idx];
+  carteiraFB.push({id:Date.now(),casa:fb.casa,conta:fb.usuarios?.[0]||'—',valor:fb.valor,tipo:fb.tipo,validade:fb.validade||'',obs:`Proc: ${e.evento}`,status:'disponivel',data:new Date().toLocaleDateString('pt-BR')});
+  sd(FBCK,carteiraFB);if(!e.fbAdicionadas)e.fbAdicionadas=[];e.fbAdicionadas.push(idx);
+  sd(SK,entries);renderEntradas();renderResumo();toast('Freebet adicionada à carteira!');
+}
+function setRes(id,res){entries.forEach(e=>{if(e.id===id)e.resultado=res});sd(SK,entries);checkAlertas();renderEntradas()}
+function delEntry(id){entries=entries.filter(e=>e.id!==id);sd(SK,entries);checkAlertas();renderEntradas()}
+
+// ── RESUMO ─────────────────────────────────────────────────────────────────
+function renderResumo(){
+  const f=filterE(entries,filterResumo);
+  const count=f.length,inv=f.reduce((a,e)=>a+e.total,0),lucro=f.reduce((a,e)=>a+e.lucro,0),roi=count&&inv?lucro/inv*100:0;
+  document.getElementById('m-count').textContent=count;
+  document.getElementById('m-inv').textContent=`R$ ${inv.toFixed(0)}`;
+  const ml=document.getElementById('m-lucro');ml.textContent=`R$ ${lucro.toFixed(2)}`;ml.className=`metric-val ${lucro>=0?'green':'red'}`;
+  document.getElementById('m-roi').textContent=`${roi.toFixed(1)}%`;
+  const fbD=carteiraFB.filter(f=>f.status==='disponivel');
+  document.getElementById('m-fb-disp').textContent=fbD.length;
+  document.getElementById('m-fb-val').textContent=`R$ ${fbD.reduce((a,f)=>a+f.valor,0).toFixed(2)}`;
+  document.getElementById('resumo-label').textContent=`Por entrada — ${periodoLabel[filterResumo]}`;
+  const el=document.getElementById('resumo-lista');
+  if(!count){el.innerHTML='<div class="empty">Sem dados.</div>';return}
+  el.innerHTML=f.map(e=>{
+    const cs=e.casas.map(c=>c.nome+(c.usuarios?.length?` (${c.usuarios.join(', ')})`:'')+(c.ref?' [ref]':'')).join(' vs ');
+    const luc=e.lucro>=0?`+R$ ${e.lucro.toFixed(2)}`:`-R$ ${Math.abs(e.lucro).toFixed(2)}`;
+    return `<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700">${e.tipo==='surebet'?'🔵':'🟠'} ${e.evento}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">${e.data} · ${cs}</div>
+      </div>
+      <div style="font-family:var(--mono);font-size:14px;font-weight:700;color:${e.lucro>=0?'var(--green)':'var(--red)'};flex-shrink:0;margin-left:8px">${luc}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── USUÁRIOS ───────────────────────────────────────────────────────────────
+function salvarConta(){const ap=document.getElementById('mgr-apelido').value.trim();if(!ap){toast('Informe o apelido');return}if(contasSalvas.some(c=>c.apelido===ap)){toast('Usuário já existe');return}contasSalvas.push({id:Date.now(),apelido:ap});sd(CK,contasSalvas);document.getElementById('mgr-apelido').value='';toast('Usuário adicionado!');renderContas();casaIds.forEach(cid=>renderUserSug(cid));renderANSug();renderFBSug()}
+function deleteConta(id){contasSalvas=contasSalvas.filter(c=>c.id!==id);sd(CK,contasSalvas);renderContas();casaIds.forEach(cid=>renderUserSug(cid))}
+function renderContas(){
+  const el=document.getElementById('contas-lista');
+  const busca=(document.getElementById('busca-user')?.value||'').toLowerCase();
+  const f=contasSalvas.filter(c=>!busca||c.apelido.toLowerCase().includes(busca));
+  document.getElementById('users-title').textContent=`Usuários cadastrados (${contasSalvas.length})`;
+  if(!f.length){el.innerHTML='<div class="empty">Nenhum usuário cadastrado.</div>';return}
+  el.innerHTML=f.map(u=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border)"><span style="font-size:14px;font-weight:700">${u.apelido}</span><button class="btn-sm red" onclick="deleteConta(${u.id})">Remover</button></div>`).join('');
+}
+
+// ── ALERTAS ────────────────────────────────────────────────────────────────
+function checkAlertas(){
+  const c=document.getElementById('alertas-container');if(!c)return;
+  const now=new Date();let html='';
+  entries.filter(e=>e.resultado==='pendente'&&e.eventoData&&e.eventoHora).forEach(e=>{
+    const p=e.eventoData.split('-');const d=new Date(p[0],p[1]-1,p[2]);const hp=e.eventoHora.split(':');
+    d.setHours(parseInt(hp[0]),parseInt(hp[1]),0,0);const diff=Math.round((d-now)/60000);
+    if(diff>=0&&diff<=120){const urg=diff<=30;html+=`<div class="alert ${urg?'danger':'warn'}"><span style="font-size:18px">${urg?'🔴':'🟡'}</span><div class="alert-text"><b>${e.evento}</b><br>Evento ${diff===0?'AGORA':'em '+diff+' min'}</div></div>`}
+  });
+  c.innerHTML=html;
+}
+setInterval(checkAlertas,30000);setTimeout(checkAlertas,500);
+
+// ── EXPORT ─────────────────────────────────────────────────────────────────
+function exportCSV(){
+  const f=filterE(entries,filterEntradas);if(!f.length){toast('Sem entradas');return}
+  const rows=[['Data','Hora','Tipo','Evento','Casas','Total','Lucro','ROI%','Resultado']];
+  f.forEach(e=>{const cs=e.casas.map(c=>`${c.nome}${c.ref?'[REF]':''}${c.freebet?'[FB]':''}${c.proc?'[Proc]':''}[${c.usuarios?.join('+')||'—'}]@${c.odd}(R$${c.stake})`).join('|');rows.push([e.data,e.hora,e.tipo,e.evento,cs,e.total.toFixed(2),e.lucro.toFixed(2),e.roi.toFixed(2),e.resultado])});
+  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(';')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);a.download=`arbpro_${new Date().toISOString().slice(0,10)}.csv`;a.click();toast('CSV exportado!');
+}
+
+// ── TOAST ──────────────────────────────────────────────────────────────────
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+
+// ── DROPDOWN GLOBAL ────────────────────────────────────────────────────────
+document.addEventListener('click',e=>{if(activeDD&&!activeDD.contains(e.target)){activeDD.querySelector('.dropdown')?.classList.remove('open');activeDD=null}});
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+addCasa();addCasa();addCasa();
+document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
+// inicializa status API
+if(ldS(APIK)){updateAPIStatus('ok')}else{updateAPIStatus('err')}
+// render inicial
+renderContas();
+</script>
+</body>
+</html>
