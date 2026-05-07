@@ -1,0 +1,2480 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ArbPro">
+<meta name="theme-color" content="#0a0a0f">
+<title>ArbPro</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #12121a;
+    --bg3: #1a1a26;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0f0f8;
+    --text2: #8888aa;
+    --text3: #4444666;
+    --accent: #6c63ff;
+    --accent2: #8b85ff;
+    --green: #00e676;
+    --green-bg: rgba(0,230,118,0.08);
+    --red: #ff4e6a;
+    --red-bg: rgba(255,78,106,0.08);
+    --amber: #ffb74d;
+    --amber-bg: rgba(255,183,77,0.08);
+    --purple: #ce93d8;
+    --purple-bg: rgba(206,147,216,0.08);
+    --blue: #64b5f6;
+    --blue-bg: rgba(100,181,246,0.08);
+    --orange: #ff7043;
+    --orange-bg: rgba(255,112,67,0.08);
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bot: env(safe-area-inset-bottom, 0px);
+    --r: 12px;
+    --r2: 8px;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font); }
+
+  /* LAYOUT */
+  #app { display: flex; flex-direction: column; height: 100%; height: 100dvh; }
+  #header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: calc(var(--safe-top) + 10px) 16px 10px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  #header-title { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+  #header-title span { color: var(--accent); }
+  #content { flex: 1; overflow-y: auto; overscroll-behavior: contain; }
+  #nav {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding-bottom: var(--safe-bot);
+    flex-shrink: 0;
+  }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    gap: 3px; padding: 10px 4px; background: none; border: none;
+    color: var(--text2); cursor: pointer; font-size: 10px; font-family: var(--font); font-weight: 500;
+    transition: color .15s;
+  }
+  .nav-btn svg { width: 22px; height: 22px; }
+  .nav-btn.active { color: var(--accent2); }
+  .nav-btn.active svg { filter: drop-shadow(0 0 6px var(--accent)); }
+
+  /* PAGES */
+  .page { display: none; padding: 14px; padding-bottom: 24px; min-height: 100%; }
+  .page.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 14px; margin-bottom: 10px;
+  }
+  .card-title { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px; }
+
+  /* TIPO SELECTOR */
+  .tipo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .tipo-btn {
+    padding: 12px 8px; border: 1.5px solid var(--border2); border-radius: var(--r);
+    background: var(--bg3); cursor: pointer; text-align: center; transition: all .15s;
+  }
+  .tipo-btn.sel.sb { border-color: var(--accent); background: rgba(108,99,255,.1); }
+  .tipo-btn.sel.an { border-color: var(--orange); background: var(--orange-bg); }
+  .tipo-btn-icon { font-size: 22px; display: block; margin-bottom: 4px; }
+  .tipo-btn-label { font-size: 13px; font-weight: 700; display: block; color: var(--text); }
+  .tipo-btn.sel.sb .tipo-btn-label { color: var(--accent2); }
+  .tipo-btn.sel.an .tipo-btn-label { color: var(--orange); }
+  .tipo-btn-desc { font-size: 10px; color: var(--text2); display: block; margin-top: 2px; }
+
+  /* INPUTS */
+  .field-label { font-size: 11px; font-weight: 600; color: var(--text2); margin-bottom: 5px; margin-top: 12px; text-transform: uppercase; letter-spacing: .06em; }
+  .field-label:first-child { margin-top: 0; }
+  input, select {
+    width: 100%; padding: 11px 13px; font-size: 15px;
+    border: 1px solid var(--border2); border-radius: var(--r2);
+    background: var(--bg3); color: var(--text); font-family: var(--font);
+    outline: none; transition: border-color .15s;
+    -webkit-appearance: none;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  input::placeholder { color: var(--text2); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+  /* BUTTONS */
+  .btn-primary {
+    width: 100%; padding: 14px; font-size: 15px; font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; border: none; border-radius: var(--r); cursor: pointer;
+    margin-top: 14px; letter-spacing: -0.2px;
+    box-shadow: 0 4px 20px rgba(108,99,255,.3);
+  }
+  .btn-primary.orange { background: linear-gradient(135deg, var(--orange), #ff8a65); box-shadow: 0 4px 20px rgba(255,112,67,.3); }
+  .btn-sm {
+    padding: 5px 11px; font-size: 11px; font-weight: 600; background: var(--bg3);
+    border: 1px solid var(--border2); border-radius: 99px; color: var(--text2); cursor: pointer;
+  }
+  .btn-sm.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-sm.red { color: var(--red); border-color: rgba(255,78,106,.3); }
+  .btn-sm.green-c { color: var(--green); border-color: rgba(0,230,118,.3); }
+  .btn-sm.purple-c { color: var(--purple); border-color: rgba(206,147,216,.3); }
+
+  /* TOGGLES */
+  /* OPTION BUTTONS (substituem toggles nas casas) */
+  .opt-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-bottom: 10px; }
+  .opt-btn {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 8px 4px; border-radius: var(--r2); border: 1.5px solid var(--border2);
+    background: var(--bg3); cursor: pointer; font-family: var(--font);
+    transition: all .15s; text-align: center; gap: 2px;
+  }
+  .opt-btn:active { transform: scale(.96); }
+  .opt-btn-icon { font-size: 16px; line-height: 1; }
+  .opt-btn-label { font-size: 10px; font-weight: 700; color: var(--text2); letter-spacing: .02em; line-height: 1.2; }
+  /* estados ativos por cor */
+  .opt-btn.sel-blue  { border-color: var(--blue);   background: rgba(100,181,246,.18); }
+  .opt-btn.sel-blue  .opt-btn-label { color: var(--blue); }
+  .opt-btn.sel-purple{ border-color: var(--purple); background: rgba(206,147,216,.18); }
+  .opt-btn.sel-purple .opt-btn-label { color: var(--purple); }
+  .opt-btn.sel-green { border-color: var(--green);  background: rgba(0,230,118,.15); }
+  .opt-btn.sel-green  .opt-btn-label { color: var(--green); }
+  .proc-panel {
+    background: rgba(0,230,118,.05); border: 1px solid rgba(0,230,118,.2);
+    border-radius: var(--r2); padding: 10px; margin-top: 6px; display: none;
+  }
+
+  /* CASA BLOCK */
+  .casa-block {
+    background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: var(--r); padding: 12px; margin-top: 10px; transition: border-color .2s;
+  }
+  .casa-block.is-ref { border-color: var(--accent); }
+  .casa-block.has-proc { border-color: var(--green); }
+  .casa-block-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .casa-block-title { font-size: 12px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: .06em; }
+  .add-casa-btn {
+    width: 100%; padding: 10px; font-size: 13px; font-weight: 600;
+    border: 1.5px dashed var(--border2); border-radius: var(--r2);
+    background: none; color: var(--text2); cursor: pointer; margin-top: 10px;
+    letter-spacing: -0.1px;
+  }
+  .stake-sug { font-size: 11px; color: var(--blue); margin-top: 4px; display: none; font-family: var(--mono); }
+
+  /* PAINEL RETORNO */
+  .retorno-panel { margin-top: 12px; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--r); overflow: hidden; display: none; }
+  .retorno-header { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; padding: 8px 10px; background: rgba(255,255,255,.03); }
+  .retorno-header span { font-size: 10px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+  .retorno-header span:not(:first-child) { text-align: right; }
+  .retorno-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; padding: 9px 10px; border-top: 1px solid var(--border); }
+  .retorno-row.is-ref-row { background: rgba(108,99,255,.06); }
+  .retorno-casa { font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .retorno-val { font-size: 12px; font-family: var(--mono); text-align: right; color: var(--text); }
+  .retorno-net { font-size: 12px; font-family: var(--mono); font-weight: 700; text-align: right; }
+
+  /* CHIPS */
+  .chips-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; min-height: 22px; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; background: var(--blue-bg); border: 1px solid rgba(100,181,246,.2); border-radius: 99px; font-size: 12px; font-weight: 600; color: var(--blue); }
+  .chip .rm { background: none; border: none; color: var(--blue); cursor: pointer; font-size: 14px; line-height: 1; padding: 0; opacity: .7; }
+  .chip.purple { background: var(--purple-bg); border-color: rgba(206,147,216,.2); color: var(--purple); }
+  .chip.green { background: var(--green-bg); border-color: rgba(0,230,118,.2); color: var(--green); }
+  .chip.orange { background: var(--orange-bg); border-color: rgba(255,112,67,.2); color: var(--orange); }
+  .chip.ref { background: rgba(108,99,255,.12); border-color: rgba(108,99,255,.3); color: var(--accent2); }
+  .sug-row { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+  .sug-btn { padding: 3px 9px; font-size: 11px; font-weight: 600; background: var(--bg3); border: 1px solid var(--border2); border-radius: 99px; color: var(--text2); cursor: pointer; }
+
+  /* DROPDOWNS */
+  .search-wrap { position: relative; }
+  .dropdown {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: var(--r2); z-index: 999; max-height: 200px; overflow-y: auto;
+    display: none; box-shadow: 0 8px 32px rgba(0,0,0,.5);
+  }
+  .dropdown.open { display: block; }
+  .dropdown-opt { padding: 11px 13px; font-size: 14px; cursor: pointer; border-bottom: 1px solid var(--border); }
+  .dropdown-opt:last-child { border-bottom: none; }
+  .dropdown-opt:hover { background: var(--bg3); }
+
+  /* BADGES */
+  .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 700; }
+  .badge.won { background: var(--green-bg); color: var(--green); border: 1px solid rgba(0,230,118,.2); }
+  .badge.lost { background: var(--red-bg); color: var(--red); border: 1px solid rgba(255,78,106,.2); }
+  .badge.pend { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(255,183,77,.2); }
+  .badge.sb { background: rgba(108,99,255,.1); color: var(--accent2); border: 1px solid rgba(108,99,255,.2); }
+  .badge.an { background: var(--orange-bg); color: var(--orange); border: 1px solid rgba(255,112,67,.2); }
+  .badge.fb { background: var(--purple-bg); color: var(--purple); border: 1px solid rgba(206,147,216,.2); }
+  .badge.proc { background: var(--green-bg); color: var(--green); border: 1px solid rgba(0,230,118,.2); }
+  .badge.ref { background: rgba(108,99,255,.1); color: var(--accent2); border: 1px solid rgba(108,99,255,.2); }
+
+  /* ENTRY ROWS */
+  .entry { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 13px; margin-bottom: 8px; }
+  .entry-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 6px; }
+  .entry-name { font-size: 14px; font-weight: 700; flex: 1; line-height: 1.3; }
+  .entry-detail { font-size: 12px; color: var(--text2); margin-top: 3px; line-height: 1.5; }
+  .entry-actions { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
+
+  /* RC TABLE */
+  .rc-table { border: 1px solid var(--border); border-radius: var(--r2); overflow: hidden; margin-top: 8px; }
+  .rc-hdr { display: grid; grid-template-columns: 1fr 1fr 1fr 80px; gap: 4px; padding: 6px 10px; background: rgba(255,255,255,.03); }
+  .rc-hdr span { font-size: 10px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+  .rc-hdr span:not(:first-child) { text-align: right; }
+  .rc-row { display: grid; grid-template-columns: 1fr 1fr 1fr 80px; gap: 4px; padding: 8px 10px; border-top: 1px solid var(--border); align-items: center; }
+  .rc-casa { font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rc-val { font-size: 12px; font-family: var(--mono); text-align: right; }
+  .rc-net { font-size: 12px; font-family: var(--mono); font-weight: 700; text-align: right; }
+  .rc-act { display: flex; justify-content: flex-end; }
+
+  /* AN RESULT */
+  .an-result { background: linear-gradient(135deg, rgba(255,112,67,.15), rgba(255,138,101,.08)); border: 1px solid rgba(255,112,67,.25); border-radius: var(--r); padding: 13px; margin-top: 12px; display: none; }
+  .an-result-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .an-result-row:last-child { margin-bottom: 0; }
+  .an-result-label { font-size: 11px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+  .an-result-val { font-size: 18px; font-weight: 700; font-family: var(--mono); }
+
+  /* METRICS */
+  .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .metric { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 14px; }
+  .metric-label { font-size: 10px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+  .metric-val { font-size: 22px; font-weight: 700; font-family: var(--mono); }
+  .metric-val.green { color: var(--green); }
+  .metric-val.red { color: var(--red); }
+  .metric-val.purple { color: var(--purple); }
+  .metric-val.blue { color: var(--blue); }
+
+  /* FILTER PILLS */
+  .filter-bar { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 2px; }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .fpill { padding: 6px 14px; font-size: 12px; font-weight: 600; border: 1px solid var(--border2); border-radius: 99px; background: var(--bg3); color: var(--text2); cursor: pointer; white-space: nowrap; }
+  .fpill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* JOGOS */
+  .comp-bar { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 10px; }
+  .comp-bar::-webkit-scrollbar { display: none; }
+  .cpill { padding: 5px 12px; font-size: 11px; font-weight: 700; border-radius: 99px; background: var(--bg3); border: 1px solid var(--border2); color: var(--text2); cursor: pointer; white-space: nowrap; }
+  .cpill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .day-label { font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: .08em; margin: 14px 0 6px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .match { display: flex; align-items: center; justify-content: space-between; padding: 11px 13px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2); margin-bottom: 6px; cursor: pointer; transition: border-color .15s, background .15s; }
+  .match:active, .match:hover { background: var(--bg3); border-color: var(--accent); }
+  .match.selected { border-color: var(--green); background: var(--green-bg); }
+  .match-teams { font-size: 13px; font-weight: 700; flex: 1; }
+  .match-comp { font-size: 10px; color: var(--text2); margin-top: 2px; font-weight: 600; }
+  .match-hora { font-size: 13px; font-weight: 700; font-family: var(--mono); color: var(--accent2); flex-shrink: 0; margin-left: 8px; }
+  .match-live { font-size: 9px; font-weight: 700; color: var(--red); background: var(--red-bg); padding: 2px 6px; border-radius: 99px; margin-left: 6px; animation: blink 1.2s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  /* JOGO BANNER */
+  .jogo-banner { display: flex; align-items: center; gap: 10px; padding: 10px 13px; background: var(--green-bg); border: 1px solid rgba(0,230,118,.25); border-radius: var(--r2); margin-bottom: 12px; }
+  .jogo-banner-text { font-size: 13px; font-weight: 600; color: var(--green); flex: 1; }
+  .jogo-banner-x { background: none; border: none; color: var(--green); cursor: pointer; font-size: 18px; line-height: 1; }
+
+  /* CARTEIRA */
+  .fb-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 13px; margin-bottom: 8px; }
+  .fb-card.usada { opacity: .45; }
+  .fb-valor { font-size: 24px; font-weight: 700; font-family: var(--mono); color: var(--purple); }
+  .fb-info { font-size: 12px; color: var(--text2); margin-top: 4px; }
+  .fb-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .fb-esp { display: flex; align-items: center; gap: 8px; margin-top: 7px; padding: 7px 10px; background: var(--green-bg); border: 1px solid rgba(0,230,118,.2); border-radius: var(--r2); }
+  .fb-esp-text { font-size: 12px; color: var(--green); flex: 1; }
+
+  /* ALERT */
+  .alert { display: flex; align-items: center; gap: 10px; padding: 10px 13px; border-radius: var(--r2); margin-bottom: 8px; }
+  .alert.warn { background: var(--amber-bg); border: 1px solid rgba(255,183,77,.25); }
+  .alert.danger { background: var(--red-bg); border: 1px solid rgba(255,78,106,.25); }
+  .alert-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .alert.warn .alert-text { color: var(--amber); }
+  .alert.danger .alert-text { color: var(--red); }
+
+  /* API KEY SETUP */
+
+  /* TOAST */
+  .toast { position: fixed; bottom: calc(70px + var(--safe-bot) + 10px); left: 50%; transform: translateX(-50%) translateY(20px); background: var(--bg2); border: 1px solid var(--border2); border-radius: 99px; padding: 9px 20px; font-size: 13px; font-weight: 600; opacity: 0; pointer-events: none; transition: all .25s; z-index: 9999; white-space: nowrap; box-shadow: 0 4px 20px rgba(0,0,0,.5); }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* EMPTY */
+  .empty { text-align: center; color: var(--text2); font-size: 13px; padding: 32px 0; }
+  .empty-icon { font-size: 32px; margin-bottom: 8px; }
+
+  /* MISC */
+  .section-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .section-title { font-size: 15px; font-weight: 700; }
+  .divider { height: 1px; background: var(--border); margin: 12px 0; }
+  .loading-spin { display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .spinner { width: 24px; height: 24px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* CHANCE PARA DUPLO */
+  .cd-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; margin-top: 4px; }
+  .cd-btn {
+    padding: 10px 4px; border: 1px solid var(--border2); border-radius: var(--r2);
+    background: var(--bg3); cursor: pointer; text-align: center; transition: all .15s;
+    font-family: var(--font);
+  }
+  .cd-btn:active { transform: scale(.97); }
+  .cd-btn.sel { border-color: var(--accent); background: rgba(108,99,255,.15); }
+  .cd-lbl { font-size: 15px; font-weight: 800; display: block; color: var(--text); font-family: var(--mono); }
+  .cd-btn.sel .cd-lbl { color: var(--accent2); }
+  .cd-desc { font-size: 9px; color: var(--text2); display: block; margin-top: 2px; line-height: 1.3; }
+  .cd-btn.sel .cd-desc { color: rgba(139,133,255,.7); }
+
+  /* NOTIFICAÇÕES / CHANCE DUPLO */
+  .cd-alert { background: linear-gradient(135deg,rgba(108,99,255,.12),rgba(139,133,255,.06)); border: 1px solid rgba(108,99,255,.3); border-radius: var(--r); padding: 13px; margin-bottom: 8px; }
+  .cd-alert-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 8px; }
+  .cd-alert-evento { font-size: 14px; font-weight: 700; flex: 1; line-height: 1.3; }
+  .cd-alert-badge { font-size: 13px; font-weight: 800; font-family: var(--mono); padding: 3px 10px; border-radius: 99px; background: var(--accent); color: #fff; flex-shrink: 0; }
+  .cd-alert-rows { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 8px; }
+  .cd-alert-cell { background: var(--bg3); border-radius: var(--r2); padding: 8px 10px; }
+  .cd-alert-cell-label { font-size: 10px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 3px; }
+  .cd-alert-cell-val { font-size: 14px; font-weight: 700; font-family: var(--mono); }
+  .notif-banner { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 13px; margin-bottom: 10px; }
+  .notif-banner-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .notif-banner-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+  .notif-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+  /* LINHAS COMPACTAS POR APOSTA */
+  .linha-aposta { display: grid; grid-template-columns: 1fr 1fr 72px 72px 28px; gap: 4px; align-items: end; margin-bottom: 5px; }
+  .linha-label { font-size: 9px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px; }
+  .linha-input { padding: 7px 8px; font-size: 13px; border: 1px solid var(--border2); border-radius: var(--r2); background: var(--bg); color: var(--text); width: 100%; font-family: var(--font); }
+  .linha-input:focus { border-color: var(--accent); outline: none; }
+  .linha-num { font-size: 13px; text-align: center; }
+  .linha-rm { background: none; border: 1px solid rgba(255,78,106,.3); border-radius: var(--r2); color: var(--red); cursor: pointer; font-size: 15px; line-height: 1; width: 28px; height: 34px; padding: 0; }
+  .linha-rm:hover { background: var(--red-bg); }
+  .linha-retorno { font-size: 11px; color: var(--text2); padding: 3px 4px; grid-column: 1/-1; }
+  .linhas-header { display: grid; grid-template-columns: 1fr 1fr 72px 72px 28px; gap: 4px; padding-bottom: 4px; border-bottom: 1px solid var(--border); margin-bottom: 5px; }
+  .linhas-header span { font-size: 9px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; }
+  .linhas-header span:nth-child(3), .linhas-header span:nth-child(4) { text-align: center; }
+  .linha-wrap { position: relative; }
+  .linha-dd { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--r2); z-index: 100; max-height: 140px; overflow-y: auto; display: none; box-shadow: 0 4px 16px rgba(0,0,0,.4); }
+  .linha-dd.open { display: block; }
+  .linha-dd-opt { padding: 8px 10px; font-size: 13px; cursor: pointer; border-bottom: 1px solid var(--border); }
+  .linha-dd-opt:hover { background: var(--bg3); }
+  .linha-dd-opt:last-child { border-bottom: none; }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  #notif-modal { display: none; }
+  #notif-modal.open { display: flex !important; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="header">
+    <div id="header-title">Arb<span>Pro</span></div>
+  </div>
+  <div id="content">
+    <div id="alertas-container"></div>
+
+    <!-- PAGE NOVA -->
+    <div class="page active" id="page-nova">
+      <div id="jogo-banner" style="display:none" class="jogo-banner">
+        <span>✓</span>
+        <span class="jogo-banner-text" id="jogo-banner-text"></span>
+        <button class="jogo-banner-x" onclick="limparJogo()">×</button>
+      </div>
+
+      <div class="card">
+        <div class="tipo-grid" id="tipo-btns">
+          <button class="tipo-btn sel sb" data-val="surebet" onclick="selTipo(this)">
+            <span class="tipo-btn-icon">🔵</span>
+            <span class="tipo-btn-label">Surebet</span>
+            <span class="tipo-btn-desc">Sem risco de perda</span>
+          </button>
+          <button class="tipo-btn an" data-val="aposta_normal" onclick="selTipo(this)">
+            <span class="tipo-btn-icon">🟠</span>
+            <span class="tipo-btn-label">Aposta Normal</span>
+            <span class="tipo-btn-desc">Com risco de perda</span>
+          </button>
+        </div>
+        <div class="field-label">Evento / mercado</div>
+        <input type="text" id="f-evento" placeholder="Ex: Flamengo x Corinthians — 1X2">
+        <div class="field-label">Horário do evento</div>
+        <div class="row2" style="margin-top:0"><input type="date" id="f-data"><input type="time" id="f-hora"></div>
+
+        <div class="field-label">Chance Para Duplo</div>
+        <div class="cd-grid" id="cd-grid">
+          <button class="cd-btn sel" data-v="N/A" onclick="selCD(this)">
+            <span class="cd-lbl">N/A</span>
+            <span class="cd-desc">Não se aplica</span>
+          </button>
+          <button class="cd-btn" data-v="1" onclick="selCD(this)">
+            <span class="cd-lbl">1</span>
+            <span class="cd-desc">Casa ou Empate</span>
+          </button>
+          <button class="cd-btn" data-v="2" onclick="selCD(this)">
+            <span class="cd-lbl">2</span>
+            <span class="cd-desc">Fora ou Empate</span>
+          </button>
+          <button class="cd-btn" data-v="12" onclick="selCD(this)">
+            <span class="cd-lbl">12</span>
+            <span class="cd-desc">Casa ou Fora</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- APOSTA NORMAL -->
+      <div id="modo-an" style="display:none">
+        <div class="card" style="border-color: rgba(255,112,67,.3)">
+          <div class="card-title" style="color:var(--orange)">🟠 Aposta Normal</div>
+          <div class="field-label" style="margin-top:0">Casa de aposta</div>
+          <div class="search-wrap" id="wrap-an">
+            <input type="text" id="an-casa" placeholder="Buscar casa..." autocomplete="off">
+            <div class="dropdown" id="dd-an"></div>
+          </div>
+          <div class="field-label">Usuários</div>
+          <div class="sug-row" id="an-sug-row"></div>
+          <div style="display:flex;gap:6px;margin-bottom:8px">
+            <input type="text" id="an-user-inp" placeholder="Digitar usuário..." style="flex:1">
+            <button class="btn-sm" onclick="anAddUser()" style="white-space:nowrap;padding:0 14px">+ Add</button>
+          </div>
+          <div class="chips-row" id="an-chips"></div>
+          <div class="row2" style="margin-top:12px">
+            <div>
+              <div class="field-label" style="margin-top:0">Odd</div>
+              <input type="number" id="an-odd" placeholder="2.50" step="0.01" oninput="calcAN()">
+            </div>
+            <div>
+              <div class="field-label" style="margin-top:0">Valor (R$)</div>
+              <input type="number" id="an-stake" placeholder="100" oninput="calcAN()">
+            </div>
+          </div>
+          <div class="an-result" id="an-result">
+            <div class="an-result-row">
+              <span class="an-result-label">Retorno se ganhar</span>
+              <span class="an-result-val" id="an-retorno" style="color:var(--green)">—</span>
+            </div>
+            <div class="an-result-row">
+              <span class="an-result-label">Lucro líquido</span>
+              <span class="an-result-val" id="an-lucro" style="color:var(--green)">—</span>
+            </div>
+            <div class="an-result-row">
+              <span class="an-result-label">Se perder</span>
+              <span class="an-result-val" id="an-perda" style="color:var(--red)">—</span>
+            </div>
+          </div>
+        </div>
+        <button class="btn-primary orange" onclick="salvarAN()">Salvar aposta</button>
+      </div>
+
+      <!-- SUREBET -->
+      <div id="modo-sb">
+        <div id="casas-container"></div>
+        <button class="add-casa-btn" id="btn-add-aposta" onclick="addCasa()">+ Adicionar aposta</button>
+        <div class="retorno-panel" id="retorno-panel">
+          <div class="retorno-header">
+            <span>Casa</span><span>Retorno</span><span>Resultado</span>
+          </div>
+          <div id="retorno-grid"></div>
+        </div>
+        <button class="btn-primary" onclick="salvarSB()">Salvar entrada</button>
+      </div>
+    </div>
+
+    <!-- PAGE JOGOS -->
+    <div class="page" id="page-jogos">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span class="section-title">Próximos jogos</span>
+        <div style="font-size:11px;color:var(--text2)" id="jogos-updated"></div>
+      </div>
+      <input type="text" id="busca-jogo" placeholder="Buscar time ou competição..." style="margin-bottom:10px" oninput="renderJogos()">
+      <div class="comp-bar" id="comp-bar"></div>
+      <div id="jogos-lista"></div>
+    </div>
+    <!-- PAGE CARTEIRA -->
+    <div class="page" id="page-carteira">
+      <div class="card">
+        <div class="card-title">+ Adicionar freebet</div>
+        <div class="field-label" style="margin-top:0">Casa</div>
+        <div class="search-wrap" id="wrap-fb-casa">
+          <input type="text" id="fb-cart-casa" placeholder="Buscar casa..." autocomplete="off">
+          <div class="dropdown" id="dd-fb-casa"></div>
+        </div>
+        <div class="field-label">Usuário</div>
+        <div class="sug-row" id="fb-sug-row"></div>
+        <input type="text" id="fb-cart-conta" placeholder="Selecione ou digite...">
+        <div class="row2" style="margin-top:10px">
+          <div>
+            <div class="field-label" style="margin-top:0">Valor (R$)</div>
+            <input type="number" id="fb-cart-valor" placeholder="50.00">
+          </div>
+          <div>
+            <div class="field-label" style="margin-top:0">Tipo</div>
+            <div style="display:flex;gap:5px;margin-top:4px" id="fb-tipo-btns">
+              <button class="btn-sm active" data-v="SNR" onclick="selFBTipo(this)">SNR</button>
+              <button class="btn-sm" data-v="SR" onclick="selFBTipo(this)">SR</button>
+            </div>
+          </div>
+        </div>
+        <div class="field-label">Validade</div>
+        <input type="date" id="fb-cart-val">
+        <div class="field-label">Observação</div>
+        <input type="text" id="fb-cart-obs" placeholder="Ex: Ganhou no proc. Flamengo x Corinthians">
+        <button class="btn-primary" style="background:linear-gradient(135deg,#9c27b0,#ce93d8);box-shadow:0 4px 20px rgba(156,39,176,.3)" onclick="adicionarFB()">Adicionar freebet</button>
+      </div>
+      <div class="section-bar">
+        <span class="section-title">Minhas freebets</span>
+        <div style="display:flex;gap:5px">
+          <button class="btn-sm active" id="fb-f-disp" onclick="setFBFiltro('disp')">Disponíveis</button>
+          <button class="btn-sm" id="fb-f-usada" onclick="setFBFiltro('usada')">Usadas</button>
+          <button class="btn-sm" id="fb-f-todas" onclick="setFBFiltro('todas')">Todas</button>
+        </div>
+      </div>
+      <div id="fb-total" style="font-size:12px;color:var(--purple);font-weight:700;margin-bottom:10px;font-family:var(--mono)"></div>
+      <div id="carteira-lista"></div>
+    </div>
+
+    <!-- PAGE ENTRADAS -->
+    <div class="page" id="page-entradas">
+
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span class="section-title">Entradas</span>
+        <button class="btn-sm" onclick="exportCSV()">↓ CSV</button>
+      </div>
+
+      <!-- Sub-abas -->
+      <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:12px">
+        <button id="subtab-btn-pendentes" onclick="setSubtab('pendentes')"
+          style="flex:1;padding:10px 4px;font-size:12px;font-weight:700;background:none;border:none;
+                 border-bottom:2px solid var(--accent);color:var(--text);cursor:pointer;letter-spacing:.01em">
+          ⏳ Pendentes
+        </button>
+        <button id="subtab-btn-historico" onclick="setSubtab('historico')"
+          style="flex:1;padding:10px 4px;font-size:12px;font-weight:700;background:none;border:none;
+                 border-bottom:2px solid transparent;color:var(--text2);cursor:pointer;letter-spacing:.01em">
+          📚 Histórico
+        </button>
+
+      </div>
+
+      <!-- SUB-ABA: PENDENTES -->
+      <div id="subtab-pendentes">
+        <div class="filter-bar" id="filter-bar-entradas">
+          <button class="fpill active" data-f="hoje" onclick="setFilter('entradas','hoje',this)">Hoje</button>
+          <button class="fpill" data-f="semana" onclick="setFilter('entradas','semana',this)">Semana</button>
+          <button class="fpill" data-f="mes" onclick="setFilter('entradas','mes',this)">Mês</button>
+          <button class="fpill" data-f="tudo" onclick="setFilter('entradas','tudo',this)">Tudo</button>
+        </div>
+        <div id="lista-entradas"></div>
+      </div>
+
+      <!-- SUB-ABA: HISTÓRICO -->
+      <div id="subtab-historico" style="display:none">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+          <div class="filter-bar" id="filter-bar-hist" style="margin-bottom:0;flex:1">
+            <button class="fpill active" data-f="tudo" onclick="setFilter('hist','tudo',this)">Tudo</button>
+            <button class="fpill" data-f="mes" onclick="setFilter('hist','mes',this)">Mês</button>
+            <button class="fpill" data-f="semana" onclick="setFilter('hist','semana',this)">Semana</button>
+          </div>
+          <button class="btn-sm red" onclick="limparHistorico()" style="flex-shrink:0">🗑 Limpar</button>
+        </div>
+        <div id="hist-lista"></div>
+      </div>
+
+
+
+    <!-- PAGE RESUMO -->
+    <div class="page" id="page-resumo">
+      <div class="filter-bar" id="filter-bar-resumo">
+        <button class="fpill active" data-f="hoje" onclick="setFilter('resumo','hoje',this)">Hoje</button>
+        <button class="fpill" data-f="semana" onclick="setFilter('resumo','semana',this)">Semana</button>
+        <button class="fpill" data-f="mes" onclick="setFilter('resumo','mes',this)">Mês</button>
+        <button class="fpill" data-f="tudo" onclick="setFilter('resumo','tudo',this)">Tudo</button>
+      </div>
+      <div class="metrics-grid">
+        <div class="metric"><div class="metric-label">Entradas</div><div class="metric-val" id="m-count">0</div></div>
+        <div class="metric"><div class="metric-label">Investido</div><div class="metric-val" id="m-inv">R$ 0</div></div>
+        <div class="metric"><div class="metric-label">Lucro est.</div><div class="metric-val green" id="m-lucro">R$ 0</div></div>
+        <div class="metric"><div class="metric-label">ROI médio</div><div class="metric-val" id="m-roi">0%</div></div>
+      </div>
+      <div class="metrics-grid">
+        <div class="metric"><div class="metric-label">FBs disponíveis</div><div class="metric-val purple" id="m-fb-disp">0</div></div>
+        <div class="metric"><div class="metric-label">Valor FBs</div><div class="metric-val purple" id="m-fb-val">R$ 0</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title" id="resumo-label">Por entrada — hoje</div>
+        <div id="resumo-lista"></div>
+      </div>
+    </div>
+
+    <!-- PAGE USUÁRIOS -->
+    <div class="page" id="page-users">
+      <div class="card">
+        <div class="card-title">Adicionar usuário</div>
+        <div class="field-label" style="margin-top:0">Apelido</div>
+        <input type="text" id="mgr-apelido" placeholder="Ex: João, Maria, Conta 2...">
+        <button class="btn-primary" style="margin-top:10px" onclick="salvarConta()">Adicionar usuário</button>
+      </div>
+      <input type="text" id="busca-user" placeholder="Buscar usuário..." oninput="renderContas()" style="margin-bottom:8px">
+      <div class="card">
+        <div class="card-title" id="users-title">Usuários cadastrados</div>
+        <div id="contas-lista"></div>
+      </div>
+    </div>
+
+    <!-- PAGE CONFIG -->
+    <div class="page" id="page-config">
+      <div class="card">
+        <div class="card-title">⚙️ Configurações</div>
+        <div class="divider"></div>
+        <div class="card-title" style="margin-top:8px">ℹ️ Sobre</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.8">
+          <b style="color:var(--text)">ArbPro</b> — Dashboard de Arbitragem Esportiva<br>
+          Dados salvos localmente no dispositivo.<br>
+          Jogos embutidos no app, atualizados periodicamente.<br><br>
+          <b style="color:var(--text)">🌍 Ligas principais:</b><br>
+          Premier League · La Liga · Bundesliga · Serie A · Ligue 1<br><br>
+          <b style="color:var(--text)">🏆 Copas nacionais:</b><br>
+          FA Cup · Copa da Liga ENG · Copa del Rey · DFB-Pokal · Coppa Italia · Coupe de France<br><br>
+          <b style="color:var(--text)">🌟 Europa:</b><br>
+          Champions League · Europa League · Conference League<br><br>
+          <b style="color:var(--text)">🌎 América do Sul:</b><br>
+          Libertadores · Sul-Americana<br><br>
+          <b style="color:var(--text)">🇧🇷 Brasil:</b><br>
+          Brasileirão Série A · Brasileirão Série B · Copa do Brasil
+        </div>
+        <div class="divider"></div>
+        <button class="btn-sm red" onclick="if(confirm('Apagar todos os dados?')){localStorage.clear();location.reload()}" style="width:100%;padding:12px;border-radius:var(--r)">⚠️ Limpar todos os dados</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <nav id="nav">
+    <button class="nav-btn active" id="nav-nova" onclick="navTo('nova',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      Nova
+    </button>
+    <button class="nav-btn" id="nav-jogos" onclick="navTo('jogos',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
+      Jogos
+    </button>
+    <button class="nav-btn" id="nav-carteira" onclick="navTo('carteira',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+      FBs
+    </button>
+    <button class="nav-btn" id="nav-entradas" onclick="navTo('entradas',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Entradas
+    </button>
+    <button class="nav-btn" id="nav-resumo" onclick="navTo('resumo',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Resumo
+    </button>
+    <button class="nav-btn" id="nav-users" onclick="navTo('users',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Usuários
+    </button>
+
+    <button class="nav-btn" id="nav-config" onclick="navTo('config',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Config
+    </button>
+  </nav>
+</div>
+  <!-- MODAL NOTIFICAÇÃO -->
+  <div id="notif-modal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:flex-end;justify-content:center">
+    <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r) var(--r) 0 0;padding:20px;width:100%;max-width:480px;animation:slideUp .2s ease">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <span style="font-size:15px;font-weight:700">🔔 Configurar notificação</span>
+        <button onclick="fecharNotifModal()" style="background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;line-height:1">×</button>
+      </div>
+      <div id="notif-modal-evento" style="font-size:13px;font-weight:600;color:var(--accent2);margin-bottom:14px;padding:8px 12px;background:var(--bg3);border-radius:var(--r2)"></div>
+
+      <!-- Status permissão -->
+      <div id="notif-modal-perm-warn" style="display:none;padding:10px 12px;background:var(--amber-bg);border:1px solid rgba(255,183,77,.3);border-radius:var(--r2);margin-bottom:12px">
+        <div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:6px">⚠️ Notificações não ativadas</div>
+        <button class="btn-primary" style="margin-top:0;background:linear-gradient(135deg,var(--amber),#ffa726)" onclick="pedirPermissaoNotif()">Ativar notificações do navegador</button>
+      </div>
+      <div id="notif-modal-perm-ok" style="display:none;padding:8px 12px;background:var(--green-bg);border:1px solid rgba(0,230,118,.2);border-radius:var(--r2);margin-bottom:12px;font-size:12px;font-weight:700;color:var(--green)">
+        ✓ Notificações ativas neste dispositivo
+      </div>
+
+      <!-- Quando avisar -->
+      <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Avisar quantos minutos antes?</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:16px" id="notif-modal-btns">
+        <button class="btn-sm" data-m="5"  onclick="setNotifMin(5,this)">5 min</button>
+        <button class="btn-sm active" data-m="10" onclick="setNotifMin(10,this)">10 min</button>
+        <button class="btn-sm" data-m="15" onclick="setNotifMin(15,this)">15 min</button>
+        <button class="btn-sm" data-m="30" onclick="setNotifMin(30,this)">30 min</button>
+        <button class="btn-sm" data-m="60" onclick="setNotifMin(60,this)">1h</button>
+      </div>
+
+      <!-- Status desta entrada -->
+      <div id="notif-modal-status" style="font-size:12px;color:var(--text2);margin-bottom:16px;min-height:18px"></div>
+
+      <!-- Ações -->
+      <div style="display:flex;gap:8px">
+        <button class="btn-primary" style="flex:1;margin-top:0" onclick="salvarNotifEntrada()">✓ Salvar configuração</button>
+        <button class="btn-sm" onclick="testarNotifModal()" style="padding:0 14px">🔔 Testar</button>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button class="btn-sm red" id="notif-modal-remover" style="flex:1;padding:10px" onclick="removerNotifEntrada()">Remover notificação desta entrada</button>
+      </div>
+    </div>
+  </div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONSTANTES ─────────────────────────────────────────────────────────────
+const SK='ap_v1', CK='ap_contas_v1', FBCK='ap_fb_v1';
+const ALL_CASAS=['Bet365','Betano','Superbet','Sportingbet','KTO','Novibet','BetMGM','Betnacional','Blaze','Betsson','Vbet','Pinnacle','Bwin','1xBet','Betboo','Brazino777','BR4bet','Multibet','BetBoom','Vera Bet','Bet7K','Bodog','Betcris','Dafabet','Betfair','Parimatch','Sportsbet.io','888sport','Unibet','William Hill','Betway','22bet','Melbet','Mostbet','Marathonbet','GGbet','BetWarrior','Codere','Galera.bet','Vai de Bet','EstrelaBet','Segurobet','Esporte da Sorte','Pagbet','Onabet','Wazamba','Rivalo','Betpix365','Brbet','Betsul','F12.bet','Lotogreen','Palms Bet','PlacarBet','R7 Bet','Realsbet','SaharaBet','Starda','TáBet','Top Bet','Toro Bet','Veloce Bet','XP Bet','Zebet','Cloudbet','DraftKings','Fonbet','Gigabet','Goldenbet','Ladbrokes','Maxbet','Megapari','Meridianbet','Mozzartbet','Netbet','Olimp','Premierbet','Rabona','Riobet','Rizk','Sportaza','Titanbet','Winbet','Wplay'];
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let tipoSel='surebet', casaSeq=0, casaIds=[], casaUsers={}, refCasaId=null;
+let anUsers=[];
+let entries=ld(SK), contasSalvas=ld(CK), carteiraFB=ld(FBCK);
+let activeDD=null, filterEntradas='hoje', filterResumo='hoje', compFilter='all', compSel='all', filterHist='tudo';
+let jogoSelecionado=null, fbFiltro='disp', fbTipoSel='SNR';
+let jogosData=[];
+const periodoLabel={hoje:'hoje',semana:'esta semana',mes:'este mês',tudo:'todos'};
+
+function ld(k){try{return JSON.parse(localStorage.getItem(k)||'[]')}catch{return[]}}
+function sd(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+function ldS(k){return localStorage.getItem(k)||''}
+function sdS(k,v){localStorage.setItem(k,v)}
+
+// ── NAVIGATION ─────────────────────────────────────────────────────────────
+
+var currentSubtab = 'pendentes';
+
+function setSubtab(tab){
+  currentSubtab = tab;
+  ['pendentes','historico'].forEach(function(t){
+    var el  = document.getElementById('subtab-'+t);
+    var btn = document.getElementById('subtab-btn-'+t);
+    if(!el||!btn) return;
+    var isActive = t===tab;
+    el.style.display  = isActive ? 'block' : 'none';
+    btn.style.borderBottomColor = isActive ? 'var(--accent)' : 'transparent';
+    btn.style.color = isActive ? 'var(--text)' : 'var(--text2)';
+  });
+  if(tab==='historico') renderHistorico();
+  if(tab==='pendentes') renderEntradas();
+}
+
+function navTo(page, btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  btn.classList.add('active');
+  if(page==='entradas'){ setSubtab(currentSubtab||'pendentes'); }
+  if(page==='resumo')  { renderResumo(); }
+  if(page==='users')   { renderContas(); }
+  if(page==='carteira'){ renderCarteira(); setTimeout(setupFBCasaDrop,50); }
+  if(page==='jogos')   { renderJogos(); }
+  if(page==='config')  { initConfig(); }
+  checkAlertas();
+}
+
+// ── TIPO SELEÇÃO ───────────────────────────────────────────────────────────
+// ── CHANCE PARA DUPLO ──────────────────────────────────────────────────────
+let cdValue='N/A';
+function selCD(btn){
+  document.querySelectorAll('#cd-grid .cd-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  cdValue=btn.dataset.v;
+}
+function resetCD(){
+  cdValue='N/A';
+  document.querySelectorAll('#cd-grid .cd-btn').forEach(b=>b.classList.remove('sel'));
+  document.querySelector('#cd-grid .cd-btn[data-v="N/A"]')?.classList.add('sel');
+}
+
+function selTipo(btn){
+  document.querySelectorAll('#tipo-btns .tipo-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  tipoSel=btn.dataset.val;
+  const isSB=tipoSel==='surebet';
+  document.getElementById('modo-sb').style.display=isSB?'block':'none';
+  document.getElementById('modo-an').style.display=isSB?'none':'block';
+  if(!isSB) setupANCasaDrop();
+}
+
+// ── APOSTA NORMAL ──────────────────────────────────────────────────────────
+function setupANCasaDrop(){
+  const inp=document.getElementById('an-casa');
+  const dd=document.getElementById('dd-an');
+  const wrap=document.getElementById('wrap-an');
+  if(!inp||inp._anReady) return;
+  inp._anReady=true;
+  renderANSug();
+  function r(f){
+    const m=ALL_CASAS.filter(c=>!f||c.toLowerCase().includes(f.toLowerCase())).slice(0,12);
+    dd.innerHTML=m.map(n=>`<div class="dropdown-opt" onclick="event.stopPropagation();document.getElementById('an-casa').value='${n}';document.getElementById('dd-an').classList.remove('open');activeDD=null">${n}</div>`).join('')||`<div class="dropdown-opt" style="color:var(--text2)">Nenhuma encontrada</div>`;
+  }
+  inp.addEventListener('input',()=>{r(inp.value);dd.classList.add('open');activeDD=wrap});
+  inp.addEventListener('focus',()=>{r(inp.value);dd.classList.add('open');activeDD=wrap});
+}
+function renderANSug(){
+  const el=document.getElementById('an-sug-row');if(!el)return;
+  const todos=[...new Set(contasSalvas.map(c=>c.apelido))];
+  el.innerHTML=todos.map(u=>`<button class="sug-btn" onclick="anAddUserDirect('${u}')">${u}</button>`).join('');
+}
+function anAddUser(){const v=document.getElementById('an-user-inp').value.trim();if(!v)return;anAddUserDirect(v);document.getElementById('an-user-inp').value=''}
+function anAddUserDirect(u){if(anUsers.includes(u))return;anUsers.push(u);renderANChips()}
+function renderANChips(){const el=document.getElementById('an-chips');if(!el)return;el.innerHTML=anUsers.length?anUsers.map(u=>`<span class="chip">${u}<button class="rm" onclick="anUsers=anUsers.filter(x=>x!=='${u}');renderANChips()">×</button></span>`).join(''):'<span style="font-size:11px;color:var(--text2)">Nenhum usuário</span>'}
+function calcAN(){
+  const odd=parseFloat(document.getElementById('an-odd').value);
+  const stake=parseFloat(document.getElementById('an-stake').value);
+  const res=document.getElementById('an-result');
+  if(!odd||!stake){res.style.display='none';return}
+  const ret=odd*stake, lucro=ret-stake;
+  res.style.display='block';
+  document.getElementById('an-retorno').textContent=`R$ ${ret.toFixed(2)}`;
+  document.getElementById('an-lucro').textContent=`+R$ ${lucro.toFixed(2)}`;
+  document.getElementById('an-perda').textContent=`-R$ ${stake.toFixed(2)}`;
+}
+function salvarAN(){
+  const ev=document.getElementById('f-evento').value.trim();if(!ev){toast('Informe o evento');return}
+  const casa=document.getElementById('an-casa').value.trim();if(!casa){toast('Informe a casa');return}
+  const odd=parseFloat(document.getElementById('an-odd').value);
+  const stake=parseFloat(document.getElementById('an-stake').value);
+  if(!odd||!stake){toast('Informe odd e valor');return}
+  const ret=odd*stake, lucro=ret-stake;
+  const now=new Date();
+  entries.push({id:Date.now(),tipo:'aposta_normal',evento:ev,
+    casas:[{nome:casa,usuarios:anUsers.slice(),odd,stake,freebet:false,proc:false}],
+    total:stake,lucro,roi:lucro/stake*100,resultado:'pendente',
+    hora:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),data:now.toLocaleDateString('pt-BR'),
+    eventoData:document.getElementById('f-data').value||'',eventoHora:document.getElementById('f-hora').value||'',
+    chanceDuplo:cdValue,fbsEsperadas:[],fbAdicionadas:[]});
+  sd(SK,entries);
+  document.getElementById('f-evento').value='';document.getElementById('f-hora').value='';
+  document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
+  document.getElementById('an-casa').value='';document.getElementById('an-odd').value='';document.getElementById('an-stake').value='';
+  document.getElementById('an-result').style.display='none';
+  anUsers=[];renderANChips();resetCD();checkAlertas();renderResumo();toast('Aposta salva!');
+}
+
+// ── SUREBET: CASAS ─────────────────────────────────────────────────────────
+function setRefCasa(cid){
+  refCasaId=(refCasaId===cid)?null:cid;
+  casaIds.forEach(id=>{
+    document.getElementById('cb-'+id)?.classList.toggle('is-ref',id===refCasaId);
+    const chk=document.getElementById('ref-chk-'+id);if(chk)chk.checked=(id===refCasaId);
+  });
+  calcLucro();
+}
+
+
+// ── CASAS POR APOSTA ──────────────────────────────────────────────────────────
+// Mapa: cid -> [{nome, stake}]
+
+
+
+
+
+// compatibilidade
+
+// mapa: cid -> [{casa, usuario, odd, stake}]
+if(typeof linhasByAposta==='undefined') var linhasByAposta={};
+
+function addCasa(){
+  if(casaIds.length>=10){toast('Máximo de 10 apostas');return;}
+  casaSeq++;
+  var cid=casaSeq;
+  casaIds.push(cid);
+  casaUsers[cid]=[];
+  linhasByAposta[cid]=[];
+  var num=casaIds.length;
+
+  var div=document.createElement('div');
+  div.className='casa-block';div.id='cb-'+cid;
+
+  // ── Header ──
+  var hdr=document.createElement('div');hdr.className='casa-block-hdr';
+  var ttl=document.createElement('span');ttl.className='casa-block-title';ttl.id='ct-'+cid;ttl.textContent='Aposta '+num;hdr.appendChild(ttl);
+  var rb=document.createElement('button');
+  rb.className='btn-sm red';rb.id='rm-aposta-'+cid;rb.textContent='×';
+  rb.style.cssText='padding:2px 8px;font-size:16px;line-height:1';
+  rb.onclick=(function(c){return function(){removeCasa(c)}})(cid);
+  hdr.appendChild(rb);
+  div.appendChild(hdr);
+
+  // ── Opt-btns (ref / snr / proc) ──
+  var tg=document.createElement('div');tg.className='opt-grid';
+
+  var bRef=document.createElement('button');bRef.type='button';bRef.className='opt-btn';bRef.id='opt-ref-'+cid;
+  bRef.innerHTML='<span class="opt-btn-icon">🔵</span><span class="opt-btn-label">Aposta Referência</span>';
+  bRef.addEventListener('click',(function(c,b){return function(){
+    var wasOn=b.classList.contains('sel-blue');
+    b.classList.toggle('sel-blue',!wasOn);
+    var ch=document.getElementById('ref-chk-'+c);if(!ch){ch=document.createElement('input');ch.type='checkbox';ch.id='ref-chk-'+c;ch.style.display='none';document.getElementById('cb-'+c).appendChild(ch);}
+    ch.checked=!wasOn; setRefCasa(c);
+  }})(cid,bRef));
+  tg.appendChild(bRef);
+
+  var bSnr=document.createElement('button');bSnr.type='button';bSnr.className='opt-btn';bSnr.id='opt-snr-'+cid;
+  bSnr.innerHTML='<span class="opt-btn-icon">💜</span><span class="opt-btn-label">Freebet SNR</span>';
+  bSnr.addEventListener('click',(function(c,b){return function(){
+    b.classList.toggle('sel-purple');
+    var ch=document.getElementById('fb-chk-'+c);if(!ch){ch=document.createElement('input');ch.type='checkbox';ch.id='fb-chk-'+c;ch.style.display='none';document.getElementById('cb-'+c).appendChild(ch);}
+    ch.checked=b.classList.contains('sel-purple'); calcLucro();
+  }})(cid,bSnr));
+  tg.appendChild(bSnr);
+
+  var bProc=document.createElement('button');bProc.type='button';bProc.className='opt-btn';bProc.id='opt-proc-'+cid;
+  bProc.innerHTML='<span class="opt-btn-icon">🟢</span><span class="opt-btn-label">Proc. Freebet</span>';
+  bProc.addEventListener('click',(function(c,b){return function(){
+    b.classList.toggle('sel-green');
+    var isOn=b.classList.contains('sel-green');
+    var ch=document.getElementById('proc-chk-'+c);if(!ch){ch=document.createElement('input');ch.type='checkbox';ch.id='proc-chk-'+c;ch.style.display='none';document.getElementById('cb-'+c).appendChild(ch);}
+    ch.checked=isOn;
+    var pp=document.getElementById('proc-panel-'+c);if(pp)pp.style.display=isOn?'block':'none';
+    document.getElementById('cb-'+c).classList.toggle('has-proc',isOn);
+  }})(cid,bProc));
+  tg.appendChild(bProc);
+  div.appendChild(tg);
+
+  // ── Proc panel ──
+  var pp=document.createElement('div');pp.className='proc-panel';pp.id='proc-panel-'+cid;
+  pp.innerHTML='<div class="field-label" style="margin-top:0;color:var(--green)">Valor da FB que irei receber (R$)</div>'
+    +'<div class="row2"><input type="number" id="proc-valor-'+cid+'" placeholder="50.00" step="0.01">'
+    +'<div><div class="field-label" style="margin-top:0;color:var(--green)">Tipo</div>'
+    +'<div style="display:flex;gap:5px;margin-top:4px" id="proc-tipo-'+cid+'">'
+    +'<button class="btn-sm active" data-v="SNR" onclick="selProcTipo('+cid+',this)">SNR</button>'
+    +'<button class="btn-sm" data-v="SR" onclick="selProcTipo('+cid+',this)">SR</button>'
+    +'</div></div></div>'
+    +'<div class="field-label" style="color:var(--green)">Validade</div>'
+    +'<input type="date" id="proc-val-'+cid+'">';
+  div.appendChild(pp);
+
+  // ── Tabela de linhas (Casa > Usuário > Odd > Stake) ──
+  var tabelaLabel=document.createElement('div');tabelaLabel.className='field-label';tabelaLabel.style.marginTop='8px';tabelaLabel.textContent='Casas e usuários desta aposta';
+  div.appendChild(tabelaLabel);
+
+  var linhasContainer=document.createElement('div');linhasContainer.id='linhas-'+cid;
+  div.appendChild(linhasContainer);
+
+  // Botão de adicionar nova linha
+  var addLinhaBtn2=document.createElement('button');
+  addLinhaBtn2.className='add-casa-btn';
+  addLinhaBtn2.textContent='+ Adicionar outra linha (mesma aposta, outra casa/usuário)';
+  addLinhaBtn2.style.marginTop='6px';
+  addLinhaBtn2.onclick=(function(c){return function(){adicionarLinha(c,'')}})(cid);
+  div.appendChild(addLinhaBtn2);
+  // campo hidden para compatibilidade de dropdown global
+  var hidNome=document.createElement('input');hidNome.type='hidden';hidNome.id='nome-'+cid;div.appendChild(hidNome);
+
+  // ── Resumo: Odd média | Stake total | Retorno máx ──
+  var resumoBar=document.createElement('div');resumoBar.id='resumo-bar-'+cid;
+  resumoBar.style.cssText='display:none;margin-top:10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px';
+  resumoBar.innerHTML=''
+    +'<div style="background:var(--bg3);border-radius:var(--r2);padding:8px 10px">'
+    +  '<div style="font-size:10px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.05em">Odd média</div>'
+    +  '<div id="resumo-odd-'+cid+'" style="font-size:16px;font-weight:700;font-family:var(--mono);color:var(--accent2)">—</div>'
+    +'</div>'
+    +'<div style="background:var(--bg3);border-radius:var(--r2);padding:8px 10px">'
+    +  '<div style="font-size:10px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.05em">Stake total</div>'
+    +  '<div id="resumo-stake-'+cid+'" style="font-size:16px;font-weight:700;font-family:var(--mono)">—</div>'
+    +'</div>'
+    +'<div style="background:var(--green-bg);border:1px solid rgba(0,230,118,.2);border-radius:var(--r2);padding:8px 10px">'
+    +  '<div style="font-size:10px;color:var(--green);font-weight:600;text-transform:uppercase;letter-spacing:.05em">Retorno máx.</div>'
+    +  '<div id="resumo-ret-'+cid+'" style="font-size:16px;font-weight:700;font-family:var(--mono);color:var(--green)">—</div>'
+    +'</div>';
+  div.appendChild(resumoBar);
+
+  // campos hidden para compatibilidade com calcLucro
+  var hidOdd=document.createElement('input');hidOdd.type='hidden';hidOdd.id='odd-'+cid;div.appendChild(hidOdd);
+  var hidStake=document.createElement('input');hidStake.type='hidden';hidStake.id='stake-'+cid;div.appendChild(hidStake);
+  var ss=document.createElement('div');ss.className='stake-sug';ss.id='stake-sug-'+cid;div.appendChild(ss);
+
+  document.getElementById('casas-container').appendChild(div);
+
+  // ── Dropdown de busca de casa ──
+  function ddR(f){
+    var m=ALL_CASAS.filter(function(c){return !f||c.toLowerCase().includes(f.toLowerCase())}).slice(0,12);
+    dd.innerHTML=m.map(function(nome){
+      return '<div class="dropdown-opt" onclick="event.stopPropagation();document.getElementById(\'nome-'+cid+'\').value=\''+nome+'\';document.getElementById(\'dd-'+cid+'\').classList.remove(\'open\');activeDD=null">'+nome+'</div>';
+    }).join('')||'<div class="dropdown-opt" style="color:var(--text2)">Nenhuma encontrada</div>';
+  }
+
+  // Adiciona 1 linha inicial vazia
+  adicionarLinha(cid,'');
+  calcLucro();
+}
+
+function adicionarLinha(cid, casaNome){
+  if(typeof casaNome==='undefined'){
+    var inp=document.getElementById('nome-'+cid);
+    casaNome=inp?inp.value.trim():'';
+    if(inp) inp.value='';
+    var dd2=document.getElementById('dd-'+cid);if(dd2)dd2.classList.remove('open');
+    activeDD=null;
+  }
+  if(!linhasByAposta[cid]) linhasByAposta[cid]=[];
+  var idx=linhasByAposta[cid].length;
+  linhasByAposta[cid].push({casa:casaNome||'', usuario:'', odd:'', stake:''});
+  renderLinhas(cid);
+  calcLucro();
+}
+
+function removerLinha(cid, idx){
+  if(!linhasByAposta[cid]) return;
+  linhasByAposta[cid].splice(idx,1);
+  renderLinhas(cid);
+  calcLucro();
+}
+
+function atualizarLinha(cid, idx, campo, val){
+  if(!linhasByAposta[cid]||!linhasByAposta[cid][idx]) return;
+  linhasByAposta[cid][idx][campo]=val;
+  atualizarResumoAposta(cid);
+  calcLucro();
+}
+
+function renderLinhas(cid){
+  var container=document.getElementById('linhas-'+cid);
+  if(!container) return;
+  var linhas=linhasByAposta[cid]||[];
+  var todos=contasSalvas.map(function(c){return c.apelido;}).filter(function(v,i,a){return a.indexOf(v)===i;});
+
+  var html='';
+  // Header das colunas
+  if(linhas.length){
+    html+='<div class="linhas-header">'
+      +'<span>Casa</span><span>Usuário</span>'
+      +'<span>Odd</span><span>Stake R$</span><span></span>'
+      +'</div>';
+  }
+
+  linhas.forEach(function(l, idx){
+    var safeCasa = (l.casa||'').replace(/'/g,"\\'");
+    var safeUser = (l.usuario||'').replace(/'/g,"\\'");
+    var o=parseFloat(l.odd)||0, s=parseFloat(l.stake)||0;
+    var hasRet = o>0&&s>0;
+    var ret=hasRet?o*s:0, lucro=hasRet?ret-s:0;
+
+    html+='<div style="margin-bottom:'+(hasRet?'2':'5')+'px">';
+    html+='<div class="linha-aposta">';
+
+    // Casa — input com autocomplete
+    html+='<div class="linha-wrap">'
+      +'<input class="linha-input" type="text" placeholder="Casa..." autocomplete="off"'
+      +' value="'+safeCasa+'"'
+      +' id="li-casa-'+cid+'-'+idx+'"'
+      +' oninput="liCasaInput('+cid+','+idx+',this)"'
+      +' onfocus="liCasaInput('+cid+','+idx+',this)"'
+      +' onblur="setTimeout(function(){var d=document.getElementById(\'li-dd-casa-'+cid+'-'+idx+'\');if(d)d.classList.remove(\'open\')},180)">'
+      +'<div class="linha-dd" id="li-dd-casa-'+cid+'-'+idx+'"></div>'
+      +'</div>';
+
+    // Usuário — input com autocomplete
+    html+='<div class="linha-wrap">'
+      +'<input class="linha-input" type="text" placeholder="Usuário..." autocomplete="off"'
+      +' value="'+safeUser+'"'
+      +' id="li-user-'+cid+'-'+idx+'"'
+      +' oninput="liUserInput('+cid+','+idx+',this)"'
+      +' onfocus="liUserInput('+cid+','+idx+',this)"'
+      +' onblur="setTimeout(function(){var d=document.getElementById(\'li-dd-user-'+cid+'-'+idx+'\');if(d)d.classList.remove(\'open\')},180)">'
+      +'<div class="linha-dd" id="li-dd-user-'+cid+'-'+idx+'"></div>'
+      +'</div>';
+
+    // Odd
+    html+='<input class="linha-input linha-num" type="number" placeholder="Odd" step="0.01"'
+      +' value="'+(l.odd||'')+'"'
+      +' oninput="atualizarLinha('+cid+','+idx+',\'odd\',this.value)"'
+      +' onchange="atualizarLinha('+cid+','+idx+',\'odd\',this.value)">';
+
+    // Stake
+    html+='<input class="linha-input linha-num" type="number" placeholder="R$" step="0.01"'
+      +' value="'+(l.stake||'')+'"'
+      +' oninput="atualizarLinha('+cid+','+idx+',\'stake\',this.value)"'
+      +' onchange="atualizarLinha('+cid+','+idx+',\'stake\',this.value)">';
+
+    // Remover
+    html+=(linhas.length>1
+      ?'<button class="linha-rm" onclick="removerLinha('+cid+','+idx+')">×</button>'
+      :'<div></div>');
+
+    html+='</div>';
+
+    // Mini retorno
+    if(hasRet){
+      html+='<div class="linha-retorno">↳ Retorno: <b style="color:var(--green);font-family:var(--mono)">R$ '+ret.toFixed(2)+'</b>'
+        +' &nbsp;·&nbsp; Lucro: <b style="color:'+(lucro>=0?'var(--green)':'var(--red)')+'">'+( lucro>=0?'+':'')+'R$ '+Math.abs(lucro).toFixed(2)+'</b></div>';
+    }
+    html+='</div>';
+  });
+
+  container.innerHTML=html;
+  atualizarResumoAposta(cid);
+}
+
+// Autocomplete de casa nas linhas
+function liCasaInput(cid, idx, inp){
+  var f=inp.value.toLowerCase();
+  var dd=document.getElementById('li-dd-casa-'+cid+'-'+idx);
+  if(!dd) return;
+  var m=ALL_CASAS.filter(function(c){return !f||c.toLowerCase().includes(f);}).slice(0,10);
+  dd.innerHTML=m.map(function(nome){
+    return '<div class="linha-dd-opt" onmousedown="event.preventDefault();atualizarLinha('+cid+','+idx+',\'casa\',\''+nome.replace(/'/g,"\\'")+'\');document.getElementById(\'li-casa-'+cid+'-'+idx+'\').value=\''+nome.replace(/'/g,"\\'")+'\';document.getElementById(\'li-dd-casa-'+cid+'-'+idx+'\').classList.remove(\'open\')">'+nome+'</div>';
+  }).join('')||'<div class="linha-dd-opt" style="color:var(--text2)">Nenhuma</div>';
+  dd.classList.toggle('open', m.length>0||f.length===0);
+  atualizarLinha(cid, idx, 'casa', inp.value);
+}
+
+// Autocomplete de usuário nas linhas
+function liUserInput(cid, idx, inp){
+  var f=inp.value.toLowerCase();
+  var dd=document.getElementById('li-dd-user-'+cid+'-'+idx);
+  if(!dd) return;
+  var todos=contasSalvas.map(function(c){return c.apelido;}).filter(function(v,i,a){return a.indexOf(v)===i;});
+  var m=todos.filter(function(u){return !f||u.toLowerCase().includes(f);}).slice(0,8);
+  dd.innerHTML=m.map(function(u){
+    return '<div class="linha-dd-opt" onmousedown="event.preventDefault();atualizarLinha('+cid+','+idx+',\'usuario\',\''+u.replace(/'/g,"\\'")+'\');document.getElementById(\'li-user-'+cid+'-'+idx+'\').value=\''+u.replace(/'/g,"\\'")+'\';document.getElementById(\'li-dd-user-'+cid+'-'+idx+'\').classList.remove(\'open\')">'+u+'</div>';
+  }).join('')||'<div class="linha-dd-opt" style="color:var(--text2)">Nenhum cadastrado</div>';
+  if(m.length>0||f.length===0) dd.classList.add('open'); else dd.classList.remove('open');
+  atualizarLinha(cid, idx, 'usuario', inp.value);
+}
+
+
+function calcLinhas(cid){
+  // Dentro de uma Aposta (cid): todas as linhas cobrem o MESMO resultado
+  // (mesma aposta em casas/contas diferentes)
+  // Se esta aposta ganhar: recebe a SOMA dos retornos de todas as linhas
+  var linhas  = linhasByAposta[cid] || [];
+  var validas = linhas.filter(function(l){
+    return parseFloat(l.odd)>0 && parseFloat(l.stake)>0;
+  });
+  if(!validas.length) return null;
+
+  var isFB = document.getElementById('fb-chk-'+cid)?.checked || false;
+
+  // Stake total desta aposta = soma de todos os stakes das linhas
+  var stakeAposta = validas.reduce(function(a,l){ return a+parseFloat(l.stake); }, 0);
+
+  // Retorno total se esta aposta ganhar = SOMA dos retornos de cada linha
+  // (porque todas cobrem o mesmo resultado — se ganhar, todas ganham juntas)
+  var retornoTotal = validas.reduce(function(a,l){
+    var o = parseFloat(l.odd), s = parseFloat(l.stake);
+    return a + (isFB ? (o-1)*s : o*s);
+  }, 0);
+
+  // Odd implícita = retornoTotal / stakeAposta (para referência)
+  var oddImplicita = stakeAposta > 0 ? retornoTotal / stakeAposta : 0;
+
+  // Detalhe por linha (para exibição)
+  var linhasCalc = validas.map(function(l){
+    var o = parseFloat(l.odd), s = parseFloat(l.stake);
+    var ret = isFB ? (o-1)*s : o*s;
+    return { casa:l.casa, usuario:l.usuario, odd:o, stake:s, ret:ret };
+  });
+
+  return {
+    validas:      validas,
+    linhasCalc:   linhasCalc,
+    isFB:         isFB,
+    stakeAposta:  stakeAposta,   // stake só desta aposta
+    retornoTotal: retornoTotal,  // retorno SE esta aposta ganhar
+    oddImplicita: oddImplicita,
+  };
+}
+
+
+function atualizarResumoAposta(cid){
+  var resumoBar = document.getElementById('resumo-bar-'+cid);
+  if(!resumoBar) return;
+  var r = calcLinhas(cid);
+  if(!r){ resumoBar.style.display='none'; return; }
+  resumoBar.style.display = 'grid';
+
+  var elOdd   = document.getElementById('resumo-odd-'+cid);
+  var elStake = document.getElementById('resumo-stake-'+cid);
+  var elRet   = document.getElementById('resumo-ret-'+cid);
+  if(elOdd)   elOdd.textContent   = 'ø '+r.oddImplicita.toFixed(2);
+  if(elStake) elStake.textContent = 'R$ '+r.stakeAposta.toFixed(2);
+  if(elRet)   elRet.textContent   = 'R$ '+r.retornoTotal.toFixed(2);
+
+  // Tabela de linhas desta aposta
+  var elTab = document.getElementById('resumo-tab-'+cid);
+  if(!elTab){
+    elTab = document.createElement('div');
+    elTab.id = 'resumo-tab-'+cid;
+    elTab.style.marginTop = '6px';
+    resumoBar.parentNode.insertBefore(elTab, resumoBar.nextSibling);
+  }
+  if(r.linhasCalc.length > 1){
+    var th = '<div style="display:grid;grid-template-columns:1fr auto auto;gap:4px;'
+      +'padding:5px 10px;font-size:9px;font-weight:700;color:var(--text2);'
+      +'text-transform:uppercase;letter-spacing:.05em;'
+      +'background:var(--bg3);border-radius:var(--r2) var(--r2) 0 0;border:1px solid var(--border);border-bottom:none">'
+      +'<span>Casa / Conta</span>'
+      +'<span style="text-align:right">Odd</span>'
+      +'<span style="text-align:right">Retorno</span></div>';
+    var rows = r.linhasCalc.map(function(l,i){
+      var isLast = i===r.linhasCalc.length-1;
+      return '<div style="display:grid;grid-template-columns:1fr auto auto;gap:4px;'
+        +'padding:6px 10px;font-size:12px;border:1px solid var(--border);border-top:none;'
+        +(isLast?'border-radius:0 0 var(--r2) var(--r2)':'')+'">'
+        +'<span style="font-weight:600">'+l.casa
+        +(l.usuario?' <span style="opacity:.6;font-size:10px">('+l.usuario+')</span>':'')+'</span>'
+        +'<span style="font-family:var(--mono);text-align:right;color:var(--accent2)">'+l.odd.toFixed(2)+'</span>'
+        +'<span style="font-family:var(--mono);text-align:right">R$ '+l.ret.toFixed(2)+'</span>'
+        +'</div>';
+    }).join('');
+    // linha de total
+    var totalRow = '<div style="display:grid;grid-template-columns:1fr auto auto;gap:4px;'
+      +'padding:6px 10px;font-size:12px;background:rgba(108,99,255,.06);'
+      +'border:1px solid rgba(108,99,255,.2);border-top:none;border-radius:0 0 var(--r2) var(--r2)">'
+      +'<span style="font-weight:700;color:var(--text2)">Total retorno</span>'
+      +'<span></span>'
+      +'<span style="font-family:var(--mono);font-weight:700;text-align:right;color:var(--green)">R$ '+r.retornoTotal.toFixed(2)+'</span>'
+      +'</div>';
+    elTab.innerHTML = th + rows + totalRow;
+    elTab.style.display = 'block';
+  } else {
+    elTab.style.display = 'none';
+  }
+
+  // Sincroniza hidden
+  var ho = document.getElementById('odd-'+cid);
+  var hs = document.getElementById('stake-'+cid);
+  if(ho) ho.value = r.oddImplicita.toFixed(4);
+  if(hs) hs.value = r.stakeAposta.toFixed(2);
+}
+
+
+
+function mkToggle(id,label,cls,cb){
+  const row=document.createElement('label');row.className='toggle-row';
+  const chk=document.createElement('input');chk.type='checkbox';chk.id=id;
+  const lbl=document.createElement('span');lbl.className=`toggle-label ${cls}`;lbl.textContent=label;
+  row.appendChild(chk);row.appendChild(lbl);chk.addEventListener('change',cb);return row;
+}
+
+function selProcTipo(cid,btn){
+  document.getElementById('proc-tipo-'+cid)?.querySelectorAll('.btn-sm').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function addU(cid,ap){if(!casaUsers[cid])casaUsers[cid]=[];if(casaUsers[cid].includes(ap))return;casaUsers[cid].push(ap);renderChips(cid)}
+function remU(cid,ap){casaUsers[cid]=casaUsers[cid].filter(u=>u!==ap);renderChips(cid)}
+function renderChips(cid){const el=document.getElementById('user-chips-'+cid);if(!el)return;const u=casaUsers[cid]||[];el.innerHTML=u.length?u.map(x=>`<span class="chip">${x}<button class="rm" onclick="remU(${cid},'${x}')">×</button></span>`).join(''):'<span style="font-size:11px;color:var(--text2)">Nenhum usuário</span>'}
+function renderUserSug(cid){const el=document.getElementById('user-sug-'+cid);if(!el)return;const todos=[...new Set(contasSalvas.map(c=>c.apelido))];el.innerHTML=todos.map(u=>`<button class="sug-btn" onclick="addU(${cid},'${u}')">${u}</button>`).join('')}
+function removeCasa(cid){
+  if(casaIds.length<=2){toast('Mínimo de 2 apostas');return;}
+  document.getElementById('cb-'+cid)?.remove();
+  casaIds=casaIds.filter(i=>i!==cid);
+  if(refCasaId===cid)refCasaId=null;
+  delete casaUsers[cid];
+  delete linhasByAposta[cid];
+  renumber();
+  atualizarBotaoAddAposta();
+  calcLucro();
+}
+function renumber(){
+  casaIds.forEach(function(cid,i){
+    var t=document.getElementById('ct-'+cid);
+    if(t) t.textContent='Aposta '+(i+1);
+    // mostra/esconde botão × baseado no mínimo
+    var rb=document.getElementById('rm-aposta-'+cid);
+    if(rb) rb.style.opacity=casaIds.length>2?'1':'0.3';
+  });
+  atualizarBotaoAddAposta();
+}
+
+function atualizarBotaoAddAposta(){
+  var btn=document.getElementById('btn-add-aposta');
+  if(!btn) return;
+  btn.disabled=casaIds.length>=10;
+  btn.style.opacity=casaIds.length>=10?'0.4':'1';
+  btn.textContent=casaIds.length>=10?'Máximo de 10 apostas atingido':'+ Adicionar aposta';
+}
+
+function calcLucro(){
+  casaIds.forEach(function(cid){ atualizarResumoAposta(cid); });
+
+  var apostas = casaIds.map(function(cid){
+    var r = calcLinhas(cid);
+    var linhas = linhasByAposta[cid]||[];
+    var validas = r ? r.validas : [];
+    var nome = validas.map(function(l){
+      return l.casa+(l.usuario?' ('+l.usuario+')':'');
+    }).filter(Boolean).join(' + ') || ('Aposta '+(casaIds.indexOf(cid)+1));
+    return { cid:cid, nome:nome, r:r, isRef:cid===refCasaId };
+  });
+
+  var apostasValidas = apostas.filter(function(a){ return a.r; });
+  var pv = document.getElementById('retorno-panel');
+  var rg = document.getElementById('retorno-grid');
+  if(apostasValidas.length < 2){ if(pv) pv.style.display='none'; return; }
+
+  // stakeGlobal = soma dos stakes de CADA aposta do conjunto
+  var stakeGlobal = apostasValidas.reduce(function(a,ap){
+    return a + ap.r.stakeAposta;
+  }, 0);
+
+  // lucro de cada aposta = retornoTotal_desta - stakeGlobal
+  var lucros = apostasValidas.map(function(ap){
+    return ap.r.retornoTotal - stakeGlobal;
+  });
+  var lucroGarantido = Math.min.apply(null, lucros);
+  var lucroMaximo    = Math.max.apply(null, lucros);
+  var roi = stakeGlobal > 0 ? lucroGarantido/stakeGlobal*100 : 0;
+
+  // Sugestão de stake (aposta referência)
+  var refA = apostas.find(function(a){ return a.isRef && a.r; });
+  if(refA){
+    var retRef = refA.r.retornoTotal;
+    apostas.forEach(function(a){
+      var sugEl = document.getElementById('stake-sug-'+a.cid);
+      if(!sugEl) return;
+      if(a.cid===refA.cid){ sugEl.style.display='none'; return; }
+      if(a.r && a.r.oddImplicita>0){
+        sugEl.textContent = '↳ Sugerido: R$ '+(retRef/a.r.oddImplicita).toFixed(2);
+        sugEl.style.display = 'block';
+      }
+    });
+  } else {
+    casaIds.forEach(function(cid){
+      var s=document.getElementById('stake-sug-'+cid); if(s) s.style.display='none';
+    });
+  }
+
+  if(pv) pv.style.display='block';
+  if(rg){
+    var rows = apostasValidas.map(function(ap, i){
+      var rb  = ap.r.retornoTotal;
+      var liq = rb - stakeGlobal;
+      var isPos = liq>=0;
+      return '<div class="retorno-row'+(ap.isRef?' is-ref-row':'')+'">'
+        +'<div class="retorno-casa">'+ap.nome
+        +(ap.isRef?'<span class="chip ref" style="margin-left:4px;padding:1px 6px;font-size:10px">ref</span>':'')
+        +'<br><span style="font-size:10px;color:var(--text2)">stake: R$ '+ap.r.stakeAposta.toFixed(2)+'</span></div>'
+        +'<div class="retorno-val">R$ '+rb.toFixed(2)+'</div>'
+        +'<div class="retorno-net" style="color:'+(isPos?'var(--green)':'var(--red)')+'">'+(isPos?'+':'')+liq.toFixed(2)+'</div>'
+        +'</div>';
+    }).join('');
+
+    var totalRow = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;'
+      +'padding:8px 10px;margin-top:2px;background:rgba(108,99,255,.06);'
+      +'border-top:1px solid rgba(108,99,255,.2)">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--text2)">Total apostado</div>'
+      +'<div style="font-size:13px;font-weight:700;font-family:var(--mono);text-align:right">R$ '+stakeGlobal.toFixed(2)+'</div>'
+      +'<div style="font-size:13px;font-weight:700;font-family:var(--mono);text-align:right;'
+      +'color:'+(lucroGarantido>=0?'var(--green)':'var(--red)')+'">'
+      +(lucroGarantido>=0?'+':'')+lucroGarantido.toFixed(2)
+      +' <span style="font-size:10px;opacity:.7">('+roi.toFixed(1)+'%)</span></div>'
+      +'</div>';
+    rg.innerHTML = rows + totalRow;
+  }
+}
+
+
+function salvarSB(){
+  const ev=document.getElementById('f-evento').value.trim();if(!ev){toast('Informe o evento');return}
+  const casas=[],retornos=[];let ts=0,ok=true,fbsEsp=[];
+  casaIds.forEach(function(cid){
+    var linhas=linhasByAposta[cid]||[];
+    var validas=linhas.filter(function(l){return l.casa&&parseFloat(l.odd)>0&&parseFloat(l.stake)>0;});
+    if(!validas.length){ok=false;return;}
+    var odds=validas.map(function(l){return parseFloat(l.odd);});
+    var stakes=validas.map(function(l){return parseFloat(l.stake);});
+    var oddMedia=odds.reduce(function(a,b){return a+b;},0)/odds.length;
+    var totalStake=stakes.reduce(function(a,b){return a+b;},0);
+    var isFB=document.getElementById('fb-chk-'+cid)?.checked;
+    var isProc=document.getElementById('proc-chk-'+cid)?.checked;
+    var isRef=cid===refCasaId;
+    var nomeCasas=validas.map(function(l){return l.casa+(l.usuario?' ('+l.usuario+')':'');}).join(' + ');
+    casas.push({nome:nomeCasas,linhas:validas,usuarios:validas.map(function(l){return l.usuario;}).filter(Boolean),odd:oddMedia,stake:totalStake,freebet:isFB,proc:isProc,ref:isRef});
+    if(!isFB)ts+=stake;
+    retornos.push(isFB?(odd-1)*stake:odd*stake);
+    if(isProc){const v=parseFloat(document.getElementById('proc-valor-'+cid)?.value);if(v){const tb=document.getElementById('proc-tipo-'+cid)?.querySelector('.btn-sm.active');fbsEsp.push({casa:nome,usuarios,valor:v,tipo:tb?.dataset.v||'SNR',validade:document.getElementById('proc-val-'+cid)?.value||''})}}
+  });
+  if(!ok||casas.length<2){toast('Preencha ao menos 2 casas');return}
+  const lucro=Math.min(...retornos)-ts,roi=ts>0?lucro/ts*100:0;
+  const now=new Date();
+  entries.push({id:Date.now(),tipo:'surebet',evento:ev,casas,total:ts,lucro,roi,resultado:'pendente',
+    hora:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),data:now.toLocaleDateString('pt-BR'),
+    eventoData:document.getElementById('f-data').value||'',eventoHora:document.getElementById('f-hora').value||'',
+    chanceDuplo:cdValue,fbsEsperadas:fbsEsp,fbAdicionadas:[]});
+  sd(SK,entries);
+  // reset
+  document.getElementById('f-evento').value='';document.getElementById('f-hora').value='';
+  document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
+  casaIds.forEach(cid=>{
+    document.getElementById('nome-'+cid).value='';document.getElementById('odd-'+cid).value='';document.getElementById('stake-'+cid).value='';
+    ['fb-chk-','proc-chk-','ref-chk-'].forEach(p=>{const el=document.getElementById(p+cid);if(el)el.checked=false});
+    const pp=document.getElementById('proc-panel-'+cid);if(pp)pp.style.display='none';
+    document.getElementById('cb-'+cid)?.classList.remove('is-ref','has-proc');
+    const pv=document.getElementById('proc-valor-'+cid);if(pv)pv.value='';
+    const ss=document.getElementById('stake-sug-'+cid);if(ss)ss.style.display='none';
+    casaUsers[cid]=[];linhasByAposta[cid]=[];renderLinhas(cid);
+    // reset botões visuais opt-btn
+    document.getElementById('opt-ref-'+cid)?.classList.remove('sel-blue');
+    document.getElementById('opt-snr-'+cid)?.classList.remove('sel-purple');
+    document.getElementById('opt-proc-'+cid)?.classList.remove('sel-green');
+  });
+  refCasaId=null;document.getElementById('retorno-panel').style.display='none';
+  document.getElementById('jogo-banner').style.display='none';jogoSelecionado=null;
+  resetCD();checkAlertas();renderResumo();toast('Entrada salva!');
+}
+
+
+function limparJogo(){jogoSelecionado=null;document.getElementById('jogo-banner').style.display='none';document.getElementById('f-evento').value='';document.getElementById('f-data').value=new Date().toISOString().slice(0,10);document.getElementById('f-hora').value=''}
+
+// ── JOGOS EMBUTIDOS ──────────────────────────────────────────────────────────
+
+const JOGOS_DB = [
+
+  // ══════════════════════════════════════════════════════
+  // LIBERTADORES 2026 — 5ª Rodada (06-08/05) e 6ª (19-21/05)
+  // Grupo A: Flamengo, Estudiantes, Cusco, Ind. Medellín
+  // Grupo B: Nacional, Universitario, Coquimbo Unido, Dep. Tolima
+  // Grupo C: Fluminense, Bolívar, Dep. La Guaira, Ind. Rivadavia
+  // Grupo D: Boca Juniors, Cruzeiro, Univ. Católica, Barcelona-EQU
+  // Grupo E: Peñarol, Corinthians, Santa Fe, Platense
+  // Grupo F: Palmeiras, Cerro Porteño, Junior Barranquilla, Sporting Cristal
+  // Grupo G: LDU, Lanús, Always Ready, Mirassol
+  // Grupo H: Ind. del Valle, Libertad, Rosario Central, Univ. Central
+  // ══════════════════════════════════════════════════════
+
+  // 5ª RODADA LIBERTADORES
+  {comp:'Libertadores', data:'2026-05-06', hora:'19:00', home:'Cusco',            away:'Estudiantes'},
+  {comp:'Libertadores', data:'2026-05-06', hora:'21:30', home:'Ind. Rivadavia',   away:'Fluminense'},
+  {comp:'Libertadores', data:'2026-05-06', hora:'21:30', home:'Santa Fe',         away:'Corinthians'},
+  {comp:'Libertadores', data:'2026-05-06', hora:'21:30', home:'Junior Barranquilla', away:'Cerro Porteño'},
+  {comp:'Libertadores', data:'2026-05-06', hora:'23:00', home:'Univ. Católica',   away:'Cruzeiro'},
+  {comp:'Libertadores', data:'2026-05-07', hora:'19:00', home:'Mirassol',         away:'LDU'},
+  {comp:'Libertadores', data:'2026-05-07', hora:'21:30', home:'Ind. Medellín',    away:'Flamengo'},
+  {comp:'Libertadores', data:'2026-05-07', hora:'21:30', home:'Sporting Cristal', away:'Palmeiras'},
+  {comp:'Libertadores', data:'2026-05-07', hora:'23:00', home:'Nacional',         away:'Dep. Tolima'},
+  {comp:'Libertadores', data:'2026-05-08', hora:'19:00', home:'Libertad',         away:'Ind. del Valle'},
+  {comp:'Libertadores', data:'2026-05-08', hora:'21:30', home:'Peñarol',          away:'Platense'},
+  {comp:'Libertadores', data:'2026-05-08', hora:'23:00', home:'Lanús',            away:'Always Ready'},
+
+  // 6ª RODADA LIBERTADORES
+  {comp:'Libertadores', data:'2026-05-19', hora:'19:00', home:'Dep. Tolima',      away:'Nacional'},
+  {comp:'Libertadores', data:'2026-05-19', hora:'19:00', home:'Always Ready',     away:'Lanús'},
+  {comp:'Libertadores', data:'2026-05-19', hora:'21:30', home:'Estudiantes',      away:'Cusco'},
+  {comp:'Libertadores', data:'2026-05-20', hora:'19:00', home:'Dep. La Guaira',   away:'Bolívar'},
+  {comp:'Libertadores', data:'2026-05-20', hora:'19:00', home:'Coquimbo Unido',   away:'Universitario'},
+  {comp:'Libertadores', data:'2026-05-20', hora:'21:30', home:'Flamengo',         away:'Cusco'},
+  {comp:'Libertadores', data:'2026-05-20', hora:'21:30', home:'Fluminense',       away:'Bolívar'},
+  {comp:'Libertadores', data:'2026-05-20', hora:'21:30', home:'Corinthians',      away:'Platense'},
+  {comp:'Libertadores', data:'2026-05-20', hora:'21:30', home:'Palmeiras',        away:'Junior Barranquilla'},
+  {comp:'Libertadores', data:'2026-05-20', hora:'23:00', home:'Boca Juniors',     away:'Barcelona-EQU'},
+  {comp:'Libertadores', data:'2026-05-21', hora:'19:00', home:'LDU',              away:'Always Ready'},
+  {comp:'Libertadores', data:'2026-05-21', hora:'21:30', home:'Cruzeiro',         away:'Univ. Católica'},
+  {comp:'Libertadores', data:'2026-05-21', hora:'21:30', home:'Mirassol',         away:'Lanús'},
+  {comp:'Libertadores', data:'2026-05-21', hora:'23:00', home:'Rosario Central',  away:'Libertad'},
+
+  // ══════════════════════════════════════════════════════
+  // SUL-AMERICANA 2026 — 4ª Rodada (05-07/05) e 5ª (19-21/05)
+  // Grupo A: Tigre, Alianza Atlético, Macará, América de Cali
+  // Grupo B: Atlético-MG, Puerto Cabello, Juventud, Cienciano
+  // Grupo C: São Paulo, O.Higgins, Palestino, Millonarios
+  // Grupo D: Grêmio, Boston River, Deportivo Cuenca, Montevideo City Torque
+  // Grupo E: Santos, San Lorenzo, Audax Italiano, Blooming
+  // Grupo F: Vasco, Unión Española, Dep. Riestra, Guabirá
+  // Grupo G: Racing, Botafogo, Caracas, Ind. Petrolero
+  // Grupo H: River Plate, RB Bragantino, Olimpia, Macará-EQU
+  // ══════════════════════════════════════════════════════
+
+  // 4ª RODADA SUL-AMERICANA
+  {comp:'Sul-Americana', data:'2026-05-05', hora:'19:00', home:'Alianza Atlético', away:'Macará'},
+  {comp:'Sul-Americana', data:'2026-05-05', hora:'21:30', home:'Dep. Cuenca',      away:'Grêmio'},
+  {comp:'Sul-Americana', data:'2026-05-05', hora:'23:00', home:'Dep. Riestra',     away:'Vasco'},
+  {comp:'Sul-Americana', data:'2026-05-06', hora:'19:00', home:'O.Higgins',       away:'São Paulo'},
+  {comp:'Sul-Americana', data:'2026-05-06', hora:'19:00', home:'Juventud',         away:'Cienciano'},
+  {comp:'Sul-Americana', data:'2026-05-06', hora:'21:30', home:'Botafogo',         away:'Racing'},
+  {comp:'Sul-Americana', data:'2026-05-06', hora:'21:30', home:'RB Bragantino',    away:'River Plate'},
+  {comp:'Sul-Americana', data:'2026-05-06', hora:'23:00', home:'Audax Italiano',   away:'Santos'},
+  {comp:'Sul-Americana', data:'2026-05-07', hora:'19:00', home:'Puerto Cabello',   away:'Atlético-MG'},
+  {comp:'Sul-Americana', data:'2026-05-07', hora:'21:30', home:'Unión Española',   away:'Vasco'},
+  {comp:'Sul-Americana', data:'2026-05-07', hora:'23:00', home:'Ind. Petrolero',   away:'Caracas'},
+
+  // 5ª RODADA SUL-AMERICANA
+  {comp:'Sul-Americana', data:'2026-05-19', hora:'19:00', home:'Macará',           away:'Alianza Atlético'},
+  {comp:'Sul-Americana', data:'2026-05-19', hora:'19:00', home:'Blooming',         away:'Audax Italiano'},
+  {comp:'Sul-Americana', data:'2026-05-19', hora:'21:30', home:'Atlético-MG',      away:'Juventud'},
+  {comp:'Sul-Americana', data:'2026-05-19', hora:'21:30', home:'RB Bragantino',    away:'Olimpia'},
+  {comp:'Sul-Americana', data:'2026-05-19', hora:'23:00', home:'América de Cali',  away:'Tigre'},
+  {comp:'Sul-Americana', data:'2026-05-20', hora:'19:00', home:'Cienciano',        away:'Puerto Cabello'},
+  {comp:'Sul-Americana', data:'2026-05-20', hora:'19:00', home:'Grêmio',           away:'Boston River'},
+  {comp:'Sul-Americana', data:'2026-05-20', hora:'21:30', home:'Santos',           away:'San Lorenzo'},
+  {comp:'Sul-Americana', data:'2026-05-20', hora:'21:30', home:'Vasco',            away:'Dep. Riestra'},
+  {comp:'Sul-Americana', data:'2026-05-20', hora:'23:00', home:'Caracas',          away:'Ind. Petrolero'},
+  {comp:'Sul-Americana', data:'2026-05-21', hora:'19:00', home:'Palestino',        away:'Millonarios'},
+  {comp:'Sul-Americana', data:'2026-05-21', hora:'21:30', home:'São Paulo',        away:'O.Higgins'},
+  {comp:'Sul-Americana', data:'2026-05-21', hora:'21:30', home:'Racing',           away:'Botafogo'},
+  {comp:'Sul-Americana', data:'2026-05-21', hora:'23:00', home:'River Plate',      away:'RB Bragantino'},
+
+  // ══════════════════════════════════════════════════════
+  // CHAMPIONS LEAGUE — Semifinais (ida + volta)
+  // ══════════════════════════════════════════════════════
+  {comp:'Champions League', data:'2026-05-06', hora:'16:00', home:'Bayern Munich',  away:'PSG'},
+  {comp:'Champions League', data:'2026-05-07', hora:'16:00', home:'Arsenal',        away:'Atlético Madrid'},
+  {comp:'Champions League', data:'2026-05-13', hora:'16:00', home:'PSG',            away:'Bayern Munich'},
+  {comp:'Champions League', data:'2026-05-14', hora:'16:00', home:'Atlético Madrid',away:'Arsenal'},
+
+  // ══════════════════════════════════════════════════════
+  // EUROPA LEAGUE — Semifinais
+  // ══════════════════════════════════════════════════════
+  {comp:'Europa League', data:'2026-05-07', hora:'16:00', home:'Athletic Club',     away:'Eintracht Frankfurt'},
+  {comp:'Europa League', data:'2026-05-08', hora:'16:00', home:'Lyon',              away:'Tottenham'},
+  {comp:'Europa League', data:'2026-05-14', hora:'16:00', home:'Eintracht Frankfurt', away:'Athletic Club'},
+  {comp:'Europa League', data:'2026-05-15', hora:'16:00', home:'Tottenham',         away:'Lyon'},
+
+  // ══════════════════════════════════════════════════════
+  // CONFERENCE LEAGUE — Semifinais
+  // ══════════════════════════════════════════════════════
+  {comp:'Conference League', data:'2026-05-07', hora:'13:45', home:'Gent',          away:'Chelsea'},
+  {comp:'Conference League', data:'2026-05-08', hora:'13:45', home:'Fenerbahçe',    away:'Fiorentina'},
+  {comp:'Conference League', data:'2026-05-14', hora:'13:45', home:'Chelsea',       away:'Gent'},
+  {comp:'Conference League', data:'2026-05-15', hora:'13:45', home:'Fiorentina',    away:'Fenerbahçe'},
+
+  // ══════════════════════════════════════════════════════
+  // PREMIER LEAGUE — Rodadas 36/37
+  // ══════════════════════════════════════════════════════
+  {comp:'Premier League', data:'2026-05-09', hora:'09:00', home:'Arsenal',          away:'Newcastle'},
+  {comp:'Premier League', data:'2026-05-09', hora:'09:00', home:'Brentford',        away:'Ipswich'},
+  {comp:'Premier League', data:'2026-05-09', hora:'09:00', home:'Everton',          away:'Wolves'},
+  {comp:'Premier League', data:'2026-05-09', hora:'09:00', home:'Nottm Forest',     away:'Leicester'},
+  {comp:'Premier League', data:'2026-05-09', hora:'11:30', home:'Man City',         away:'Brighton'},
+  {comp:'Premier League', data:'2026-05-09', hora:'11:30', home:'Aston Villa',      away:'Bournemouth'},
+  {comp:'Premier League', data:'2026-05-09', hora:'14:00', home:'Liverpool',        away:'Chelsea'},
+  {comp:'Premier League', data:'2026-05-10', hora:'09:00', home:'Fulham',           away:'Crystal Palace'},
+  {comp:'Premier League', data:'2026-05-10', hora:'09:00', home:'Southampton',      away:'West Ham'},
+  {comp:'Premier League', data:'2026-05-10', hora:'11:30', home:'Man United',       away:'Tottenham'},
+
+  // ══════════════════════════════════════════════════════
+  // FA CUP — Final
+  // ══════════════════════════════════════════════════════
+  {comp:'FA Cup', data:'2026-05-16', hora:'12:00', home:'Man City',                 away:'Crystal Palace'},
+
+  // ══════════════════════════════════════════════════════
+  // LA LIGA — Rodadas 35/36
+  // ══════════════════════════════════════════════════════
+  {comp:'La Liga', data:'2026-05-09', hora:'10:00', home:'Celta Vigo',              away:'Girona'},
+  {comp:'La Liga', data:'2026-05-09', hora:'10:00', home:'Las Palmas',              away:'Leganés'},
+  {comp:'La Liga', data:'2026-05-09', hora:'12:15', home:'Villarreal',              away:'Espanyol'},
+  {comp:'La Liga', data:'2026-05-09', hora:'12:15', home:'Alavés',                  away:'Rayo Vallecano'},
+  {comp:'La Liga', data:'2026-05-09', hora:'14:30', home:'Barcelona',               away:'Atlético Madrid'},
+  {comp:'La Liga', data:'2026-05-10', hora:'10:00', home:'Getafe',                  away:'Osasuna'},
+  {comp:'La Liga', data:'2026-05-10', hora:'12:15', home:'Sevilla',                 away:'Valencia'},
+  {comp:'La Liga', data:'2026-05-10', hora:'16:00', home:'Real Madrid',             away:'Mallorca'},
+
+  // ══════════════════════════════════════════════════════
+  // COPA DEL REY — Final
+  // ══════════════════════════════════════════════════════
+  {comp:'Copa del Rey', data:'2026-05-13', hora:'21:00', home:'Athletic Club',      away:'Real Sociedad'},
+
+  // ══════════════════════════════════════════════════════
+  // BUNDESLIGA — Rodada 33
+  // ══════════════════════════════════════════════════════
+  {comp:'Bundesliga', data:'2026-05-09', hora:'10:30', home:'Borussia Dortmund',    away:'Stuttgart'},
+  {comp:'Bundesliga', data:'2026-05-09', hora:'10:30', home:'Wolfsburg',            away:'Bayern Munich'},
+  {comp:'Bundesliga', data:'2026-05-09', hora:'10:30', home:'Bayer Leverkusen',     away:'Mainz'},
+  {comp:'Bundesliga', data:'2026-05-09', hora:'10:30', home:'Freiburg',             away:'Hoffenheim'},
+  {comp:'Bundesliga', data:'2026-05-09', hora:'10:30', home:'Werder Bremen',        away:'Union Berlin'},
+  {comp:'Bundesliga', data:'2026-05-09', hora:'10:30', home:'Augsburg',             away:'Eintracht Frankfurt'},
+  {comp:'Bundesliga', data:'2026-05-09', hora:'10:30', home:'Holstein Kiel',        away:'Heidenheim'},
+  {comp:'Bundesliga', data:'2026-05-09', hora:'10:30', home:'RB Leipzig',           away:'Gladbach'},
+  {comp:'Bundesliga', data:'2026-05-09', hora:'10:30', home:'St. Pauli',            away:'Bochum'},
+
+  // ══════════════════════════════════════════════════════
+  // DFB-POKAL — Final
+  // ══════════════════════════════════════════════════════
+  {comp:'DFB-Pokal', data:'2026-05-09', hora:'13:00', home:'Bayern Munich',         away:'Borussia Dortmund'},
+
+  // ══════════════════════════════════════════════════════
+  // SERIE A — Rodada 36
+  // ══════════════════════════════════════════════════════
+  {comp:'Serie A', data:'2026-05-09', hora:'09:00', home:'Cagliari',                away:'Udinese'},
+  {comp:'Serie A', data:'2026-05-09', hora:'09:00', home:'Como',                    away:'Empoli'},
+  {comp:'Serie A', data:'2026-05-09', hora:'09:00', home:'Monza',                   away:'Hellas Verona'},
+  {comp:'Serie A', data:'2026-05-09', hora:'12:00', home:'Juventus',                away:'Bologna'},
+  {comp:'Serie A', data:'2026-05-09', hora:'12:00', home:'AC Milan',                away:'Genoa'},
+  {comp:'Serie A', data:'2026-05-09', hora:'15:45', home:'Inter',                   away:'Torino'},
+  {comp:'Serie A', data:'2026-05-10', hora:'09:00', home:'Venezia',                 away:'Parma'},
+  {comp:'Serie A', data:'2026-05-10', hora:'12:00', home:'Napoli',                  away:'Lecce'},
+  {comp:'Serie A', data:'2026-05-10', hora:'12:00', home:'Lazio',                   away:'Atalanta'},
+  {comp:'Serie A', data:'2026-05-10', hora:'15:45', home:'Roma',                    away:'Fiorentina'},
+
+  // ══════════════════════════════════════════════════════
+  // LIGUE 1 — Rodada 33
+  // ══════════════════════════════════════════════════════
+  {comp:'Ligue 1', data:'2026-05-09', hora:'11:00', home:'PSG',                     away:'Marseille'},
+  {comp:'Ligue 1', data:'2026-05-09', hora:'13:00', home:'Lyon',                    away:'Monaco'},
+  {comp:'Ligue 1', data:'2026-05-09', hora:'15:00', home:'Lens',                    away:'Rennes'},
+  {comp:'Ligue 1', data:'2026-05-09', hora:'15:00', home:'Reims',                   away:'Brest'},
+  {comp:'Ligue 1', data:'2026-05-09', hora:'17:05', home:'Lille',                   away:'Nice'},
+  {comp:'Ligue 1', data:'2026-05-10', hora:'11:00', home:'Nantes',                  away:'Auxerre'},
+  {comp:'Ligue 1', data:'2026-05-10', hora:'13:05', home:'Strasbourg',              away:'Angers'},
+  {comp:'Ligue 1', data:'2026-05-10', hora:'15:05', home:'Toulouse',                away:'Le Havre'},
+
+  // ══════════════════════════════════════════════════════
+  // BRASILEIRÃO SÉRIE A — Rodadas 5/6
+  // ══════════════════════════════════════════════════════
+  {comp:'Brasileirão A', data:'2026-05-07', hora:'19:00', home:'São Paulo',         away:'Grêmio'},
+  {comp:'Brasileirão A', data:'2026-05-07', hora:'21:30', home:'Botafogo',          away:'Atlético-MG'},
+  {comp:'Brasileirão A', data:'2026-05-08', hora:'19:00', home:'Flamengo',          away:'Bahia'},
+  {comp:'Brasileirão A', data:'2026-05-08', hora:'21:30', home:'Palmeiras',         away:'Internacional'},
+  {comp:'Brasileirão A', data:'2026-05-09', hora:'18:30', home:'Fluminense',        away:'Corinthians'},
+  {comp:'Brasileirão A', data:'2026-05-09', hora:'21:00', home:'Cruzeiro',          away:'Vasco'},
+  {comp:'Brasileirão A', data:'2026-05-10', hora:'16:00', home:'Santos',            away:'Fortaleza'},
+  {comp:'Brasileirão A', data:'2026-05-10', hora:'18:30', home:'Athletico-PR',      away:'Mirassol'},
+  {comp:'Brasileirão A', data:'2026-05-10', hora:'18:30', home:'RB Bragantino',     away:'Juventude'},
+  {comp:'Brasileirão A', data:'2026-05-11', hora:'20:00', home:'Vitória',           away:'América-MG'},
+
+  // ══════════════════════════════════════════════════════
+  // COPA DO BRASIL — 3ª Fase (ida + volta)
+  // ══════════════════════════════════════════════════════
+  {comp:'Copa do Brasil', data:'2026-05-07', hora:'21:30', home:'Flamengo',         away:'CRB'},
+  {comp:'Copa do Brasil', data:'2026-05-07', hora:'21:30', home:'Palmeiras',        away:'Náutico'},
+  {comp:'Copa do Brasil', data:'2026-05-08', hora:'19:00', home:'Fortaleza',        away:'Ceará'},
+  {comp:'Copa do Brasil', data:'2026-05-08', hora:'21:30', home:'Atlético-MG',      away:'CSA'},
+  {comp:'Copa do Brasil', data:'2026-05-13', hora:'21:30', home:'CRB',              away:'Flamengo'},
+  {comp:'Copa do Brasil', data:'2026-05-13', hora:'21:30', home:'Ceará',            away:'Fortaleza'},
+  {comp:'Copa do Brasil', data:'2026-05-14', hora:'21:30', home:'Náutico',          away:'Palmeiras'},
+  {comp:'Copa do Brasil', data:'2026-05-14', hora:'21:30', home:'CSA',              away:'Atlético-MG'},
+
+];
+
+const COMP_COLORS = {
+  'Champions League':'#006064','Europa League':'#ff6f00','Conference League':'#00838f',
+  'Libertadores':'#283593','Sul-Americana':'#bf360c',
+  'Brasileirão A':'#1b5e20','Copa do Brasil':'#004d40',
+  'Premier League':'#2e7d32','FA Cup':'#1b5e20',
+  'La Liga':'#1565c0','Copa del Rey':'#0d47a1',
+  'Bundesliga':'#e65100','DFB-Pokal':'#bf360c',
+  'Serie A':'#b71c1c','Coppa Italia':'#880e4f',
+  'Ligue 1':'#6a1b9a','Coupe de France':'#4a148c',
+};
+
+function renderJogos(){
+  const busca = (document.getElementById('busca-jogo')?.value||'').toLowerCase();
+  const hoje  = new Date(); hoje.setHours(0,0,0,0);
+  const limite= new Date(hoje); limite.setDate(hoje.getDate()+8);
+
+  // filtra por data e busca
+  const filtered = JOGOS_DB.filter(j=>{
+    const [y,m,d] = j.data.split('-');
+    const dt = new Date(y, m-1, d);
+    if(dt < hoje || dt > limite) return false;
+    if(compSel !== 'all' && j.comp !== compSel) return false;
+    if(busca && !(j.home+' '+j.away+' '+j.comp).toLowerCase().includes(busca)) return false;
+    return true;
+  });
+
+  // atualiza pills de competição
+  const comps = [...new Set(JOGOS_DB
+    .filter(j=>{ const [y,m,d]=j.data.split('-'); const dt=new Date(y,m-1,d); return dt>=hoje&&dt<=limite; })
+    .map(j=>j.comp))];
+
+  const cb = document.getElementById('comp-bar');
+  if(cb){
+    const abrev = {
+      'Champions League':'Champions','Europa League':'Europa L.',
+      'Conference League':'Conference','Libertadores':'Liberta.',
+      'Sul-Americana':'Sul-Am.','Brasileirão A':'Brasileirão A',
+      'Copa do Brasil':'Copa BR','Premier League':'Premier',
+      'FA Cup':'FA Cup','La Liga':'La Liga','Copa del Rey':'Copa Rey',
+      'Bundesliga':'Bundes.','DFB-Pokal':'DFB-Pokal',
+      'Serie A':'Serie A','Coppa Italia':'Coppa It.',
+      'Ligue 1':'Ligue 1','Coupe de France':'Coupe FR',
+    };
+    cb.innerHTML = `<button class="cpill ${compSel==='all'?'active':''}" onclick="compSel='all';renderJogos()">Todos</button>`
+      + comps.map(c=>{
+          const cor = COMP_COLORS[c]||'#666';
+          const sel = compSel===c;
+          return `<button class="cpill ${sel?'active':''}" style="border-color:${cor};${sel?`background:${cor};color:#fff`:''}" onclick="compSel='${c}';renderJogos()">${abrev[c]||c}</button>`;
+        }).join('');
+  }
+
+  const el = document.getElementById('jogos-lista');
+  const upd = document.getElementById('jogos-updated');
+
+  if(!filtered.length){
+    el.innerHTML='<div class="empty"><div class="empty-icon">📅</div>Nenhum jogo para este período.</div>';
+    return;
+  }
+
+  // agrupa por data
+  const porDia = {};
+  filtered.forEach(j=>{ if(!porDia[j.data])porDia[j.data]=[]; porDia[j.data].push(j); });
+  const dias = Object.keys(porDia).sort();
+
+  const fmtDia = d => {
+    const [y,m,dv]=d.split('-');
+    const dt=new Date(y,m-1,dv);
+    const nomes=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    const meses=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+    return nomes[dt.getDay()]+' '+parseInt(dv)+'/'+meses[m-1];
+  };
+
+  el.innerHTML = dias.map(dia=>{
+    const jogos = porDia[dia].sort((a,b)=>a.hora.localeCompare(b.hora));
+    return `<div class="day-label">${fmtDia(dia)}</div>`
+      + jogos.map(j=>{
+          const sel = jogoSelecionado?.data===j.data && jogoSelecionado?.home===j.home;
+          const cor = COMP_COLORS[j.comp]||'var(--text2)';
+          return `<div class="match ${sel?'selected':''}" onclick="selJogo(${JSON.stringify(j).replace(/"/g,'&quot;')})">
+            <div style="flex:1;min-width:0">
+              <div class="match-teams">${j.home} × ${j.away}</div>
+              <div class="match-comp" style="color:${cor}">${j.comp}</div>
+            </div>
+            <div class="match-hora">${j.hora}</div>
+          </div>`;
+        }).join('');
+  }).join('');
+
+  if(upd) upd.textContent = filtered.length + ' jogos · atualizado 06/05';
+}
+
+function selJogo(j){
+  jogoSelecionado = j;
+  document.getElementById('f-evento').value = j.home+' x '+j.away+' — '+j.comp;
+  document.getElementById('f-data').value   = j.data;
+  document.getElementById('f-hora').value   = j.hora;
+  document.getElementById('jogo-banner-text').textContent = j.home+' x '+j.away+' · '+j.hora;
+  document.getElementById('jogo-banner').style.display = 'flex';
+  // vai para aba +Nova
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-nova').classList.add('active');
+  document.getElementById('nav-nova').classList.add('active');
+  toast('Jogo preenchido!');
+  renderJogos();
+}
+
+// ── CARTEIRA ───────────────────────────────────────────────────────────────
+function selFBTipo(btn){document.querySelectorAll('#fb-tipo-btns .btn-sm').forEach(b=>b.classList.remove('active'));btn.classList.add('active');fbTipoSel=btn.dataset.v}
+function setFBFiltro(f){fbFiltro=f;['disp','usada','todas'].forEach(x=>{const el=document.getElementById('fb-f-'+x);if(el)el.classList.toggle('active',x===f)});renderCarteira()}
+function setupFBCasaDrop(){
+  const inp=document.getElementById('fb-cart-casa');const dd=document.getElementById('dd-fb-casa');const wrap=document.getElementById('wrap-fb-casa');
+  if(!inp||inp._fbReady)return;inp._fbReady=true;
+  function r(f){const m=ALL_CASAS.filter(c=>!f||c.toLowerCase().includes(f.toLowerCase())).slice(0,12);dd.innerHTML=m.map(n=>`<div class="dropdown-opt" onclick="event.stopPropagation();document.getElementById('fb-cart-casa').value='${n}';document.getElementById('dd-fb-casa').classList.remove('open');activeDD=null;renderFBSug()">${n}</div>`).join('')||`<div class="dropdown-opt" style="color:var(--text2)">Nenhuma</div>`}
+  inp.addEventListener('input',()=>{r(inp.value);dd.classList.add('open');activeDD=wrap});inp.addEventListener('focus',()=>{r(inp.value);dd.classList.add('open');activeDD=wrap});
+}
+function renderFBSug(){const el=document.getElementById('fb-sug-row');if(!el)return;const todos=[...new Set(contasSalvas.map(c=>c.apelido))];el.innerHTML=todos.map(u=>`<button class="sug-btn" onclick="document.getElementById('fb-cart-conta').value='${u}'">${u}</button>`).join('')}
+function adicionarFB(){
+  const casa=document.getElementById('fb-cart-casa').value.trim();
+  const conta=document.getElementById('fb-cart-conta').value.trim();
+  const valor=parseFloat(document.getElementById('fb-cart-valor').value);
+  const validade=document.getElementById('fb-cart-val').value;
+  const obs=document.getElementById('fb-cart-obs').value.trim();
+  if(!casa||!valor){toast('Preencha casa e valor');return}
+  carteiraFB.push({id:Date.now(),casa,conta:conta||'—',valor,tipo:fbTipoSel,validade,obs,status:'disponivel',data:new Date().toLocaleDateString('pt-BR')});
+  sd(FBCK,carteiraFB);
+  ['fb-cart-casa','fb-cart-conta','fb-cart-valor','fb-cart-val','fb-cart-obs'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fb-sug-row').innerHTML='';
+  toast('Freebet adicionada!');renderCarteira();renderResumo();
+}
+function renderCarteira(){
+  const el=document.getElementById('carteira-lista');
+  const f=carteiraFB.filter(x=>fbFiltro==='disp'?x.status==='disponivel':fbFiltro==='usada'?x.status==='usada':true);
+  const disp=carteiraFB.filter(x=>x.status==='disponivel');
+  const tot=document.getElementById('fb-total');
+  if(tot)tot.textContent=`${disp.length} disponível(is) · Total: R$ ${disp.reduce((a,x)=>a+x.valor,0).toFixed(2)}`;
+  if(!f.length){el.innerHTML='<div class="empty"><div class="empty-icon">💜</div>Nenhuma freebet nesta categoria.</div>';return}
+  el.innerHTML=f.map(f=>{
+    const isU=f.status==='usada';
+    return `<div class="fb-card ${isU?'usada':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div class="fb-valor">R$ ${f.valor.toFixed(2)}</div>
+        <span class="badge ${isU?'pend':'fb'}">${isU?'Usada':'Disponível'}</span>
+      </div>
+      <div class="fb-info">${f.casa} · <span class="chip purple" style="font-size:11px;padding:1px 7px">${f.conta}</span> · <span class="chip" style="background:var(--purple-bg);color:var(--purple);border-color:rgba(206,147,216,.2);font-size:10px;padding:1px 7px">${f.tipo}</span></div>
+      ${f.obs?`<div class="fb-info" style="margin-top:4px">📝 ${f.obs}</div>`:''}
+      ${f.validade?`<div class="fb-info">⏳ Válida até ${f.validade.split('-').reverse().join('/')}</div>`:''}
+      <div class="fb-info">Adicionada: ${f.data}</div>
+      <div class="fb-actions">
+        ${!isU?`<button class="btn-sm purple-c" onclick="fbSetStatus(${f.id},'usada')">Marcar usada</button>`:`<button class="btn-sm" onclick="fbSetStatus(${f.id},'disponivel')">Restaurar</button>`}
+        <button class="btn-sm red" onclick="fbRem(${f.id})">Remover</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function fbSetStatus(id,s){carteiraFB.forEach(f=>{if(f.id===id)f.status=s});sd(FBCK,carteiraFB);renderCarteira();renderResumo()}
+function fbRem(id){carteiraFB=carteiraFB.filter(f=>f.id!==id);sd(FBCK,carteiraFB);renderCarteira();renderResumo()}
+
+// ── ENTRADAS ───────────────────────────────────────────────────────────────
+function todayStr(){return new Date().toLocaleDateString('pt-BR')}
+function filterE(arr,f){
+  if(f==='hoje')return arr.filter(e=>e.data===todayStr());
+  if(f==='semana'){const n=new Date();n.setHours(0,0,0,0);const s=new Date(n);s.setDate(n.getDate()-n.getDay());return arr.filter(e=>{const p=e.data.split('/');const d=new Date(p[2],p[1]-1,p[0]);return d>=s})}
+  if(f==='mes'){const n=new Date();return arr.filter(e=>{const p=e.data.split('/');return parseInt(p[1])===n.getMonth()+1&&parseInt(p[2])===n.getFullYear()})}
+  return arr;
+}
+function setFilter(page,f,btn){
+  document.querySelectorAll(`#filter-bar-${page} .fpill`).forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  if(page==='entradas'){filterEntradas=f;renderEntradas()}
+  if(page==='resumo'){filterResumo=f;renderResumo()}
+  if(page==='hist'){filterHist=f;renderHistorico()}
+}
+function calcRPC(casas){
+  return casas.map((c,i)=>{
+    const rb=c.freebet?(c.odd-1)*c.stake:c.odd*c.stake;
+    const outros=casas.reduce((a,x,j)=>a+(i===j||x.freebet?0:x.stake),0);
+    const liq=rb-(c.freebet?0:c.stake)-outros;
+    return{nome:c.nome,isFB:c.freebet||false,isRef:c.ref||false,stake:c.stake,odd:c.odd,rb,liq};
+  });
+}
+function renderEntradas(){
+  var el = document.getElementById('lista-entradas');
+  var f  = filterE(entries, filterEntradas);
+  // Só mostra pendentes na aba Entradas
+  var pendentes = f.filter(function(e){ return e.resultado==='pendente'; });
+  if(!pendentes.length){
+    el.innerHTML='<div class="empty"><div class="empty-icon">📋</div>Nenhuma entrada pendente neste período.<br><span style="font-size:12px;color:var(--text2)">Apostas concluídas ficam no Histórico</span></div>';
+    return;
+  }
+  el.innerHTML = pendentes.slice().reverse().map(function(e){ return buildCard(e,true); }).join('');
+}
+
+function renderHistorico(){
+  var el = document.getElementById('hist-lista');
+  if(!el) return;
+  var concluidas = filterE(entries, filterHist).filter(function(e){
+    return e.resultado==='ganho'||e.resultado==='perdido';
+  });
+  if(!concluidas.length){
+    el.innerHTML='<div class="empty"><div class="empty-icon">📚</div>Nenhuma aposta no histórico ainda.<br><span style="font-size:12px;color:var(--text2)">Apostas concluídas aparecem aqui</span></div>';
+    return;
+  }
+
+  // Usa lucroReal se disponível, senão lucro estimado
+  var ganhas   = concluidas.filter(function(e){return e.resultado==='ganho';}).length;
+  var perdidas = concluidas.filter(function(e){return e.resultado==='perdido';}).length;
+  var lucroTotal = concluidas.reduce(function(a,e){
+    var l = (e.lucroReal !== undefined) ? e.lucroReal : (e.resultado==='ganho' ? e.lucro : -e.total);
+    return a + l;
+  }, 0);
+
+  var resumo = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">'
+    +'<div class="metric"><div class="metric-label">Ganhas</div><div class="metric-val green">'+ganhas+'</div></div>'
+    +'<div class="metric"><div class="metric-label">Perdidas</div><div class="metric-val red">'+perdidas+'</div></div>'
+    +'<div class="metric"><div class="metric-label">Resultado real</div>'
+    +'<div class="metric-val '+(lucroTotal>=0?'green':'red')+'">'+(lucroTotal>=0?'+':'')+lucroTotal.toFixed(2)+'</div></div>'
+    +'</div>';
+
+  el.innerHTML = resumo + concluidas.slice().reverse().map(function(e){
+    return buildHistCard(e);
+  }).join('');
+}
+
+function buildHistCard(e){
+  var ti  = {surebet:{icon:'🔵',label:'Surebet'},aposta_normal:{icon:'🟠',label:'Aposta Normal'}}[e.tipo]||{icon:'⚪',label:e.tipo||'—'};
+  var ag  = e.apostasGanhadoras||[];
+  var isGanho = e.resultado==='ganho';
+
+  // Lucro real ou estimado
+  var lucroExibir = (e.lucroReal !== undefined) ? e.lucroReal : (isGanho ? e.lucro : -e.total);
+  var retExibir   = e.retornoReal || 0;
+  var stakeTotal  = e.total||0;
+
+  // Badge especial para duplo green
+  var isDuploGreen = isGanho && ag.length >= 2;
+  var badgeStatus  = isGanho
+    ? (isDuploGreen ? '🟢🟢 Duplo Green' : '✅ Green')
+    : '❌ Red';
+  var badgeClass = isGanho ? 'won' : 'lost';
+
+  var h = '<div class="entry" style="border-color:'+(isGanho?'rgba(0,230,118,.2)':'rgba(255,78,106,.15)')+'">';
+
+  // Topo
+  h += '<div class="entry-top" style="margin-bottom:6px">'
+    +'<div class="entry-name" style="font-size:13px">'+e.evento+'</div>'
+    +'<span class="badge '+badgeClass+'" style="white-space:nowrap">'+badgeStatus+'</span>'
+    +'</div>';
+
+  // Info
+  h += '<div style="display:flex;flex-wrap:wrap;gap:8px;font-size:11px;color:var(--text2);margin-bottom:8px">';
+  h += '<span>'+ti.icon+' '+ti.label+'</span>';
+  h += '<span>📅 '+e.data+(e.eventoHora?' '+e.eventoHora:'')+'</span>';
+  if(e.chanceDuplo&&e.chanceDuplo!=='N/A') h += '<span>🎯 CD: <b style="color:var(--accent2)">'+e.chanceDuplo+'</b></span>';
+  h += '</div>';
+
+  // Resumo financeiro real
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">';
+  h += '<div style="background:var(--bg3);border-radius:var(--r2);padding:8px 10px">'
+    +'<div style="font-size:9px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:2px">Apostado</div>'
+    +'<div style="font-size:14px;font-weight:700;font-family:var(--mono)">R$ '+stakeTotal.toFixed(2)+'</div></div>';
+  if(isGanho){
+    h += '<div style="background:var(--green-bg);border:1px solid rgba(0,230,118,.2);border-radius:var(--r2);padding:8px 10px">'
+      +'<div style="font-size:9px;font-weight:700;color:var(--green);text-transform:uppercase;margin-bottom:2px">Retorno recebido</div>'
+      +'<div style="font-size:14px;font-weight:700;font-family:var(--mono);color:var(--green)">R$ '+retExibir.toFixed(2)+'</div></div>';
+    h += '<div style="background:'+(lucroExibir>=0?'var(--green-bg)':'var(--red-bg)')+';border:1px solid '+(lucroExibir>=0?'rgba(0,230,118,.2)':'rgba(255,78,106,.2)')+';border-radius:var(--r2);padding:8px 10px">'
+      +'<div style="font-size:9px;font-weight:700;color:'+(lucroExibir>=0?'var(--green)':'var(--red)')+';text-transform:uppercase;margin-bottom:2px">Lucro real</div>'
+      +'<div style="font-size:14px;font-weight:700;font-family:var(--mono);color:'+(lucroExibir>=0?'var(--green)':'var(--red)')+'">'+(lucroExibir>=0?'+':'')+lucroExibir.toFixed(2)+'</div></div>';
+  } else {
+    h += '<div style="background:var(--red-bg);border:1px solid rgba(255,78,106,.2);border-radius:var(--r2);padding:8px 10px;grid-column:2/-1">'
+      +'<div style="font-size:9px;font-weight:700;color:var(--red);text-transform:uppercase;margin-bottom:2px">Perda</div>'
+      +'<div style="font-size:14px;font-weight:700;font-family:var(--mono);color:var(--red)">-R$ '+stakeTotal.toFixed(2)+'</div></div>';
+  }
+  h += '</div>';
+
+  // Apostas que bateram
+  if(e.casas&&e.casas.length&&ag.length){
+    h += '<div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:4px">'
+      +(ag.length>1?'Apostas que bateram ('+ag.length+'):':'Aposta que bateu:')+'</div>';
+    h += '<div style="display:flex;flex-direction:column;gap:3px;margin-bottom:8px">';
+    ag.forEach(function(idx){
+      var c = e.casas[idx];
+      if(!c) return;
+      var o=parseFloat(c.odd)||0, s=parseFloat(c.stake)||0;
+      var ret=c.freebet?(o-1)*s:o*s;
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;'
+        +'padding:5px 10px;background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.2);border-radius:var(--r2)">'
+        +'<span style="font-size:12px;font-weight:600">🟢 '+c.nome+'</span>'
+        +'<span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--green)">@'+o.toFixed(2)+' → R$ '+ret.toFixed(2)+'</span>'
+        +'</div>';
+    });
+    h += '</div>';
+  }
+
+  // Ações
+  h += '<div style="display:flex;gap:6px">'
+    +'<button class="btn-sm" style="font-size:11px" onclick="reabrirEntrada('+e.id+')">↩ Reabrir</button>'
+    +'</div>';
+
+  h += '</div>';
+  return h;
+}
+
+
+function buildCard(e, isPend){
+  var ti = {surebet:{icon:'🔵',label:'Surebet'},aposta_normal:{icon:'🟠',label:'Aposta Normal'}}[e.tipo]||{icon:'⚪',label:e.tipo||'—'};
+  var bc = e.resultado==='ganho'?'won':e.resultado==='perdido'?'lost':'pend';
+  var bl = e.resultado==='ganho'?'✓ Ganho':e.resultado==='perdido'?'✗ Perdido':'⏳ Pendente';
+  var ag = e.apostasGanhadoras||[];
+
+  var stakeTotal = e.total||0;
+  var lucroEst   = e.lucro||0;
+
+  var h = '<div class="entry">';
+
+  // ── Topo ──
+  h += '<div class="entry-top" style="margin-bottom:6px">'
+    +'<div class="entry-name" style="font-size:13px">'+e.evento+'</div>'
+    +'<span class="badge '+bc+'">'+bl+'</span>'
+    +'</div>';
+
+  // ── Info linha ──
+  h += '<div style="display:flex;flex-wrap:wrap;gap:8px;font-size:11px;color:var(--text2);margin-bottom:8px">';
+  h += '<span>'+ti.icon+' '+ti.label+'</span>';
+  h += '<span>📅 '+e.data+(e.eventoHora?' '+e.eventoHora:'')+'</span>';
+  if(e.chanceDuplo&&e.chanceDuplo!=='N/A') h += '<span>🎯 CD: <b style="color:var(--accent2)">'+e.chanceDuplo+'</b></span>';
+  h += '<span style="font-family:var(--mono)">Total: R$ '+stakeTotal.toFixed(2)+'</span>';
+  h += '<span style="font-family:var(--mono);color:'+(lucroEst>=0?'var(--green)':'var(--red)')+'">Lucro est.: '+(lucroEst>=0?'+':'')+lucroEst.toFixed(2)+'</span>';
+  h += '</div>';
+
+  // ── Tabela de apostas ──
+  if(e.casas&&e.casas.length){
+    h += '<div style="border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;margin-bottom:8px">';
+
+    // header
+    h += '<div style="display:grid;grid-template-columns:1fr 60px 64px '+(isPend?'70px':'40px')+';'
+      +'gap:0;background:var(--bg3);border-bottom:1px solid var(--border)">';
+    ['Aposta','Retorno','Lucro líq.', isPend?'Bateu?':'Status'].forEach(function(col){
+      h += '<div style="padding:5px 8px;font-size:9px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em">'+col+'</div>';
+    });
+    h += '</div>';
+
+    e.casas.forEach(function(c,i){
+      var o   = parseFloat(c.odd)||0;
+      var s   = parseFloat(c.stake)||0;
+      var rb  = c.freebet?(o-1)*s:o*s;
+      var liq = rb - stakeTotal;
+      var isPos = liq>=0;
+      var isBateu = ag.indexOf(i)>=0;
+
+      h += '<div style="display:grid;grid-template-columns:1fr 60px 64px '+(isPend?'70px':'40px')+';'
+        +'gap:0;align-items:center;border-top:1px solid var(--border);'
+        +'background:'+(isBateu?'rgba(0,230,118,.06)':'')+';">';
+
+      // Nome + odd + stake
+      h += '<div style="padding:7px 8px;min-width:0">'
+        +'<div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+c.nome+'</div>'
+        +'<div style="font-size:10px;color:var(--text2);font-family:var(--mono)">@'+o.toFixed(2)+' · R$'+s.toFixed(2)+'</div>'
+        +'</div>';
+
+      // Retorno
+      h += '<div style="padding:7px 6px;font-family:var(--mono);font-size:11px;text-align:right;color:var(--text2)">'+rb.toFixed(2)+'</div>';
+
+      // Lucro líquido
+      h += '<div style="padding:7px 8px;font-family:var(--mono);font-size:11px;font-weight:700;text-align:right;'
+        +'color:'+(isPos?'var(--green)':'var(--red)')+'">'+(isPos?'+':'')+liq.toFixed(2)+'</div>';
+
+      // Bateu / Status
+      if(isPend){
+        h += '<div style="padding:4px 6px;text-align:center">'
+          +'<button style="width:100%;padding:5px 4px;font-size:11px;font-weight:700;border-radius:6px;cursor:pointer;border:1px solid '
+          +(isBateu?'var(--green)':'var(--border2)')+';background:'+(isBateu?'rgba(0,230,118,.15)':'var(--bg3)')+';color:'+(isBateu?'var(--green)':'var(--text2)')+'"'
+          +' onclick="toggleApostaGanhadora('+e.id+','+i+')">'+(isBateu?'✓':'—')+'</button></div>';
+      } else {
+        h += '<div style="padding:7px 6px;text-align:center;font-size:14px">'+(isBateu?'✓':'')+'</div>';
+      }
+      h += '</div>';
+    });
+    h += '</div>';
+  }
+
+  // ── FBs esperadas ──
+  if(e.fbsEsperadas&&e.fbsEsperadas.length){
+    e.fbsEsperadas.forEach(function(fb,idx){
+      var jaAdicionada=(e.fbAdicionadas||[]).indexOf(idx)>=0;
+      h += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;padding:6px 8px;'
+        +'background:var(--green-bg);border:1px solid rgba(0,230,118,.2);border-radius:var(--r2)">'
+        +'<span style="font-size:11px">🟢</span>'
+        +'<span style="font-size:11px;color:var(--green);flex:1">FB em <b>'+fb.casa+'</b>: R$ '+fb.valor.toFixed(2)+' ('+fb.tipo+')</span>';
+      if(!jaAdicionada&&e.resultado==='ganho')
+        h += '<button class="btn-sm purple-c" onclick="addFBProc('+e.id+','+idx+')">+ Carteira</button>';
+      else if(jaAdicionada)
+        h += '<span style="font-size:11px;color:var(--green)">✓</span>';
+      h += '</div>';
+    });
+  }
+
+  // ── Ações ──
+  h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">';
+  if(isPend){
+    // Botão notificação — mostra ícone diferente se já configurado
+    var notifConf = e.notifConfig;
+    var notifBtnStyle = notifConf
+      ? 'color:var(--green);border-color:rgba(0,230,118,.4)'
+      : 'color:var(--text2)';
+    var notifBtnTitle = notifConf
+      ? ('🔔 '+notifConf.minutos+' min antes')
+      : '🔔';
+    h += '<button class="btn-sm" style="'+notifBtnStyle+'" title="Configurar notificação"'
+      +' onclick="abrirNotifModal('+e.id+')">'+notifBtnTitle+'</button>';
+    if(ag.length>0){
+      h += '<button class="btn-sm green-c" style="font-weight:700;flex:1" onclick="concluirEntrada('+e.id+',\'ganho\')">✓ Ganho</button>';
+    }
+    h += '<button class="btn-sm red" onclick="concluirEntrada('+e.id+',\'perdido\')">✗ Perdido</button>';
+  } else {
+    h += '<button class="btn-sm" style="font-size:11px" onclick="reabrirEntrada('+e.id+')">↩ Reabrir</button>';
+  }
+  h += '</div>';
+  h += '</div>';
+  return h;
+}
+
+function reabrirEntrada(id){
+  entries.forEach(function(e){if(e.id===id)e.resultado='pendente';});
+  sd(SK,entries);
+  renderHistorico();
+  renderEntradas();
+  renderResumo();
+  toast('Entrada reaberta');
+}
+
+function limparHistorico(){
+  if(!confirm('Remover TODAS as entradas concluídas do histórico?')) return;
+  entries = entries.filter(function(e){ return e.resultado==='pendente'; });
+  sd(SK,entries);
+  renderHistorico();
+  renderResumo();
+  toast('Histórico limpo');
+}
+
+
+function toggleApostaGanhadora(entradaId, idx){
+  var e = entries.find(function(x){ return x.id===entradaId; });
+  if(!e) return;
+  if(!e.apostasGanhadoras) e.apostasGanhadoras=[];
+  var pos = e.apostasGanhadoras.indexOf(idx);
+  if(pos>=0) e.apostasGanhadoras.splice(pos,1);
+  else e.apostasGanhadoras.push(idx);
+  sd(SK,entries);
+  renderEntradas();
+}
+
+function concluirEntrada(entradaId, resultado){
+  var e = entries.find(function(x){ return x.id===entradaId; });
+  if(!e) return;
+  e.resultado = resultado || 'ganho';
+
+  // Recalcula lucro real baseado nas apostas que bateram (duplo green etc.)
+  if(resultado === 'ganho' && e.apostasGanhadoras && e.apostasGanhadoras.length > 0 && e.casas){
+    var stakeTotal = e.casas.reduce(function(a,c){ return a+(c.freebet?0:c.stake); }, 0);
+    // Soma o retorno de TODAS as apostas que bateram
+    var retornoReal = 0;
+    e.apostasGanhadoras.forEach(function(idx){
+      var c = e.casas[idx];
+      if(!c) return;
+      var o = parseFloat(c.odd)||0, s = parseFloat(c.stake)||0;
+      retornoReal += c.freebet ? (o-1)*s : o*s;
+    });
+    e.lucroReal    = retornoReal - stakeTotal;
+    e.retornoReal  = retornoReal;
+    e.apostasGanhadasCount = e.apostasGanhadoras.length;
+  } else if(resultado === 'perdido'){
+    e.lucroReal   = -e.total;
+    e.retornoReal = 0;
+  }
+
+  sd(SK, entries);
+  renderEntradas();
+  renderHistorico();
+  renderResumo();
+  renderCDResumo();
+  setSubtab('historico');
+  toast(resultado==='ganho' ? '✅ GANHO! Entrada no histórico.' : '❌ Perdido. Entrada no histórico.');
+}
+
+
+function marcarCG(id,i){entries.forEach(e=>{if(e.id===id)e.casaGanhadora=e.casaGanhadora===i?null:i});sd(SK,entries);renderEntradas()}
+function addFBProc(eid,idx){
+  const e=entries.find(x=>x.id===eid);if(!e||!e.fbsEsperadas[idx])return;
+  const fb=e.fbsEsperadas[idx];
+  carteiraFB.push({id:Date.now(),casa:fb.casa,conta:fb.usuarios?.[0]||'—',valor:fb.valor,tipo:fb.tipo,validade:fb.validade||'',obs:`Proc: ${e.evento}`,status:'disponivel',data:new Date().toLocaleDateString('pt-BR')});
+  sd(FBCK,carteiraFB);if(!e.fbAdicionadas)e.fbAdicionadas=[];e.fbAdicionadas.push(idx);
+  sd(SK,entries);renderEntradas();renderResumo();toast('Freebet adicionada à carteira!');
+}
+function setRes(id,res){entries.forEach(e=>{if(e.id===id)e.resultado=res});sd(SK,entries);checkAlertas();renderEntradas()}
+function delEntry(id){entries=entries.filter(e=>e.id!==id);sd(SK,entries);checkAlertas();renderEntradas()}
+
+// ── RESUMO ─────────────────────────────────────────────────────────────────
+
+function initConfig(){
+  // nada a inicializar — config é estática
+}
+
+function renderResumo(){
+  const f=filterE(entries,filterResumo);
+  const count=f.length,inv=f.reduce((a,e)=>a+e.total,0),lucro=f.reduce((a,e)=>a+e.lucro,0),roi=count&&inv?lucro/inv*100:0;
+  document.getElementById('m-count').textContent=count;
+  document.getElementById('m-inv').textContent=`R$ ${inv.toFixed(0)}`;
+  const ml=document.getElementById('m-lucro');ml.textContent=`R$ ${lucro.toFixed(2)}`;ml.className=`metric-val ${lucro>=0?'green':'red'}`;
+  document.getElementById('m-roi').textContent=`${roi.toFixed(1)}%`;
+  const fbD=carteiraFB.filter(f=>f.status==='disponivel');
+  document.getElementById('m-fb-disp').textContent=fbD.length;
+  document.getElementById('m-fb-val').textContent=`R$ ${fbD.reduce((a,f)=>a+f.valor,0).toFixed(2)}`;
+  document.getElementById('resumo-label').textContent=`Por entrada — ${periodoLabel[filterResumo]}`;
+  const el=document.getElementById('resumo-lista');
+  if(!count){el.innerHTML='<div class="empty">Sem dados.</div>';return}
+  el.innerHTML=f.map(e=>{
+    const cs=e.casas.map(c=>c.nome+(c.usuarios?.length?` (${c.usuarios.join(', ')})`:'')+(c.ref?' [ref]':'')).join(' vs ');
+    const luc=e.lucro>=0?`+R$ ${e.lucro.toFixed(2)}`:`-R$ ${Math.abs(e.lucro).toFixed(2)}`;
+    return `<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700">${e.tipo==='surebet'?'🔵':'🟠'} ${e.evento}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">${e.data} · ${cs}</div>
+      </div>
+      <div style="font-family:var(--mono);font-size:14px;font-weight:700;color:${e.lucro>=0?'var(--green)':'var(--red)'};flex-shrink:0;margin-left:8px">${luc}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── USUÁRIOS ───────────────────────────────────────────────────────────────
+function salvarConta(){const ap=document.getElementById('mgr-apelido').value.trim();if(!ap){toast('Informe o apelido');return}if(contasSalvas.some(c=>c.apelido===ap)){toast('Usuário já existe');return}contasSalvas.push({id:Date.now(),apelido:ap});sd(CK,contasSalvas);document.getElementById('mgr-apelido').value='';toast('Usuário adicionado!');renderContas();casaIds.forEach(cid=>renderUserSug(cid));renderANSug();renderFBSug()}
+function deleteConta(id){contasSalvas=contasSalvas.filter(c=>c.id!==id);sd(CK,contasSalvas);renderContas();casaIds.forEach(cid=>renderUserSug(cid))}
+function renderContas(){
+  const el=document.getElementById('contas-lista');
+  const busca=(document.getElementById('busca-user')?.value||'').toLowerCase();
+  const f=contasSalvas.filter(c=>!busca||c.apelido.toLowerCase().includes(busca));
+  document.getElementById('users-title').textContent=`Usuários cadastrados (${contasSalvas.length})`;
+  if(!f.length){el.innerHTML='<div class="empty">Nenhum usuário cadastrado.</div>';return}
+  el.innerHTML=f.map(u=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border)"><span style="font-size:14px;font-weight:700">${u.apelido}</span><button class="btn-sm red" onclick="deleteConta(${u.id})">Remover</button></div>`).join('');
+}
+
+// ── ALERTAS ────────────────────────────────────────────────────────────────
+function checkAlertas(){
+  const c=document.getElementById('alertas-container');if(!c)return;
+  const now=new Date();let html='';
+  entries.filter(e=>e.resultado==='pendente'&&e.eventoData&&e.eventoHora).forEach(e=>{
+    const p=e.eventoData.split('-');const d=new Date(p[0],p[1]-1,p[2]);const hp=e.eventoHora.split(':');
+    d.setHours(parseInt(hp[0]),parseInt(hp[1]),0,0);const diff=Math.round((d-now)/60000);
+    if(diff>=0&&diff<=120){const urg=diff<=30;html+=`<div class="alert ${urg?'danger':'warn'}"><span style="font-size:18px">${urg?'🔴':'🟡'}</span><div class="alert-text"><b>${e.evento}</b><br>Evento ${diff===0?'AGORA':'em '+diff+' min'}</div></div>`}
+  });
+  c.innerHTML=html;
+}
+setInterval(checkAlertas,30000);setTimeout(checkAlertas,500);
+
+
+// ── NOTIFICAÇÕES & CHANCE PARA DUPLO ────────────────────────────────────────
+let notifPermitida = false;
+let notifEnviadas  = new Set(); // controla quais já foram enviadas nesta sessão
+
+function renderCDResumo(){ /* integrado no modal de notif */ }
+
+function dispararNotificacao(e, forcado=false){
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  const chave = String(e.id) + '_' + (forcado ? Date.now() : 'std');
+  if(!forcado && notifEnviadas.has(String(e.id))) return;
+
+  const rcs = e.casas.map((c,i) => {
+    const rb  = c.freebet?(c.odd-1)*c.stake:c.odd*c.stake;
+    const outros = e.casas.reduce((a,x,j)=>a+(i===j||x.freebet?0:x.stake),0);
+    return rb-(c.freebet?0:c.stake)-outros;
+  });
+  const melhor = Math.max.apply(null, rcs);
+  const pior   = Math.min.apply(null, rcs);
+  const cdLabels = {'1':'1 (Casa ou Empate)','2':'2 (Fora ou Empate)','12':'12 (Casa ou Fora)'};
+  const cdLabel  = cdLabels[e.chanceDuplo] || e.chanceDuplo;
+
+  const titulo = 'ArbPro — ' + e.evento;
+  const corpo  = 'Chance Para Duplo: ' + cdLabel
+    + '\nInvestido: R$ ' + e.total.toFixed(2)
+    + (melhor>=0 ? '\nLucro máx: +R$ '+melhor.toFixed(2) : '\nPerda máx: R$ '+Math.abs(pior).toFixed(2))
+    + (e.eventoHora ? '\nHorário: ' + e.eventoHora : '');
+
+  new Notification(titulo, {
+    body: corpo,
+    tag: 'arbpro_cd_' + e.id,
+    requireInteraction: true,
+  });
+
+  if(!forcado) notifEnviadas.add(String(e.id));
+}
+
+
+// ── TIMER NOTIFICAÇÕES
+function checkNotificacoesCD10min(){ /* deprecated */ }
+setInterval(checkNotificacoesCD10min,30000);
+setTimeout(checkNotificacoesCD10min,2000);
+
+// ── EMAIL RESUMO ─────────────────────────────────────────────────────────────
+function enviarResumoEmail(){
+  const comCD = entries.filter(e => e.chanceDuplo && e.chanceDuplo !== 'N/A' && e.resultado === 'pendente');
+  if(!comCD.length){ toast('Nenhuma entrada com Chance Para Duplo'); return; }
+
+  const cdLabels = {'1':'1 (Casa ou Empate)','2':'2 (Fora ou Empate)','12':'12 (Casa ou Fora)'};
+  let corpo = 'RESUMO ARBPRO - CHANCE PARA DUPLO\n================================\n\n';
+
+  comCD.forEach(e => {
+    const rcs = e.casas.map((c,i) => {
+      const rb = c.freebet?(c.odd-1)*c.stake:c.odd*c.stake;
+      const outros = e.casas.reduce((a,x,j)=>a+(i===j||x.freebet?0:x.stake),0);
+      const liq = rb-(c.freebet?0:c.stake)-outros;
+      return {nome:c.nome, rb, liq};
+    });
+    const melhor = Math.max.apply(null, rcs.map(r=>r.liq));
+    const pior   = Math.min.apply(null, rcs.map(r=>r.liq));
+
+    corpo += 'JOGO: ' + e.evento + '\n';
+    corpo += 'Data: ' + e.data + (e.eventoHora ? ' as ' + e.eventoHora : '') + '\n';
+    corpo += 'Chance Para Duplo: ' + (cdLabels[e.chanceDuplo]||e.chanceDuplo) + '\n';
+    corpo += 'Tipo: ' + (e.tipo==='surebet'?'Surebet':'Aposta Normal') + '\n';
+    corpo += 'Total Investido: R$ ' + e.total.toFixed(2) + '\n';
+    corpo += 'Melhor resultado: ' + (melhor>=0 ? '+R$ '+melhor.toFixed(2) : '-R$ '+Math.abs(melhor).toFixed(2)) + '\n';
+    corpo += 'Pior resultado: '   + (pior>=0   ? '+R$ '+pior.toFixed(2)   : '-R$ '+Math.abs(pior).toFixed(2))   + '\n';
+    corpo += 'Por casa:\n';
+    rcs.forEach(r => {
+      corpo += '  - ' + r.nome + ': Retorno R$ ' + r.rb.toFixed(2) + ' | ';
+      corpo += (r.liq>=0 ? '+R$ '+r.liq.toFixed(2) : '-R$ '+Math.abs(r.liq).toFixed(2)) + '\n';
+    });
+    corpo += '---\n\n';
+  });
+
+  corpo += 'Gerado em: ' + new Date().toLocaleString('pt-BR') + '\nArbPro - Dashboard de Arbitragem Esportiva';
+
+  const assunto = 'ArbPro - ' + comCD.length + ' jogo(s) com Chance Para Duplo';
+  const a = document.createElement('a');
+  a.href = 'mailto:?subject=' + encodeURIComponent(assunto) + '&body=' + encodeURIComponent(corpo);
+  a.click();
+}
+
+
+
+// ── MODAL DE NOTIFICAÇÃO POR ENTRADA ─────────────────────────────────────
+var notifModalEntradaId = null;
+
+function abrirNotifModal(entradaId){
+  notifModalEntradaId = entradaId;
+  var e = entries.find(function(x){ return x.id===entradaId; });
+  if(!e) return;
+
+  var modal = document.getElementById('notif-modal');
+  modal.classList.add('open');
+
+  // Evento
+  document.getElementById('notif-modal-evento').textContent =
+    e.evento + (e.eventoData&&e.eventoHora ? '  ·  '+e.eventoData.split('-').slice(1).reverse().join('/')+' às '+e.eventoHora : '');
+
+  // Permissão
+  var permOk = 'Notification' in window && Notification.permission === 'granted';
+  document.getElementById('notif-modal-perm-warn').style.display = permOk ? 'none' : 'block';
+  document.getElementById('notif-modal-perm-ok').style.display   = permOk ? 'block' : 'none';
+
+  // Configuração atual desta entrada
+  var min = (e.notifConfig && e.notifConfig.minutos) || notifMinutosAntes || 10;
+  document.querySelectorAll('#notif-modal-btns .btn-sm').forEach(function(b){
+    b.classList.toggle('active', parseInt(b.dataset.m)===min);
+  });
+
+  // Status
+  atualizarStatusModal(e);
+
+  // Botão remover
+  var btnRem = document.getElementById('notif-modal-remover');
+  if(btnRem) btnRem.style.display = e.notifConfig ? 'block' : 'none';
+}
+
+function fecharNotifModal(){
+  var modal = document.getElementById('notif-modal');
+  modal.classList.remove('open');
+  notifModalEntradaId = null;
+}
+
+// Fecha ao clicar fora
+document.addEventListener('click', function(ev){
+  var modal = document.getElementById('notif-modal');
+  if(!modal || !modal.classList.contains('open')) return;
+  if(ev.target === modal) fecharNotifModal();
+});
+
+function setNotifMin(min, btn){
+  document.querySelectorAll('#notif-modal-btns .btn-sm').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  notifMinutosAntes = min;
+  localStorage.setItem('ap_notif_min', min);
+}
+
+function atualizarStatusModal(e){
+  var el = document.getElementById('notif-modal-status');
+  if(!el) return;
+  if(!e) return;
+  if(e.notifConfig){
+    var min = e.notifConfig.minutos;
+    el.innerHTML = '✓ Notificação configurada para <b style="color:var(--accent2)">' + min + ' min antes</b>';
+    el.style.color = 'var(--green)';
+  } else {
+    el.textContent = 'Nenhuma notificação configurada para esta entrada.';
+    el.style.color = 'var(--text2)';
+  }
+}
+
+function salvarNotifEntrada(){
+  if(!notifModalEntradaId) return;
+  var e = entries.find(function(x){ return x.id===notifModalEntradaId; });
+  if(!e) return;
+
+  var permOk = 'Notification' in window && Notification.permission === 'granted';
+  if(!permOk){
+    toast('Ative as notificações primeiro');
+    return;
+  }
+
+  var minBtn = document.querySelector('#notif-modal-btns .btn-sm.active');
+  var min = minBtn ? parseInt(minBtn.dataset.m) : 10;
+
+  e.notifConfig = { minutos: min, salvoEm: Date.now() };
+  sd(SK, entries);
+
+  atualizarStatusModal(e);
+  var btnRem = document.getElementById('notif-modal-remover');
+  if(btnRem) btnRem.style.display = 'block';
+
+  toast('✓ Notificação salva — ' + min + ' min antes do jogo');
+  // Atualiza botão na entrada
+  renderEntradas();
+}
+
+function removerNotifEntrada(){
+  if(!notifModalEntradaId) return;
+  var e = entries.find(function(x){ return x.id===notifModalEntradaId; });
+  if(!e) return;
+  delete e.notifConfig;
+  sd(SK, entries);
+  atualizarStatusModal(e);
+  var btnRem = document.getElementById('notif-modal-remover');
+  if(btnRem) btnRem.style.display = 'none';
+  toast('Notificação removida');
+  renderEntradas();
+}
+
+function testarNotifModal(){
+  if(!('Notification' in window) || Notification.permission !== 'granted'){
+    toast('Ative as notificações primeiro');
+    return;
+  }
+  var e = entries.find(function(x){ return x.id===notifModalEntradaId; });
+  var stakeT = e ? (e.total||0) : 0;
+  var cdT    = e ? (e.chanceDuplo&&e.chanceDuplo!=='N/A'?e.chanceDuplo:'') : '';
+  var casasT = e && e.casas ? e.casas.map(function(c){ return c.nome+' @'+parseFloat(c.odd).toFixed(2); }).join(' · ') : '';
+  var bodyT  = '💰 Total apostado: R$ '+stakeT.toFixed(2);
+  if(cdT)    bodyT += '\n🎯 Chance Duplo: '+cdT;
+  if(casasT) bodyT += '\n📋 '+casasT;
+  new Notification('🔔 ArbPro — Notificação de teste', {
+    body: bodyT || 'Notificações funcionando!',
+    requireInteraction: false,
+  });
+  toast('Notificação de teste enviada!');
+}
+
+async function pedirPermissaoNotif(){
+  if(!('Notification' in window)){ toast('Navegador não suporta notificações'); return; }
+  var perm = await Notification.requestPermission();
+  var permOk = perm === 'granted';
+  document.getElementById('notif-modal-perm-warn').style.display = permOk ? 'none' : 'block';
+  document.getElementById('notif-modal-perm-ok').style.display   = permOk ? 'block' : 'none';
+  if(permOk) toast('✓ Notificações ativadas!');
+  else toast('Permissão negada. Ative nas configurações do browser.');
+}
+
+// Check a cada 30s — dispara notificação baseada na config de cada entrada
+function checkNotificacoesPorEntrada(){
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  var now = new Date();
+  entries.filter(function(e){
+    return e.resultado==='pendente' && e.notifConfig && e.eventoData && e.eventoHora;
+  }).forEach(function(e){
+    var p=e.eventoData.split('-'), hp=e.eventoHora.split(':');
+    var dt=new Date(p[0],p[1]-1,p[2],parseInt(hp[0]),parseInt(hp[1]));
+    var diff=Math.round((dt-now)/60000);
+    var min=e.notifConfig.minutos||10;
+    var chave=String(e.id)+'_notif_'+min;
+    if(diff>=(min-2) && diff<=(min+2) && !notifEnviadas.has(chave)){
+      notifEnviadas.add(chave);
+      var stakeTotal = e.total||0;
+      var cdStr  = (e.chanceDuplo&&e.chanceDuplo!=='N/A') ? e.chanceDuplo : '';
+      var casasN = e.casas ? e.casas.map(function(c){ return c.nome+' @'+parseFloat(c.odd).toFixed(2); }).join(' · ') : '';
+      var titulo = '⏰ ' + diff + ' min para o jogo!';
+      var corpo  = '💰 Total apostado: R$ '+stakeTotal.toFixed(2);
+      if(cdStr)  corpo += '\nChance Duplo: '+cdStr;
+      if(casasN) corpo += '\n'+casasN;
+      new Notification(titulo, {
+        body: corpo,
+        tag: 'arbpro_'+e.id,
+        requireInteraction: true,
+      });
+    }
+  });
+}
+setInterval(checkNotificacoesPorEntrada, 30000);
+setTimeout(checkNotificacoesPorEntrada, 3000);
+
+// ── EXPORT ─────────────────────────────────────────────────────────────────
+function exportCSV(){
+  const f=filterE(entries,filterEntradas);if(!f.length){toast('Sem entradas');return}
+  const rows=[['Data','Hora','Tipo','Evento','Casas','Total','Lucro','ROI%','Resultado']];
+  f.forEach(e=>{const cs=e.casas.map(c=>`${c.nome}${c.ref?'[REF]':''}${c.freebet?'[FB]':''}${c.proc?'[Proc]':''}[${c.usuarios?.join('+')||'—'}]@${c.odd}(R$${c.stake})`).join('|');rows.push([e.data,e.hora,e.tipo,e.evento,cs,e.total.toFixed(2),e.lucro.toFixed(2),e.roi.toFixed(2),e.resultado])});
+  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(';')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);a.download=`arbpro_${new Date().toISOString().slice(0,10)}.csv`;a.click();toast('CSV exportado!');
+}
+
+// ── TOAST ──────────────────────────────────────────────────────────────────
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+
+// ── DROPDOWN GLOBAL ────────────────────────────────────────────────────────
+document.addEventListener('click',e=>{if(activeDD&&!activeDD.contains(e.target)){activeDD.querySelector('.dropdown')?.classList.remove('open');activeDD=null}});
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+addCasa();addCasa();addCasa();
+atualizarBotaoAddAposta();
+document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
+// inicializa status API
+// render inicial
+renderContas();
+</script>
+</body>
+</html>
