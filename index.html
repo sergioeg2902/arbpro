@@ -2402,7 +2402,10 @@ function buildCard(e, isPend){
   h += '<span>'+ti.icon+' '+ti.label+'</span>';
   h += '<span>📅 '+e.data+(e.eventoHora?' '+e.eventoHora:'')+'</span>';
   if(e.chanceDuplo&&e.chanceDuplo!=='N/A') h += '<span>🎯 CD: <b style="color:var(--accent2)">'+e.chanceDuplo+'</b></span>';
+  var temFB=(e.casas||[]).some(function(c){return c.freebet;});
+  var totalFB=(e.casas||[]).filter(function(c){return c.freebet;}).reduce(function(a,c){return a+parseFloat(c.stake);},0);
   h += '<span style="font-family:var(--mono)">Total: R$ '+stakeTotal.toFixed(2)+'</span>';
+  if(temFB) h += '<span style="font-family:var(--mono);color:var(--purple)">💜 FB: R$ '+totalFB.toFixed(2)+'</span>';
   h += '<span style="font-family:var(--mono);color:'+(lucroEst>=0?'var(--green)':'var(--red)')+'">Lucro est.: '+(lucroEst>=0?'+':'')+lucroEst.toFixed(2)+'</span>';
   h += '</div>';
 
@@ -2426,15 +2429,23 @@ function buildCard(e, isPend){
       var isPos = liq>=0;
       var isBateu = ag.indexOf(i)>=0;
 
+      var rowBg = isBateu ? 'rgba(0,230,118,.06)' : c.freebet ? 'rgba(206,147,216,.06)' : '';
       h += '<div style="display:grid;grid-template-columns:1fr 60px 64px '+(isPend?'70px':'40px')+';'
         +'gap:0;align-items:center;border-top:1px solid var(--border);'
-        +'background:'+(isBateu?'rgba(0,230,118,.06)':'')+';">';
+        +'background:'+rowBg+';'
+        +(c.freebet?'border-left:3px solid var(--purple);':'')
+        +'">';
 
       // Nome + odd + stake
       h += '<div style="padding:7px 8px;min-width:0">'
-        +'<div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+c.nome+'</div>'
+        +'<div style="display:flex;align-items:center;gap:5px;overflow:hidden">'
+        +'<span style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">'+c.nome+'</span>'
+        +(c.freebet?'<span style="flex-shrink:0;font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;background:rgba(206,147,216,.18);border:1px solid rgba(206,147,216,.35);color:var(--purple)">💜 FB</span>':'')
+        +'</div>'
         +(c.protegidoPor?'<div style="margin-top:3px;display:flex;flex-wrap:wrap;gap:3px">'+(Array.isArray(c.protegidoPor)?c.protegidoPor:[c.protegidoPor]).map(function(n){return '<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:1px 7px;border-radius:99px;background:rgba(255,183,77,.12);border:1px solid rgba(255,183,77,.3);color:var(--amber)">🛡️ '+esc(n)+'</span>';}).join('')+'</div>':'')
-        +'<div style="font-size:10px;color:var(--text2);font-family:var(--mono)">@'+o.toFixed(2)+' · R$'+s.toFixed(2)+'</div>'
+        +'<div style="font-size:10px;color:var(--text2);font-family:var(--mono)">@'+o.toFixed(2)
+        +' · '+(c.freebet?'<span style="color:var(--purple)">💜 FB R$'+s.toFixed(2)+'</span>':'R$'+s.toFixed(2))
+        +'</div>'
         +'</div>';
 
       // Retorno
