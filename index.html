@@ -487,18 +487,19 @@
             <div id="calc-result" style="margin-top:8px;font-size:12px"></div>
           </div>
         </details>
-        <button class="btn-primary" onclick="salvarSB()">Salvar entrada</button>
-      </div>
 
-      <!-- JOGOS INTEGRADO -->
-      <div style="margin-top:20px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <span class="section-title">Próximos jogos</span>
-          <div style="font-size:11px;color:var(--text2)" id="jogos-updated"></div>
+        <!-- JOGOS — abaixo da calculadora -->
+        <div style="margin:12px 0 4px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <span class="section-title" style="font-size:13px">📅 Selecionar jogo(s)</span>
+            <div style="font-size:10px;color:var(--text2)" id="jogos-updated"></div>
+          </div>
+          <input type="text" id="busca-jogo" placeholder="Buscar time ou competição..." style="margin-bottom:8px" oninput="renderJogos()">
+          <div class="comp-bar" id="comp-bar"></div>
+          <div id="jogos-lista"></div>
         </div>
-        <input type="text" id="busca-jogo" placeholder="Buscar time ou competição..." style="margin-bottom:10px" oninput="renderJogos()">
-        <div class="comp-bar" id="comp-bar"></div>
-        <div id="jogos-lista"></div>
+
+        <button class="btn-primary" onclick="salvarSB()">Salvar entrada</button>
       </div>
     </div>
 
@@ -751,7 +752,7 @@ let anUsers=[];
 let entries=ld(SK), contasSalvas=ld(CK), carteiraFB=ld(FBCK);
 let activeDD=null, filterEntradas='semana', filterResumo='hoje', compFilter='all', compSel='all', filterHist='tudo';
 let notifMinutosAntes=parseInt(localStorage.getItem('ap_notif_min')||'10');
-let jogoSelecionado=null, fbFiltro='disp', fbTipoSel='SNR';
+let jogosSelected=[], fbFiltro='disp', fbTipoSel='SNR';
 let jogosData=[];
 const periodoLabel={hoje:'hoje',semana:'esta semana',mes:'este mês',tudo:'todos'};
 
@@ -870,6 +871,7 @@ function salvarAN(){
   document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
   document.getElementById('an-casa').value='';document.getElementById('an-odd').value='';document.getElementById('an-stake').value='';
   document.getElementById('an-result').style.display='none';
+  jogosSelected=[];document.getElementById('jogo-banner').style.display='none';
   anUsers=[];renderANChips();resetCD();checkAlertas();renderResumo();toast('Aposta salva!','ok');setTimeout(function(){navTo('entradas',document.getElementById('nav-entradas'));},600);
 }
 
@@ -1435,12 +1437,12 @@ function salvarSB(){
     document.getElementById('opt-proc-'+cid)?.classList.remove('sel-green');
   });
   refCasaId=null;document.getElementById('retorno-panel').style.display='none';
-  document.getElementById('jogo-banner').style.display='none';jogoSelecionado=null;
+  jogosSelected=[];document.getElementById('jogo-banner').style.display='none';
   resetCD();checkAlertas();renderResumo();toast('Entrada salva!','ok');setTimeout(function(){navTo('entradas',document.getElementById('nav-entradas'));},600);
 }
 
 
-function limparJogo(){jogoSelecionado=null;document.getElementById('jogo-banner').style.display='none';document.getElementById('f-evento').value='';document.getElementById('f-data').value=new Date().toISOString().slice(0,10);document.getElementById('f-hora').value=''}
+function limparJogo(){jogosSelected=[];atualizarCamposJogos();renderJogos();}
 
 // ── JOGOS EMBUTIDOS ──────────────────────────────────────────────────────────
 
@@ -1737,7 +1739,7 @@ function renderJogos(){
     const jogos = porDia[dia].sort((a,b)=>a.hora.localeCompare(b.hora));
     return `<div class="day-label">${fmtDia(dia)}</div>`
       + jogos.map(j=>{
-          const sel = jogoSelecionado?.data===j.data && jogoSelecionado?.home===j.home;
+          const sel = jogosSelected.some(s=>s.data===j.data&&s.home===j.home);
           const cor = COMP_COLORS[j.comp]||'var(--text2)';
           return `<div class="match ${sel?'selected':''}" onclick="selJogo(${JSON.stringify(j).replace(/"/g,'&quot;')})">
             <div style="flex:1;min-width:0">
@@ -1753,19 +1755,33 @@ function renderJogos(){
 }
 
 function selJogo(j){
-  jogoSelecionado = j;
-  document.getElementById('f-evento').value = j.home+' x '+j.away+' — '+j.comp;
-  document.getElementById('f-data').value   = j.data;
-  document.getElementById('f-hora').value   = j.hora;
-  document.getElementById('jogo-banner-text').textContent = j.home+' x '+j.away+' · '+j.hora;
-  document.getElementById('jogo-banner').style.display = 'flex';
-  // vai para aba +Nova
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('page-nova').classList.add('active');
-  document.getElementById('nav-nova').classList.add('active');
-  toast('Jogo preenchido!');
+  const idx = jogosSelected.findIndex(s=>s.data===j.data&&s.home===j.home);
+  if(idx>=0){ jogosSelected.splice(idx,1); } else { jogosSelected.push(j); }
+  atualizarCamposJogos();
   renderJogos();
+}
+
+function atualizarCamposJogos(){
+  const banner = document.getElementById('jogo-banner');
+  const bannerText = document.getElementById('jogo-banner-text');
+  if(!jogosSelected.length){
+    banner.style.display='none';
+    document.getElementById('f-evento').value='';
+    document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
+    document.getElementById('f-hora').value='';
+    return;
+  }
+  // preenche campos com todos os jogos selecionados
+  const sorted = jogosSelected.slice().sort((a,b)=>a.hora.localeCompare(b.hora));
+  document.getElementById('f-evento').value = sorted.map(j=>j.home+' x '+j.away+' — '+j.comp).join(' / ');
+  document.getElementById('f-data').value   = sorted[0].data;
+  document.getElementById('f-hora').value   = sorted[0].hora;
+  // banner
+  const n = jogosSelected.length;
+  bannerText.textContent = n===1
+    ? sorted[0].home+' x '+sorted[0].away+' · '+sorted[0].hora
+    : n+' jogos: '+sorted.map(j=>j.home.split(' ')[0]+' x '+j.away.split(' ')[0]).join(', ');
+  banner.style.display='flex';
 }
 
 // ── CARTEIRA ───────────────────────────────────────────────────────────────
