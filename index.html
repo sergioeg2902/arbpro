@@ -1068,6 +1068,8 @@ function salvarAN(){
   const stake=parseFloat(document.getElementById('an-stake').value);
   if(!odd||!stake){toast('Informe odd e valor');return}
   const ret=odd*stake, lucro=ret-stake;
+  var _anAvisos=verificarSaldoParaAposta([{usuario:(anUsers[0]||'').trim(),casaNome:casa,stake:stake}]);
+  if(_anAvisos.length&&!confirm('⚠️ Saldo insuficiente:\n'+_anAvisos.join('\n')+'\n\nContinuar mesmo assim?'))return;
   const now=new Date();
   entries.push({id:uid(),tipo:'aposta_normal',evento:ev,
     casas:[{nome:casa,usuarios:anUsers.slice(),odd,stake,freebet:false,proc:false}],
@@ -1799,6 +1801,16 @@ function salvarSB(){
     if(isProc){const v=parseFloat(document.getElementById('proc-valor-'+cid)?.value);if(v){const tb=document.getElementById('proc-tipo-'+cid)?.querySelector('.btn-sm.active');fbsEsp.push({casa:nomeCasas,usuarios:usrs,valor:v,tipo:tb?.dataset.v||'SNR',validade:document.getElementById('proc-val-'+cid)?.value||''})}}
   });
   if(!ok||casas.length<2){toast('Preencha ao menos 2 casas');return}
+  var _sbChecks=[];
+  casaIds.forEach(function(cid){
+    (linhasByAposta[cid]||[]).forEach(function(l){
+      if(l.isFreebet||l.isFB)return;
+      var stk=parseFloat(l.stake)||0;if(!stk)return;
+      _sbChecks.push({usuario:(l.usuario||'').trim(),casaNome:(l.casa||'').trim(),stake:stk});
+    });
+  });
+  var _sbAvisos=verificarSaldoParaAposta(_sbChecks);
+  if(_sbAvisos.length&&!confirm('⚠️ Saldo insuficiente em:\n'+_sbAvisos.join('\n')+'\n\nContinuar mesmo assim?'))return;
   const lucro=Math.min(...retornos)-ts,roi=ts>0?lucro/ts*100:0;
   const now=new Date();
   entries.push({id:uid(),tipo:'surebet',evento:ev,casas,total:ts,lucro,roi,resultado:'pendente',
@@ -3917,6 +3929,25 @@ function fecharTransferenciaModal(){
 }
 
 // ── INTEGRAÇÃO APOSTAS ↔ USUÁRIOS ────────────────────────────────────────
+function verificarSaldoParaAposta(checks){
+  // checks = [{usuario, casaNome, stake}]
+  var avisos=[];
+  checks.forEach(function(item){
+    if(!item.stake||!item.casaNome)return;
+    var conta=item.usuario?contasSalvas.find(function(ct){return ct.apelido===item.usuario;}):null;
+    if(!conta&&contasSalvas.length===1)conta=contasSalvas[0];
+    if(!conta)return;
+    var casaObj=(conta.casas||[]).find(function(x){return x.nome.toLowerCase()===item.casaNome.toLowerCase();});
+    if(!casaObj)return;
+    var saldo=parseFloat(casaObj.saldo||0);
+    if(saldo<item.stake){
+      var nome=item.usuario||(conta.apelido||'');
+      avisos.push((nome?nome+' @ ':'')+item.casaNome+': saldo R$ '+saldo.toFixed(2)+' / stake R$ '+item.stake.toFixed(2));
+    }
+  });
+  return avisos;
+}
+
 function descontarStakeUsuarios(entry){
   if(!entry.casas)return;
   var alterou=false;
