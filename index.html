@@ -763,6 +763,21 @@
     </button>
   </nav>
 </div>
+  <!-- MODAL SELEÇÃO FREEBET -->
+  <div id="fb-sel-modal" style="display:none;position:fixed;inset:0;z-index:9100;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);align-items:center;justify-content:center">
+    <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:20px;width:calc(100% - 32px);max-width:460px;max-height:80vh;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <span style="font-size:15px;font-weight:700">💜 Selecionar Freebet</span>
+        <button onclick="fecharFBModal()" style="background:none;border:none;color:var(--text2);font-size:24px;cursor:pointer;line-height:1">×</button>
+      </div>
+      <div id="fb-modal-lista"></div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn-primary" onclick="confirmarFBModal()" style="flex:1;background:linear-gradient(135deg,var(--purple),#9c27b0)">Inserir freebet</button>
+        <button class="btn-sm" onclick="fecharFBModal()" style="padding:0 16px">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL NOTIFICAÇÃO -->
   <div id="notif-modal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:flex-end;justify-content:center">
     <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r) var(--r) 0 0;padding:20px;width:100%;max-width:480px;animation:slideUp .2s ease">
@@ -1016,7 +1031,8 @@ function addCasa(){
     var ch=document.getElementById('fb-chk-'+c);if(!ch){ch=document.createElement('input');ch.type='checkbox';ch.id='fb-chk-'+c;ch.style.display='none';document.getElementById('cb-'+c).appendChild(ch);}
     var isOn=b.classList.contains('sel-purple');
     ch.checked=isOn;
-    var fbp=document.getElementById('fb-panel-'+c);if(fbp){fbp.style.display=isOn?'block':'none';if(isOn)renderFBPanel(c);}
+    if(isOn){ abrirFBModal(c); }
+    else { fbSelecionadaByCid[c]=null; var fp=document.getElementById('fb-panel-'+c);if(fp)fp.style.display='none'; }
     calcLucro();
   }})(cid,bSnr));
   tg.appendChild(bSnr);
@@ -1159,45 +1175,79 @@ function atualizarLinha(cid, idx, campo, val){
 }
 function renderFBPanel(cid){
   var list=document.getElementById('fb-panel-list-'+cid);if(!list)return;
-  var disponiveis=carteiraFB.filter(function(f){return f.status==='disponivel';});
-  var sel=fbSelecionadaByCid[cid]||null;
-  if(!disponiveis.length){
-    list.innerHTML='<div style="color:var(--text2);font-size:12px;padding:4px 0">Nenhuma freebet disponível na carteira</div>';
-    return;
+  var sel=fbSelecionadaByCid[cid];
+  var fp=document.getElementById('fb-panel-'+cid);
+  if(!sel){if(fp)fp.style.display='none';list.innerHTML='';return;}
+  var fb=carteiraFB.find(function(f){return f.id===sel.fbId;});
+  if(!fb){if(fp)fp.style.display='none';list.innerHTML='';return;}
+  if(fp)fp.style.display='block';
+  list.innerHTML='<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:rgba(206,147,216,.1);border-radius:var(--r2)">'
+    +'<span>💜</span>'
+    +'<div style="flex:1;min-width:0"><b style="font-size:12px">'+esc(fb.casa)+'</b> <span style="font-size:11px;color:var(--text2)">'+esc(fb.conta)+'</span></div>'
+    +'<span style="font-weight:700;color:var(--purple);font-size:13px;font-family:var(--mono)">R$ '+parseFloat(sel.valorUsar).toFixed(2)+'</span>'
+    +'<button onclick="abrirFBModal('+cid+')" style="background:none;border:1px solid var(--border2);border-radius:var(--r2);color:var(--text2);cursor:pointer;font-size:11px;padding:2px 8px">Trocar</button>'
+    +'</div>';
+}
+
+// ── MODAL FREEBET ───────────────────────────────────────────────────────────
+var fbModalCid=null, fbModalSelTemp=null;
+function abrirFBModal(cid){
+  fbModalCid=cid;
+  fbModalSelTemp=fbSelecionadaByCid[cid]?Object.assign({},fbSelecionadaByCid[cid]):null;
+  renderFBModalLista();
+  document.getElementById('fb-sel-modal').style.display='flex';
+}
+function fecharFBModal(){
+  document.getElementById('fb-sel-modal').style.display='none';
+  if(!fbSelecionadaByCid[fbModalCid]){
+    var btn=document.getElementById('opt-snr-'+fbModalCid);if(btn)btn.classList.remove('sel-purple');
+    var ch=document.getElementById('fb-chk-'+fbModalCid);if(ch)ch.checked=false;
+    calcLucro();
   }
+  fbModalCid=null;fbModalSelTemp=null;
+}
+function renderFBModalLista(){
+  var list=document.getElementById('fb-modal-lista');if(!list)return;
+  var disponiveis=carteiraFB.filter(function(f){return f.status==='disponivel';});
+  if(!disponiveis.length){list.innerHTML='<div style="color:var(--text2);font-size:13px;padding:12px 0;text-align:center">Nenhuma freebet disponível na carteira.</div>';return;}
   list.innerHTML=disponiveis.map(function(f){
-    var isSel=sel&&sel.fbId===f.id;
-    var card='<div id="fb-card-'+cid+'-'+f.id+'" onclick="selecionarFBParaUso('+cid+','+f.id+')" '
-      +'style="cursor:pointer;padding:7px 8px;margin-top:4px;border-radius:var(--r2);border:1px solid '
-      +(isSel?'var(--purple)':'rgba(206,147,216,.2)')+';background:'
-      +(isSel?'rgba(206,147,216,.15)':'rgba(206,147,216,.05)')+';">'
-      +'<div style="display:flex;align-items:center;gap:6px">'
-      +'<span style="font-size:11px">💜</span>'
-      +'<span style="font-size:12px;font-weight:600">'+esc(f.casa)+'</span>'
-      +'<span style="font-size:11px;color:var(--text2)">'+esc(f.conta)+'</span>'
-      +'<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:rgba(206,147,216,.15);color:var(--purple)">'+esc(f.tipo)+'</span>'
-      +'<span style="font-size:12px;font-weight:700;color:var(--purple);margin-left:auto">R$ '+parseFloat(f.valor).toFixed(2)+'</span>'
-      +(f.validade?'<span style="font-size:10px;color:var(--text2)">val: '+esc(f.validade)+'</span>':'')
+    var isSel=fbModalSelTemp&&fbModalSelTemp.fbId===f.id;
+    return '<div id="fb-mcard-'+f.id+'" onclick="selecionarFBModal('+f.id+')" style="cursor:pointer;padding:12px;margin-bottom:8px;border-radius:var(--r2);border:1px solid '+(isSel?'var(--purple)':'rgba(206,147,216,.2)')+';background:'+(isSel?'rgba(206,147,216,.12)':'var(--bg3)')+';">'
+      +'<div style="display:flex;align-items:center;gap:10px">'
+      +'<div style="width:18px;height:18px;border-radius:50%;border:2px solid '+(isSel?'var(--purple)':'var(--border2)')+';background:'+(isSel?'var(--purple)':'transparent')+';flex-shrink:0"></div>'
+      +'<div style="flex:1">'
+      +'<span style="font-size:14px;font-weight:700">'+esc(f.casa)+'</span>'
+      +' <span style="font-size:12px;color:var(--text2)">'+esc(f.conta)+'</span>'
+      +' <span style="font-size:11px;padding:2px 7px;border-radius:10px;background:rgba(206,147,216,.15);color:var(--purple)">'+esc(f.tipo)+'</span>'
+      +'</div>'
+      +'<span style="font-size:15px;font-weight:700;color:var(--purple);font-family:var(--mono)">R$ '+parseFloat(f.valor).toFixed(2)+'</span>'
+      +'</div>'
+      +(f.validade?'<div style="font-size:11px;color:var(--text2);margin-top:5px;margin-left:28px">⏳ Válida até '+esc(f.validade.split('-').reverse().join('/'))+'</div>':'')
+      +(isSel?'<div style="margin-top:10px;margin-left:28px;display:flex;align-items:center;gap:8px" onclick="event.stopPropagation()">'
+        +'<span style="font-size:12px;color:var(--text2)">Valor a usar:</span>'
+        +'<input type="number" id="fb-modal-val" value="'+parseFloat(fbModalSelTemp.valorUsar).toFixed(2)+'" min="0.01" max="'+f.valor+'" step="0.01" '
+        +'style="width:100px;padding:5px 8px;font-size:13px;background:var(--bg2);border:1px solid var(--purple);border-radius:var(--r2);color:var(--text);font-family:var(--mono)" '
+        +'oninput="if(fbModalSelTemp)fbModalSelTemp.valorUsar=parseFloat(this.value)||0">'
+        +'<span style="font-size:12px;color:var(--text2)">/ R$ '+parseFloat(f.valor).toFixed(2)+'</span>'
+        +'</div>':'')
       +'</div>';
-    if(isSel){
-      card+='<div style="margin-top:7px;display:flex;align-items:center;gap:6px" onclick="event.stopPropagation()">'
-        +'<span style="font-size:11px;color:var(--text2)">Valor a usar:</span>'
-        +'<input type="number" id="fb-uso-val-'+cid+'" value="'+sel.valorUsar.toFixed(2)+'" min="0.01" max="'+f.valor+'" step="0.01" '
-        +'style="width:90px;padding:4px 6px;font-size:12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text);font-family:var(--mono)" '
-        +'oninput="fbSelecionadaByCid['+cid+'].valorUsar=parseFloat(this.value)||0">'
-        +'<span style="font-size:11px;color:var(--text2)">/ R$ '+parseFloat(f.valor).toFixed(2)+'</span>'
-        +'</div>';
-    }
-    card+='</div>';
-    return card;
   }).join('');
 }
-function selecionarFBParaUso(cid, fbId){
+function selecionarFBModal(fbId){
   var fb=carteiraFB.find(function(f){return f.id===fbId;});if(!fb)return;
-  var jasel=fbSelecionadaByCid[cid];
-  if(jasel&&jasel.fbId===fbId){ fbSelecionadaByCid[cid]=null; }
-  else{ fbSelecionadaByCid[cid]={fbId:fbId, valorUsar:fb.valor}; }
-  renderFBPanel(cid);
+  fbModalSelTemp=(fbModalSelTemp&&fbModalSelTemp.fbId===fbId)?null:{fbId:fbId,valorUsar:fb.valor};
+  renderFBModalLista();
+}
+function confirmarFBModal(){
+  if(!fbModalSelTemp||!fbModalSelTemp.fbId){toast('Selecione uma freebet','err');return;}
+  var v=document.getElementById('fb-modal-val');
+  if(v)fbModalSelTemp.valorUsar=parseFloat(v.value)||fbModalSelTemp.valorUsar;
+  if(!fbModalSelTemp.valorUsar||fbModalSelTemp.valorUsar<=0){toast('Informe o valor a usar','err');return;}
+  fbSelecionadaByCid[fbModalCid]=Object.assign({},fbModalSelTemp);
+  renderFBPanel(fbModalCid);
+  document.getElementById('fb-sel-modal').style.display='none';
+  var c=fbModalCid;fbModalCid=null;fbModalSelTemp=null;
+  toast('Freebet inserida!','ok');
 }
 function verificarDesativarAmigo(cid){
   var temAmigo=(linhasByAposta[cid]||[]).some(function(l){return l.isAmigo;});
@@ -2030,20 +2080,66 @@ function renderCarteira(){
       <div class="fb-actions">
         ${!isU?`<button class="btn-sm purple-c" onclick="fbSetStatus(${f.id},'usada')">Marcar usada</button>`:`<button class="btn-sm" onclick="fbSetStatus(${f.id},'disponivel')">Restaurar</button>`}
         ${!isU?`<button class="btn-sm" onclick="fbAcumularPrompt(${f.id})" style="border-color:var(--purple);color:var(--purple)">+ Acumular</button>`:''}
+        <button class="btn-sm" onclick="fbEditarPrompt(${f.id})" style="border-color:var(--blue);color:var(--blue)">Editar</button>
         <button class="btn-sm red" onclick="fbRem(${f.id})">Remover</button>
       </div>
-      <div id="fb-acum-${f.id}" style="display:none;margin-top:8px;display:none;align-items:center;gap:6px">
+      <div id="fb-acum-${f.id}" style="display:none;margin-top:8px;align-items:center;gap:6px">
         <span style="font-size:12px;color:var(--text2)">Adicionar R$</span>
         <input type="number" id="fb-acum-val-${f.id}" placeholder="0.00" min="0.01" step="0.01"
           style="width:90px;padding:4px 6px;font-size:12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text);font-family:var(--mono)">
         <button class="btn-sm" onclick="fbAcumularConfirmar(${f.id})" style="border-color:var(--purple);color:var(--purple)">OK</button>
         <button class="btn-sm" onclick="document.getElementById('fb-acum-${f.id}').style.display='none'">✕</button>
       </div>
+      <div id="fb-edit-${f.id}" style="display:none;margin-top:10px;background:var(--bg3);border-radius:var(--r2);padding:10px;border:1px solid var(--border2)">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+          <div><div class="field-label" style="margin-top:0">Casa</div><input id="fb-edit-casa-${f.id}" type="text" style="width:100%;padding:5px 8px;font-size:12px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text)"></div>
+          <div><div class="field-label" style="margin-top:0">Conta</div><input id="fb-edit-conta-${f.id}" type="text" style="width:100%;padding:5px 8px;font-size:12px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text)"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+          <div><div class="field-label" style="margin-top:0">Valor (R$)</div><input id="fb-edit-valor-${f.id}" type="number" step="0.01" style="width:100%;padding:5px 8px;font-size:12px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text);font-family:var(--mono)"></div>
+          <div><div class="field-label" style="margin-top:0">Tipo</div><select id="fb-edit-tipo-${f.id}" style="width:100%;padding:5px 8px;font-size:12px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text)"><option value="SNR">SNR</option><option value="SR">SR</option></select></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+          <div><div class="field-label" style="margin-top:0">Validade</div><input id="fb-edit-val-${f.id}" type="date" style="width:100%;padding:5px 8px;font-size:12px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text)"></div>
+          <div><div class="field-label" style="margin-top:0">Obs</div><input id="fb-edit-obs-${f.id}" type="text" style="width:100%;padding:5px 8px;font-size:12px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text)"></div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn-sm" onclick="fbEditarConfirmar(${f.id})" style="flex:1;padding:8px;border-color:var(--blue);color:var(--blue)">Salvar alterações</button>
+          <button class="btn-sm" onclick="document.getElementById('fb-edit-${f.id}').style.display='none'">Cancelar</button>
+        </div>
+      </div>
     </div>`;
   }).join('');
 }
 function fbSetStatus(id,s){carteiraFB.forEach(f=>{if(f.id===id)f.status=s});sd(FBCK,carteiraFB);renderCarteira();renderResumo()}
 function fbRem(id){carteiraFB=carteiraFB.filter(f=>f.id!==id);sd(FBCK,carteiraFB);renderCarteira();renderResumo()}
+function fbEditarPrompt(id){
+  const fb=carteiraFB.find(f=>f.id===id);if(!fb)return;
+  document.querySelectorAll('[id^="fb-edit-"],[id^="fb-acum-"]').forEach(e=>e.style.display='none');
+  const el=document.getElementById('fb-edit-'+id);if(!el)return;
+  document.getElementById('fb-edit-casa-'+id).value=fb.casa;
+  document.getElementById('fb-edit-conta-'+id).value=fb.conta==='—'?'':fb.conta;
+  document.getElementById('fb-edit-valor-'+id).value=fb.valor;
+  document.getElementById('fb-edit-tipo-'+id).value=fb.tipo;
+  document.getElementById('fb-edit-val-'+id).value=fb.validade||'';
+  document.getElementById('fb-edit-obs-'+id).value=fb.obs||'';
+  el.style.display='block';
+}
+function fbEditarConfirmar(id){
+  const fb=carteiraFB.find(f=>f.id===id);if(!fb)return;
+  const casa=document.getElementById('fb-edit-casa-'+id).value.trim();
+  const valor=parseFloat(document.getElementById('fb-edit-valor-'+id).value);
+  if(!casa||!valor){toast('Preencha casa e valor','err');return;}
+  fb.casa=casa;
+  fb.conta=document.getElementById('fb-edit-conta-'+id).value.trim()||'—';
+  fb.valor=valor;
+  fb.tipo=document.getElementById('fb-edit-tipo-'+id).value;
+  fb.validade=document.getElementById('fb-edit-val-'+id).value;
+  fb.obs=document.getElementById('fb-edit-obs-'+id).value.trim();
+  sd(FBCK,carteiraFB);
+  renderCarteira();renderResumo();
+  toast('Freebet atualizada!','ok');
+}
 function fbAcumularPrompt(id){
   const el=document.getElementById('fb-acum-'+id);if(!el)return;
   el.style.display=el.style.display==='none'?'flex':'none';
@@ -3056,6 +3152,12 @@ function fecharNotifModal(){
   modal.classList.remove('open');
   notifModalEntradaId = null;
 }
+
+// Fecha modal FB ao clicar fora
+document.addEventListener('click', function(ev){
+  var fbModal=document.getElementById('fb-sel-modal');
+  if(fbModal&&fbModal.style.display==='flex'&&ev.target===fbModal)fecharFBModal();
+});
 
 // Fecha ao clicar fora
 document.addEventListener('click', function(ev){
