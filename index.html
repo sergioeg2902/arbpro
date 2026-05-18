@@ -1812,6 +1812,40 @@ function salvarSB(){
     sd(FBCK,carteiraFB);
   });
   sd(SK,entries);
+  // auto-criar proteções para linhas cobertas por amigos
+  var _entradaId=entries[entries.length-1].id;
+  var _eventoNome=ev;
+  var _eventoData=document.getElementById('f-data').value||'';
+  var _eventoHora=document.getElementById('f-hora').value||'';
+  var _protCriadas=0;
+  casaIds.forEach(function(cid){
+    var isAmigo=document.getElementById('amigo-chk-'+cid)?.checked;
+    var protAmigos=isAmigo?(amigosSelecionadosByCid[cid]||[]):[];
+    if(!protAmigos.length)return;
+    var linhas=linhasByAposta[cid]||[];
+    var validas=linhas.filter(function(l){return l.casa&&parseFloat(l.odd)>0&&parseFloat(l.stake)>0;});
+    if(!validas.length)return;
+    var apostas=validas.map(function(l){return{casa:l.casa,conta:l.usuario||'',odd:parseFloat(l.odd),stake:parseFloat(l.stake)};});
+    var first=apostas[0];
+    var totalStk=apostas.reduce(function(s,a){return s+a.stake;},0);
+    var lucroVal=apostas.reduce(function(s,a){return s+(a.odd-1)*a.stake;},0);
+    protAmigos.forEach(function(amigo){
+      protecoes.push({
+        id:Date.now()+(_protCriadas++),
+        amigo:amigo,direcao:'rec',
+        evento:_eventoNome,eventoData:_eventoData,eventoHora:_eventoHora,
+        apostas:apostas,odd:first.odd,stake:totalStk,casa:first.casa,
+        retorno:first.odd*first.stake,lucro:lucroVal,
+        resultado:'pendente',data:new Date().toLocaleDateString('pt-BR'),
+        entradaId:_entradaId
+      });
+    });
+  });
+  if(_protCriadas>0){
+    sd(PRTK,protecoes);
+    atualizarFiltroAmigos();
+    toast('Proteção registrada automaticamente para '+_protCriadas+' amigo(s)!','ok');
+  }
   // reset
   document.getElementById('f-evento').value='';document.getElementById('f-hora').value='';
   document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
