@@ -3561,7 +3561,9 @@ function buildUserCasas(c){
 
   // Cabeçalho casas
   h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
-  h+='<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em">Casas ('+comSaldo+' com saldo / '+casas.length+')</div>';
+  var qtLimitadas=casas.filter(function(x){return x.limitada;}).length;
+  var infoLim=qtLimitadas?' · <span style="color:var(--red)">'+qtLimitadas+' limitada'+(qtLimitadas>1?'s':'')+'</span>':'';
+  h+='<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em">Casas ('+comSaldo+' com saldo / '+casas.length+')'+infoLim+'</div>';
   h+='<button class="btn-sm" onclick="toggleTodasCasas('+c.id+')" style="font-size:11px">'+(mostrarTodas?'Só com saldo':'Ver todas')+'</button>';
   h+='</div>';
 
@@ -3585,7 +3587,7 @@ function buildUserCasas(c){
       +'</div>';
   } else {
     h+='<div style="border:1px solid var(--border);border-radius:var(--r2);overflow:hidden">';
-    h+='<div style="display:grid;grid-template-columns:1fr 44px 72px 72px 72px 22px;gap:0;background:var(--bg2);padding:7px 12px">';
+    h+='<div style="display:grid;grid-template-columns:1fr 44px 72px 72px 72px 40px;gap:0;background:var(--bg2);padding:7px 12px">';
     h+='<div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase">Casa</div>';
     h+='<div style="font-size:10px;font-weight:700;color:var(--purple);text-transform:uppercase;text-align:center">FB</div>';
     h+='<div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;text-align:center">Total</div>';
@@ -3604,6 +3606,7 @@ function buildUserCasas(c){
       var bgDisp=disp>0?'var(--green-bg)':disp<0?'rgba(255,78,106,.08)':'var(--bg3)';
       var bdDisp=disp>0?'rgba(0,230,118,.35)':disp<0?'rgba(255,78,106,.35)':'var(--border2)';
       var safeNome=esc(casa.nome);
+      var isLimitada=!!casa.limitada;
       var qtFB=(carteiraFB||[]).filter(function(fb){
         return fb.status==='disponivel'
           && (fb.casa||'').toLowerCase()===casa.nome.toLowerCase()
@@ -3614,9 +3617,12 @@ function buildUserCasas(c){
           && (fb.casa||'').toLowerCase()===casa.nome.toLowerCase()
           && (fb.conta===c.apelido||(fb.conta||'')==='—'||!(fb.conta||'').trim());
       }).reduce(function(a,fb){return a+(parseFloat(fb.valor)||0);},0);
-      h+='<div style="padding:8px 12px;border-top:1px solid var(--border)">';
-      h+='<div style="display:grid;grid-template-columns:1fr 44px 72px 72px 72px 22px;gap:4px;align-items:center">';
-      h+='<span style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+safeNome+'</span>';
+      h+='<div style="padding:8px 12px;border-top:1px solid var(--border)'+(isLimitada?';background:rgba(255,78,106,.04)':'')+'">';
+      h+='<div style="display:grid;grid-template-columns:1fr 44px 72px 72px 72px 40px;gap:4px;align-items:center">';
+      h+='<div style="min-width:0">';
+      h+='<span style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'+(isLimitada?';opacity:.5':'')+'">'+safeNome+'</span>';
+      if(isLimitada)h+=' <span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;background:rgba(255,78,106,.12);border:1px solid rgba(255,78,106,.35);color:var(--red);white-space:nowrap">⛔ Limitada</span>';
+      h+='</div>';
       // Coluna FB
       if(qtFB>0){
         h+='<div style="text-align:center;background:rgba(206,147,216,.1);border:1px solid rgba(206,147,216,.35);border-radius:var(--r2);padding:4px 2px" title="'+qtFB+' freebet(s) — R$ '+totalFBVal.toFixed(2)+'">';
@@ -3638,9 +3644,12 @@ function buildUserCasas(c){
       h+='<div style="font-size:9px;font-weight:700;color:'+corDisp+';text-transform:uppercase;letter-spacing:.03em">Livre</div>';
       h+='<div style="font-size:13px;font-weight:800;font-family:var(--mono);color:'+corDisp+'">'+disp.toFixed(0)+'</div>';
       h+='</div>';
+      h+='<div style="display:flex;flex-direction:column;align-items:center;gap:3px">';
+      h+='<button style="background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1;opacity:.7" onclick="toggleLimitadaCasa('+c.id+',\''+casa.nome.replace(/'/g,"\\'")+'\','+isLimitada+')" title="'+(isLimitada?'Remover limitação':'Marcar como limitada')+'">'+(isLimitada?'🔓':'⛔')+'</button>';
       h+='<button style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:14px;padding:0;opacity:.4" onclick="removCasaUsuario('+c.id+',\''+casa.nome.replace(/'/g,"\\'")+'\')" title="Remover">×</button>';
       h+='</div>';
-      h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;margin-top:6px">';
+      h+='</div>';
+      h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;margin-top:6px'+(isLimitada?';opacity:.5':'')+'">';
       h+='<button class="btn-sm" style="font-size:10px;padding:5px;border-color:rgba(0,230,118,.4);color:var(--green)" onclick="abrirTransacaoCasa('+c.id+','+idx+',\'add\')">↑ Dep.</button>';
       h+='<button class="btn-sm" style="font-size:10px;padding:5px;border-color:rgba(255,183,77,.5);color:var(--amber)" onclick="abrirTransacaoCasa('+c.id+','+idx+',\'bonus\')">🎰 Ganho</button>';
       h+='<button class="btn-sm" style="font-size:10px;padding:5px;border-color:rgba(255,112,67,.4);color:var(--orange)" onclick="abrirTransacaoCasa('+c.id+','+idx+',\'sloss\')">🎰 Perca</button>';
@@ -3704,6 +3713,16 @@ function removCasaUsuario(uid,nomeCasa){
     var det=document.getElementById('user-detail-'+uid);
     if(det){det.style.display='block';var c=contasSalvas.find(function(x){return x.id===uid;});var w=document.getElementById('casas-wrapper-'+uid);if(c&&w)w.innerHTML=buildUserCasas(c);}
   },80);
+}
+
+function toggleLimitadaCasa(uid,nomeCasa,atualLimitada){
+  var c=contasSalvas.find(function(x){return x.id===uid;});if(!c)return;
+  var casa=(c.casas||[]).find(function(x){return x.nome===nomeCasa;});if(!casa)return;
+  casa.limitada=!atualLimitada;
+  sd(CK,contasSalvas);
+  var w=document.getElementById('casas-wrapper-'+uid);
+  if(w)w.innerHTML=buildUserCasas(c);
+  toast(casa.limitada?'⛔ '+nomeCasa+' marcada como limitada':'🔓 Limitação de '+nomeCasa+' removida','ok');
 }
 
 // ── MODAL TRANSAÇÃO ───────────────────────────────────────────────────────
