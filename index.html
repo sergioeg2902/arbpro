@@ -489,15 +489,17 @@
         </details>
 
         <!-- JOGOS — abaixo da calculadora -->
-        <div style="margin:12px 0 4px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <span class="section-title" style="font-size:13px">📅 Selecionar jogo(s)</span>
-            <div style="font-size:10px;color:var(--text2)" id="jogos-updated"></div>
+        <details id="jogos-panel" style="margin:8px 0 4px;border-radius:var(--r2);overflow:hidden">
+          <summary style="cursor:pointer;font-size:13px;font-weight:700;color:var(--text2);padding:10px 14px;background:var(--bg3);list-style:none;display:flex;align-items:center;justify-content:space-between" onclick="if(!this.parentElement.open)renderJogos()">
+            <span style="display:flex;align-items:center;gap:6px">📅 Selecionar jogo(s)</span>
+            <span id="jogos-updated" style="font-size:10px;font-weight:400"></span>
+          </summary>
+          <div style="padding:12px 14px 8px;background:var(--bg3);border-top:1px solid var(--border)">
+            <input type="text" id="busca-jogo" placeholder="Buscar time ou competição..." style="margin-bottom:8px" oninput="renderJogos()">
+            <div class="comp-bar" id="comp-bar"></div>
+            <div id="jogos-lista"></div>
           </div>
-          <input type="text" id="busca-jogo" placeholder="Buscar time ou competição..." style="margin-bottom:8px" oninput="renderJogos()">
-          <div class="comp-bar" id="comp-bar"></div>
-          <div id="jogos-lista"></div>
-        </div>
+        </details>
 
         <button class="btn-primary" onclick="salvarSB()">Salvar entrada</button>
       </div>
