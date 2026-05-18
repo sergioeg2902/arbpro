@@ -676,6 +676,9 @@
         <button class="btn-primary" style="margin-top:12px" onclick="salvarProtecao()">Salvar proteção</button>
       </div>
 
+      <!-- Lucros compartilhados -->
+      <div id="prot-lucros-comp"></div>
+
       <!-- Saldos por amigo -->
       <div id="prot-saldos"></div>
 
@@ -809,6 +812,42 @@
       <div id="transacao-novo-saldo" style="font-size:20px;font-weight:800;font-family:var(--mono)"></div>
     </div>
     <button class="btn-primary" style="margin-top:0" onclick="confirmarTransacao()">✓ Confirmar</button>
+  </div>
+</div>
+
+<!-- MODAL COMPARTILHAR LUCRO -->
+<div class="modal-overlay" id="comp-lucro-modal">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <span style="font-size:15px;font-weight:700">💰 Compartilhar Lucro</span>
+      <button onclick="fecharCompLucroModal()" style="background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;line-height:1">×</button>
+    </div>
+    <div id="comp-lucro-evento" style="font-size:12px;color:var(--text2);margin-bottom:12px"></div>
+    <div style="background:var(--green-bg);border:1px solid rgba(0,230,118,.25);border-radius:var(--r2);padding:12px;margin-bottom:14px;text-align:center">
+      <div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Lucro total da operação</div>
+      <div id="comp-lucro-total" style="font-size:24px;font-weight:800;font-family:var(--mono);color:var(--green)">R$ 0,00</div>
+    </div>
+    <div class="field-label" style="margin-top:0">Amigo</div>
+    <div id="comp-lucro-amigos" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px"></div>
+    <div class="field-label" style="margin-top:0">Valor a enviar (R$)</div>
+    <input type="number" step="0.01" id="comp-lucro-valor" placeholder="0,00" style="font-size:20px;font-weight:700;text-align:center;margin-bottom:8px" oninput="atualizarPrevComp()">
+    <div style="display:flex;gap:6px;margin-bottom:12px">
+      <button class="btn-sm" style="flex:1;font-size:11px" onclick="setCompValor(0.5)">Metade (50%)</button>
+      <button class="btn-sm" style="flex:1;font-size:11px" onclick="setCompValor(1)">Tudo (100%)</button>
+    </div>
+    <div id="comp-lucro-preview" style="display:none;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);padding:10px;margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center">
+        <div>
+          <div style="font-size:9px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:3px">Você fica com</div>
+          <div id="comp-prev-eu" style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--green)">—</div>
+        </div>
+        <div>
+          <div style="font-size:9px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:3px">Amigo recebe</div>
+          <div id="comp-prev-amigo" style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--amber)">—</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn-primary" style="margin-top:0" onclick="confirmarCompLucro()">✓ Registrar compartilhamento</button>
   </div>
 </div>
 
@@ -984,6 +1023,7 @@
 const SK='ap_v1', CK='ap_contas_v1', FBCK='ap_fb_v1';
 const PRTK='ap_protecao_v1', PRUSR='ap_prot_users_v1', PRPAG='ap_prot_pag_v1';
 const MOVK='ap_mov_v1';
+const LCOMPK='ap_lucro_comp_v1';
 const ALL_CASAS=['Bet365','Betano','Superbet','Sportingbet','KTO','Novibet','BetMGM','Betnacional','Blaze','Betsson','Vbet','Pinnacle','Bwin','1xBet','Betboo','Brazino777','BR4bet','Multibet','BetBoom','Vera Bet','Bet7K','Bodog','Betcris','Dafabet','Betfair','Parimatch','Sportsbet.io','888sport','Unibet','William Hill','Betway','22bet','Melbet','Mostbet','Marathonbet','GGbet','BetWarrior','Codere','Galera.bet','Vai de Bet','EstrelaBet','Segurobet','Esporte da Sorte','Pagbet','Onabet','Wazamba','Rivalo','Betpix365','Brbet','Betsul','F12.bet','Lotogreen','Palms Bet','PlacarBet','R7 Bet','Realsbet','SaharaBet','Starda','TáBet','Top Bet','Toro Bet','Veloce Bet','XP Bet','Zebet','Cloudbet','DraftKings','Fonbet','Gigabet','Goldenbet','Ladbrokes','Maxbet','Megapari','Meridianbet','Mozzartbet','Netbet','Olimp','Premierbet','Rabona','Riobet','Rizk','Sportaza','Titanbet','Winbet','Wplay'];
 
 // ── UTILITÁRIOS ────────────────────────────────────────────────────────────
@@ -995,6 +1035,8 @@ let anUsers=[];
 let entries=ld(SK), contasSalvas=ld(CK), carteiraFB=ld(FBCK);
 let protecoes=ld(PRTK)||[], amigosProts=ld(PRUSR)||[], pagamentosProts=ld(PRPAG)||[];
 let movimentacoes=ld(MOVK)||[];
+let lucrosComp=ld(LCOMPK)||[];
+var _compLucroEntradaId=null,_compLucroAmigo=null,_compLucroTotal=0;
 let protDir='fiz';
 var protApostasRows=[], protApostaSeq=0, protDirecao='fiz', protFiltroStatus='todas';
 var amigosSelecionadosByCid={};
@@ -1041,7 +1083,7 @@ function navTo(page, btn){
   if(page==='users')   { renderContas(); }
   if(page==='carteira'){ renderCarteira(); setTimeout(setupFBCasaDrop,50); }
   if(page==='nova')    { renderJogos(); }
-  if(page==='prot')    { renderAmigosChips();renderProtSug();renderSaldos();renderProtecoes();if(!protApostasRows.length)addProtAposta(); }
+  if(page==='prot')    { renderAmigosChips();renderProtSug();renderLucrosComp();renderSaldos();renderProtecoes();if(!protApostasRows.length)addProtAposta(); }
   if(page==='config')  { initConfig(); }
   checkAlertas();
 }
@@ -2593,10 +2635,22 @@ function buildHistCard(e){
     h += '</div>';
   }
 
+  // Lucros já compartilhados nesta entrada
+  var _jaComp=(lucrosComp||[]).filter(function(lc){return lc.entradaId===e.id;});
+  if(_jaComp.length){
+    h+='<div style="margin-bottom:8px;display:flex;flex-wrap:wrap;gap:4px">';
+    _jaComp.forEach(function(lc){
+      h+='<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(255,183,77,.1);border:1px solid rgba(255,183,77,.3);color:var(--amber)">💰 '+esc(lc.amigo)+' recebeu R$ '+lc.valor.toFixed(2)+'</span>';
+    });
+    h+='</div>';
+  }
   // Ações
-  h += '<div style="display:flex;gap:6px">'
-    +'<button class="btn-sm" style="font-size:11px" onclick="reabrirEntrada('+e.id+')">↩ Reabrir</button>'
-    +'</div>';
+  h += '<div style="display:flex;gap:6px;flex-wrap:wrap">'
+    +'<button class="btn-sm" style="font-size:11px" onclick="reabrirEntrada('+e.id+')">↩ Reabrir</button>';
+  if(isGanho&&lucroExibir>0){
+    h+='<button class="btn-sm" style="font-size:11px;border-color:rgba(255,183,77,.5);color:var(--amber)" onclick="abrirCompLucro('+e.id+')">💰 Compartilhar Lucro</button>';
+  }
+  h+='</div>';
 
   h += '</div>';
   return h;
@@ -2971,7 +3025,7 @@ function renderAmigosChips(){
 function remAmigoProt(nome){
   if(!confirm('Remover '+nome+'? As proteções dele ficam salvas.'))return;
   amigosProts=amigosProts.filter(a=>a!==nome);sd(PRUSR,amigosProts);
-  renderAmigosChips();renderProtSug();atualizarFiltroAmigos();renderSaldos();renderProtecoes();
+  renderAmigosChips();renderProtSug();atualizarFiltroAmigos();renderLucrosComp();renderSaldos();renderProtecoes();
 }
 function renderProtSug(){
   const el=document.getElementById('prot-sug-row');if(!el)return;
@@ -3048,7 +3102,7 @@ function salvarProtecao(){
   document.getElementById('prot-apostas-container').innerHTML='';
   protApostasRows=[];protApostaSeq=0;addProtAposta();
   toast('Proteção salva!','ok');
-  atualizarFiltroAmigos();renderSaldos();renderProtecoes();
+  atualizarFiltroAmigos();renderLucrosComp();renderSaldos();renderProtecoes();
 }
 function calcDevidoProt(p){
   if(p.resultado==='pendente')return null;
@@ -3074,6 +3128,61 @@ function calcSaldoAmigo(amigo){
   pagamentosProts.filter(pg=>pg.amigo===amigo).forEach(pg=>{saldo-=pg.valor;});
   return saldo;
 }
+function renderLucrosComp(){
+  var el=document.getElementById('prot-lucros-comp');if(!el)return;
+  if(!lucrosComp.length){el.innerHTML='';return;}
+  var filtroAmigo=document.getElementById('prot-filtro-amigo')?.value||'todos';
+  var lista=filtroAmigo==='todos'?lucrosComp:lucrosComp.filter(function(lc){return lc.amigo===filtroAmigo;});
+  if(!lista.length){el.innerHTML='';return;}
+  // agrupar por amigo
+  var porAmigo={};
+  lista.forEach(function(lc){
+    if(!porAmigo[lc.amigo])porAmigo[lc.amigo]={total:0,registros:[]};
+    porAmigo[lc.amigo].total+=lc.valor;
+    porAmigo[lc.amigo].registros.push(lc);
+  });
+  var totalGeral=lista.reduce(function(s,lc){return s+lc.valor;},0);
+  var h='<div class="card" style="margin-bottom:8px">';
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';
+  h+='<span class="card-title" style="margin:0">💰 Lucros Compartilhados</span>';
+  h+='<span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--amber)">R$ '+totalGeral.toFixed(2)+'</span>';
+  h+='</div>';
+  Object.keys(porAmigo).forEach(function(amigo){
+    var grupo=porAmigo[amigo];
+    var aberto=false;
+    h+='<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);margin-bottom:6px;overflow:hidden">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer" onclick="toggleCompAmigoDetail(\'comp-det-'+esc(amigo)+'\')">';
+    h+='<div style="font-size:13px;font-weight:700">👤 '+esc(amigo)+'</div>';
+    h+='<div style="display:flex;align-items:center;gap:10px">';
+    h+='<div style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--amber)">R$ '+grupo.total.toFixed(2)+'</div>';
+    h+='<span style="color:var(--text2);font-size:18px">›</span>';
+    h+='</div></div>';
+    h+='<div id="comp-det-'+esc(amigo)+'" style="display:none;padding:0 12px 10px">';
+    grupo.registros.slice().reverse().forEach(function(lc){
+      var restou=lc.lucroTotal-lc.valor;
+      h+='<div style="padding:6px 0;border-top:1px solid var(--border)">';
+      h+='<div style="display:flex;justify-content:space-between;align-items:flex-start">';
+      h+='<div style="font-size:12px;font-weight:600;flex:1;min-width:0;margin-right:8px">'+esc(lc.evento)+'</div>';
+      h+='<div style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--amber);flex-shrink:0">R$ '+lc.valor.toFixed(2)+'</div>';
+      h+='</div>';
+      h+='<div style="display:flex;gap:8px;font-size:10px;color:var(--text2);margin-top:2px">';
+      h+='<span>📅 '+lc.dataRegistro+'</span>';
+      h+='<span>Lucro total: R$ '+lc.lucroTotal.toFixed(2)+'</span>';
+      h+='<span>Você ficou: <b style="color:var(--green)">R$ '+restou.toFixed(2)+'</b></span>';
+      h+='</div>';
+      h+='</div>';
+    });
+    h+='</div></div>';
+  });
+  h+='</div>';
+  el.innerHTML=h;
+}
+
+function toggleCompAmigoDetail(id){
+  var el=document.getElementById(id);if(!el)return;
+  el.style.display=el.style.display==='none'?'block':'none';
+}
+
 function renderSaldos(){
   const el=document.getElementById('prot-saldos');if(!el)return;
   const amigosAtivos=[...new Set(protecoes.map(p=>p.amigo))];
@@ -3118,15 +3227,15 @@ function abrirPagamentoModal(amigo){
   if(!v||v<=0){toast('Valor inválido','err');return;}
   pagamentosProts.push({id:uid(),amigo,valor:s>0?v:-v,data:new Date().toLocaleDateString('pt-BR'),obs:''});
   sd(PRPAG,pagamentosProts);
-  toast('Pagamento registrado!','ok');renderSaldos();renderProtecoes();
+  toast('Pagamento registrado!','ok');renderLucrosComp();renderSaldos();renderProtecoes();
 }
 function concluirProtecao(id,resultado){
   const p=protecoes.find(x=>x.id===id);if(!p)return;
-  p.resultado=resultado;sd(PRTK,protecoes);renderSaldos();renderProtecoes();
+  p.resultado=resultado;sd(PRTK,protecoes);renderLucrosComp();renderSaldos();renderProtecoes();
 }
 function deletarProtecao(id){
   if(!confirm('Remover esta proteção?'))return;
-  protecoes=protecoes.filter(p=>p.id!==id);sd(PRTK,protecoes);renderSaldos();renderProtecoes();
+  protecoes=protecoes.filter(p=>p.id!==id);sd(PRTK,protecoes);renderLucrosComp();renderSaldos();renderProtecoes();
 }
 
 // ── EDIÇÃO DE PROTEÇÃO ────────────────────────────────────────────────────
@@ -3201,7 +3310,7 @@ function salvarEditProt(){
   }
   sd(PRTK,protecoes);
   fecharEditProt();
-  renderSaldos();renderProtecoes();
+  renderLucrosComp();renderSaldos();renderProtecoes();
   toast('Proteção atualizada!','ok');
 }
 
@@ -3223,7 +3332,7 @@ function marcarAcertada(id){
   if(p.resultado==='pendente'){toast('Defina o resultado antes de acertar','err');return;}
   p.acertada=true;
   sd(PRTK,protecoes);
-  renderSaldos();renderProtecoes();
+  renderLucrosComp();renderSaldos();renderProtecoes();
   toast('Marcado como acertado 🤝','ok');
 }
 
@@ -3882,6 +3991,82 @@ function fecharExtratoModal(){
   _extratoUid=null;
 }
 
+// ── COMPARTILHAR LUCRO ───────────────────────────────────────────────────
+function abrirCompLucro(entradaId){
+  var e=entries.find(function(x){return x.id===entradaId;});if(!e)return;
+  var lucroExibir=(e.lucroReal!==undefined)?e.lucroReal:(e.resultado==='ganho'?e.lucro:-e.total);
+  if(lucroExibir<=0){toast('Sem lucro para compartilhar','err');return;}
+  _compLucroEntradaId=entradaId;
+  _compLucroAmigo=null;
+  _compLucroTotal=lucroExibir;
+  document.getElementById('comp-lucro-evento').textContent=e.evento+' · '+e.data;
+  document.getElementById('comp-lucro-total').textContent='R$ '+lucroExibir.toFixed(2);
+  document.getElementById('comp-lucro-valor').value='';
+  document.getElementById('comp-lucro-preview').style.display='none';
+  // chips de amigos
+  var amigos=[...new Set([...amigosProts,...protecoes.map(function(p){return p.amigo;})])].filter(Boolean);
+  var el=document.getElementById('comp-lucro-amigos');
+  if(!amigos.length){
+    el.innerHTML='<div style="font-size:12px;color:var(--text2)">Nenhum amigo cadastrado em Proteção.</div>';
+  } else {
+    el.innerHTML=amigos.map(function(a){
+      return '<button class="chip" id="comp-chip-'+esc(a)+'" onclick="selCompAmigo(\''+esc(a)+'\')">'+esc(a)+'</button>';
+    }).join('');
+  }
+  document.getElementById('comp-lucro-modal').classList.add('open');
+  setTimeout(function(){document.getElementById('comp-lucro-valor').focus();},200);
+}
+
+function selCompAmigo(nome){
+  _compLucroAmigo=nome;
+  document.querySelectorAll('#comp-lucro-amigos .chip').forEach(function(c){
+    c.classList.toggle('active',c.textContent===nome);
+  });
+}
+
+function setCompValor(frac){
+  var v=(_compLucroTotal*frac);
+  document.getElementById('comp-lucro-valor').value=v.toFixed(2);
+  atualizarPrevComp();
+}
+
+function atualizarPrevComp(){
+  var v=parseFloat(document.getElementById('comp-lucro-valor').value)||0;
+  var prev=document.getElementById('comp-lucro-preview');
+  if(!v){prev.style.display='none';return;}
+  prev.style.display='block';
+  var euFico=_compLucroTotal-v;
+  document.getElementById('comp-prev-eu').textContent='R$ '+euFico.toFixed(2);
+  document.getElementById('comp-prev-eu').style.color=euFico>=0?'var(--green)':'var(--red)';
+  document.getElementById('comp-prev-amigo').textContent='R$ '+v.toFixed(2);
+}
+
+function confirmarCompLucro(){
+  if(!_compLucroAmigo){toast('Selecione um amigo','err');return;}
+  var v=parseFloat(document.getElementById('comp-lucro-valor').value)||0;
+  if(!v||v<=0){toast('Informe o valor a compartilhar','err');return;}
+  if(v>_compLucroTotal){toast('Valor maior que o lucro total (R$ '+_compLucroTotal.toFixed(2)+')','err');return;}
+  var e=entries.find(function(x){return x.id===_compLucroEntradaId;});
+  var now=new Date();
+  lucrosComp.push({
+    id:uid(),entradaId:_compLucroEntradaId,
+    evento:e?e.evento:'',dataEvento:e?e.data:'',
+    dataRegistro:now.toLocaleDateString('pt-BR'),
+    horaRegistro:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+    lucroTotal:_compLucroTotal,amigo:_compLucroAmigo,valor:v
+  });
+  sd(LCOMPK,lucrosComp);
+  fecharCompLucroModal();
+  renderHistorico();
+  if(document.getElementById('page-prot')?.style.display!=='none')renderLucrosComp();
+  toast('💰 R$ '+v.toFixed(2)+' compartilhado com '+_compLucroAmigo,'ok');
+}
+
+function fecharCompLucroModal(){
+  document.getElementById('comp-lucro-modal').classList.remove('open');
+  _compLucroEntradaId=null;_compLucroAmigo=null;_compLucroTotal=0;
+}
+
 function renderExtratoLista(){
   var tipoFiltro=document.getElementById('extrato-filtro-tipo').value;
   var userFiltro=document.getElementById('extrato-filtro-user');
@@ -4326,11 +4511,12 @@ document.addEventListener('click', function(ev){
 });
 
 document.addEventListener('click',function(ev){
-  ['transacao-modal','transf-modal','prot-edit-modal','extrato-modal'].forEach(function(id){
+  ['transacao-modal','transf-modal','prot-edit-modal','extrato-modal','comp-lucro-modal'].forEach(function(id){
     var m=document.getElementById(id);
     if(m&&m.classList.contains('open')&&ev.target===m){
       m.classList.remove('open');
       if(id==='extrato-modal')_extratoUid=null;
+      if(id==='comp-lucro-modal'){_compLucroEntradaId=null;_compLucroAmigo=null;_compLucroTotal=0;}
     }
   });
 });
