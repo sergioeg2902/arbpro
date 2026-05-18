@@ -824,6 +824,7 @@ let protecoes=ld(PRTK)||[], amigosProts=ld(PRUSR)||[], pagamentosProts=ld(PRPAG)
 let protDir='fiz';
 var protApostasRows=[], protApostaSeq=0;
 var amigosSelecionadosByCid={};
+var fbSelecionadaByCid={};
 let activeDD=null, filterEntradas='semana', filterResumo='hoje', compFilter='all', compSel='all', filterHist='tudo';
 let notifMinutosAntes=parseInt(localStorage.getItem('ap_notif_min')||'10');
 let jogosSelected=[], fbFiltro='disp', fbTipoSel='SNR';
@@ -1158,22 +1159,45 @@ function atualizarLinha(cid, idx, campo, val){
 }
 function renderFBPanel(cid){
   var list=document.getElementById('fb-panel-list-'+cid);if(!list)return;
-  var disponiveis=carteiraFB.filter(function(f){return f.status==='disponivel'&&f.tipo==='SNR';});
+  var disponiveis=carteiraFB.filter(function(f){return f.status==='disponivel';});
+  var sel=fbSelecionadaByCid[cid]||null;
   if(!disponiveis.length){
-    list.innerHTML='<div style="color:var(--text2);font-size:12px;padding:4px 0">Nenhuma freebet SNR disponível na carteira</div>';
+    list.innerHTML='<div style="color:var(--text2);font-size:12px;padding:4px 0">Nenhuma freebet disponível na carteira</div>';
     return;
   }
   list.innerHTML=disponiveis.map(function(f){
-    return '<div style="display:flex;align-items:center;gap:8px;padding:5px 6px;margin-top:4px;background:rgba(206,147,216,.07);border-radius:var(--r2)">'
-      +'<span style="font-size:13px">💜</span>'
-      +'<div style="flex:1;min-width:0">'
+    var isSel=sel&&sel.fbId===f.id;
+    var card='<div id="fb-card-'+cid+'-'+f.id+'" onclick="selecionarFBParaUso('+cid+','+f.id+')" '
+      +'style="cursor:pointer;padding:7px 8px;margin-top:4px;border-radius:var(--r2);border:1px solid '
+      +(isSel?'var(--purple)':'rgba(206,147,216,.2)')+';background:'
+      +(isSel?'rgba(206,147,216,.15)':'rgba(206,147,216,.05)')+';">'
+      +'<div style="display:flex;align-items:center;gap:6px">'
+      +'<span style="font-size:11px">💜</span>'
       +'<span style="font-size:12px;font-weight:600">'+esc(f.casa)+'</span>'
-      +' <span style="font-size:11px;color:var(--text2)">'+esc(f.conta)+'</span>'
-      +'</div>'
-      +'<span style="font-size:12px;font-weight:700;color:var(--purple)">R$ '+parseFloat(f.valor).toFixed(2)+'</span>'
+      +'<span style="font-size:11px;color:var(--text2)">'+esc(f.conta)+'</span>'
+      +'<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:rgba(206,147,216,.15);color:var(--purple)">'+esc(f.tipo)+'</span>'
+      +'<span style="font-size:12px;font-weight:700;color:var(--purple);margin-left:auto">R$ '+parseFloat(f.valor).toFixed(2)+'</span>'
       +(f.validade?'<span style="font-size:10px;color:var(--text2)">val: '+esc(f.validade)+'</span>':'')
       +'</div>';
+    if(isSel){
+      card+='<div style="margin-top:7px;display:flex;align-items:center;gap:6px" onclick="event.stopPropagation()">'
+        +'<span style="font-size:11px;color:var(--text2)">Valor a usar:</span>'
+        +'<input type="number" id="fb-uso-val-'+cid+'" value="'+sel.valorUsar.toFixed(2)+'" min="0.01" max="'+f.valor+'" step="0.01" '
+        +'style="width:90px;padding:4px 6px;font-size:12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text);font-family:var(--mono)" '
+        +'oninput="fbSelecionadaByCid['+cid+'].valorUsar=parseFloat(this.value)||0">'
+        +'<span style="font-size:11px;color:var(--text2)">/ R$ '+parseFloat(f.valor).toFixed(2)+'</span>'
+        +'</div>';
+    }
+    card+='</div>';
+    return card;
   }).join('');
+}
+function selecionarFBParaUso(cid, fbId){
+  var fb=carteiraFB.find(function(f){return f.id===fbId;});if(!fb)return;
+  var jasel=fbSelecionadaByCid[cid];
+  if(jasel&&jasel.fbId===fbId){ fbSelecionadaByCid[cid]=null; }
+  else{ fbSelecionadaByCid[cid]={fbId:fbId, valorUsar:fb.valor}; }
+  renderFBPanel(cid);
 }
 function verificarDesativarAmigo(cid){
   var temAmigo=(linhasByAposta[cid]||[]).some(function(l){return l.isAmigo;});
@@ -1581,6 +1605,17 @@ function salvarSB(){
     hora:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),data:now.toLocaleDateString('pt-BR'),
     eventoData:document.getElementById('f-data').value||'',eventoHora:document.getElementById('f-hora').value||'',
     chanceDuplo:cdValue,fbsEsperadas:fbsEsp,fbAdicionadas:[]});
+  // descontar freebets parcialmente usadas
+  casaIds.forEach(function(cid){
+    var sel=fbSelecionadaByCid[cid];
+    if(!sel||!sel.fbId)return;
+    var fb=carteiraFB.find(function(f){return f.id===sel.fbId;});
+    if(!fb)return;
+    var usado=parseFloat(sel.valorUsar)||0;
+    fb.valor=Math.max(0,parseFloat(fb.valor)-usado);
+    if(fb.valor<=0)fb.status='usada';
+    sd(FBCK,carteiraFB);
+  });
   sd(SK,entries);
   // reset
   document.getElementById('f-evento').value='';document.getElementById('f-hora').value='';
@@ -1594,6 +1629,7 @@ function salvarSB(){
     document.getElementById('cb-'+cid)?.classList.remove('is-ref','has-proc');
     const pv=document.getElementById('proc-valor-'+cid);if(pv)pv.value='';
     amigosSelecionadosByCid[cid]=[];
+    fbSelecionadaByCid[cid]=null;
     const ss=document.getElementById('stake-sug-'+cid);if(ss)ss.style.display='none';
     casaUsers[cid]=[];linhasByAposta[cid]=[];renderLinhas(cid);
     // reset botões visuais opt-btn
@@ -1993,13 +2029,37 @@ function renderCarteira(){
       <div class="fb-info">Adicionada: ${f.data}</div>
       <div class="fb-actions">
         ${!isU?`<button class="btn-sm purple-c" onclick="fbSetStatus(${f.id},'usada')">Marcar usada</button>`:`<button class="btn-sm" onclick="fbSetStatus(${f.id},'disponivel')">Restaurar</button>`}
+        ${!isU?`<button class="btn-sm" onclick="fbAcumularPrompt(${f.id})" style="border-color:var(--purple);color:var(--purple)">+ Acumular</button>`:''}
         <button class="btn-sm red" onclick="fbRem(${f.id})">Remover</button>
+      </div>
+      <div id="fb-acum-${f.id}" style="display:none;margin-top:8px;display:none;align-items:center;gap:6px">
+        <span style="font-size:12px;color:var(--text2)">Adicionar R$</span>
+        <input type="number" id="fb-acum-val-${f.id}" placeholder="0.00" min="0.01" step="0.01"
+          style="width:90px;padding:4px 6px;font-size:12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text);font-family:var(--mono)">
+        <button class="btn-sm" onclick="fbAcumularConfirmar(${f.id})" style="border-color:var(--purple);color:var(--purple)">OK</button>
+        <button class="btn-sm" onclick="document.getElementById('fb-acum-${f.id}').style.display='none'">✕</button>
       </div>
     </div>`;
   }).join('');
 }
 function fbSetStatus(id,s){carteiraFB.forEach(f=>{if(f.id===id)f.status=s});sd(FBCK,carteiraFB);renderCarteira();renderResumo()}
 function fbRem(id){carteiraFB=carteiraFB.filter(f=>f.id!==id);sd(FBCK,carteiraFB);renderCarteira();renderResumo()}
+function fbAcumularPrompt(id){
+  const el=document.getElementById('fb-acum-'+id);if(!el)return;
+  el.style.display=el.style.display==='none'?'flex':'none';
+  if(el.style.display==='flex'){const inp=document.getElementById('fb-acum-val-'+id);if(inp){inp.value='';inp.focus();}}
+}
+function fbAcumularConfirmar(id){
+  const inp=document.getElementById('fb-acum-val-'+id);if(!inp)return;
+  const add=parseFloat(inp.value);
+  if(!add||add<=0){toast('Informe um valor válido','err');return;}
+  const fb=carteiraFB.find(f=>f.id===id);if(!fb)return;
+  fb.valor=parseFloat((fb.valor+add).toFixed(2));
+  fb.status='disponivel';
+  sd(FBCK,carteiraFB);
+  renderCarteira();renderResumo();
+  toast('R$ '+add.toFixed(2)+' acumulado na freebet!','ok');
+}
 
 // ── ENTRADAS ───────────────────────────────────────────────────────────────
 function todayStr(){return new Date().toLocaleDateString('pt-BR')}
