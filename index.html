@@ -517,8 +517,8 @@
           <div class="dropdown" id="dd-fb-casa"></div>
         </div>
         <div class="field-label">Usuário</div>
+        <input type="text" id="fb-cart-conta" readonly placeholder="Selecione uma conta..." style="background:var(--bg3);cursor:default;margin-bottom:4px">
         <div class="sug-row" id="fb-sug-row"></div>
-        <input type="text" id="fb-cart-conta" placeholder="Selecione ou digite...">
         <div class="row2" style="margin-top:10px">
           <div>
             <div class="field-label" style="margin-top:0">Valor (R$)</div>
@@ -1355,10 +1355,17 @@ function renderLinhas(cid){
       +' onchange="atualizarLinha('+cid+','+idx+',\'odd\',this.value)">';
 
     // Stake
-    html+='<input class="linha-input linha-num" type="number" placeholder="R$" step="0.01"'
-      +' value="'+(l.stake||'')+'"'
-      +' oninput="atualizarLinha('+cid+','+idx+',\'stake\',this.value)"'
-      +' onchange="atualizarLinha('+cid+','+idx+',\'stake\',this.value)">';
+    if(l.isFreebet){
+      html+='<input class="linha-input linha-num" type="number" placeholder="R$" step="0.01"'
+        +' value="'+(l.stake||'')+'"'
+        +' readonly tabindex="-1"'
+        +' style="opacity:.7;cursor:not-allowed;background:rgba(206,147,216,.12);pointer-events:none">';
+    } else {
+      html+='<input class="linha-input linha-num" type="number" placeholder="R$" step="0.01"'
+        +' value="'+(l.stake||'')+'"'
+        +' oninput="atualizarLinha('+cid+','+idx+',\'stake\',this.value)"'
+        +' onchange="atualizarLinha('+cid+','+idx+',\'stake\',this.value)">';
+    }
 
     // Remover
     html+=(linhas.length>1
@@ -2069,7 +2076,7 @@ function setupFBCasaDrop(){
   function r(f){const m=ALL_CASAS.filter(c=>!f||c.toLowerCase().includes(f.toLowerCase())).slice(0,12);dd.innerHTML=m.map(n=>`<div class="dropdown-opt" onclick="event.stopPropagation();document.getElementById('fb-cart-casa').value='${n}';document.getElementById('dd-fb-casa').classList.remove('open');activeDD=null;renderFBSug()">${n}</div>`).join('')||`<div class="dropdown-opt" style="color:var(--text2)">Nenhuma</div>`}
   inp.addEventListener('input',()=>{r(inp.value);dd.classList.add('open');activeDD=wrap});inp.addEventListener('focus',()=>{r(inp.value);dd.classList.add('open');activeDD=wrap});
 }
-function renderFBSug(){const el=document.getElementById('fb-sug-row');if(!el)return;const todos=[...new Set(contasSalvas.map(c=>c.apelido))];el.innerHTML=todos.map(u=>`<button class="sug-btn" data-u="${esc(u)}" onclick="document.getElementById('fb-cart-conta').value=this.dataset.u">${esc(u)}</button>`).join('')}
+function renderFBSug(){const el=document.getElementById('fb-sug-row');if(!el)return;const todos=[...new Set(contasSalvas.map(c=>c.apelido))];el.innerHTML=todos.map(u=>`<button class="sug-btn" data-u="${esc(u)}" onclick="document.getElementById('fb-cart-conta').value=this.dataset.u;document.getElementById('fb-cart-conta').dispatchEvent(new Event('input'))">${esc(u)}</button>`).join('')||'<span style="font-size:11px;color:var(--text2)">Nenhuma conta cadastrada</span>'}
 function adicionarFB(){
   const casa=document.getElementById('fb-cart-casa').value.trim();
   const conta=document.getElementById('fb-cart-conta').value.trim();
@@ -2116,8 +2123,20 @@ function renderCarteira(){
       </div>
       <div id="fb-edit-${f.id}" style="display:none;margin-top:10px;background:var(--bg3);border-radius:var(--r2);padding:10px;border:1px solid var(--border2)">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
-          <div><div class="field-label" style="margin-top:0">Casa</div><input id="fb-edit-casa-${f.id}" type="text" style="width:100%;padding:5px 8px;font-size:12px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text)"></div>
-          <div><div class="field-label" style="margin-top:0">Conta</div><input id="fb-edit-conta-${f.id}" type="text" style="width:100%;padding:5px 8px;font-size:12px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text)"></div>
+          <div>
+            <div class="field-label" style="margin-top:0">Casa</div>
+            <div class="search-wrap" id="fb-edit-casa-wrap-${f.id}" style="position:relative">
+              <input id="fb-edit-casa-${f.id}" type="text" autocomplete="off" style="width:100%;padding:5px 8px;font-size:12px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text)"
+                oninput="fbEditCasaInput(${f.id},this)" onfocus="fbEditCasaInput(${f.id},this)"
+                onblur="setTimeout(function(){var d=document.getElementById('fb-edit-casa-dd-${f.id}');if(d)d.classList.remove('open')},180)">
+              <div class="dropdown" id="fb-edit-casa-dd-${f.id}" style="top:100%;left:0;right:0"></div>
+            </div>
+          </div>
+          <div>
+            <div class="field-label" style="margin-top:0">Conta</div>
+            <input id="fb-edit-conta-${f.id}" type="text" readonly placeholder="Selecione..." style="width:100%;padding:5px 8px;font-size:12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text);cursor:default;margin-bottom:4px">
+            <div class="sug-row" id="fb-edit-conta-sug-${f.id}" style="flex-wrap:wrap;gap:4px"></div>
+          </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
           <div><div class="field-label" style="margin-top:0">Valor (R$)</div><input id="fb-edit-valor-${f.id}" type="number" step="0.01" style="width:100%;padding:5px 8px;font-size:12px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text);font-family:var(--mono)"></div>
@@ -2148,6 +2167,20 @@ function fbEditarPrompt(id){
   document.getElementById('fb-edit-val-'+id).value=fb.validade||'';
   document.getElementById('fb-edit-obs-'+id).value=fb.obs||'';
   el.style.display='block';
+  renderFBEditContaSug(id);
+}
+function fbEditCasaInput(id, inp){
+  const dd=document.getElementById('fb-edit-casa-dd-'+id);if(!dd)return;
+  const wrap=document.getElementById('fb-edit-casa-wrap-'+id);
+  const f=inp.value;
+  const m=ALL_CASAS.filter(c=>!f||c.toLowerCase().includes(f.toLowerCase())).slice(0,12);
+  dd.innerHTML=m.map(n=>`<div class="dropdown-opt" onclick="event.stopPropagation();document.getElementById('fb-edit-casa-${id}').value='${n}';document.getElementById('fb-edit-casa-dd-${id}').classList.remove('open')">${n}</div>`).join('')||`<div class="dropdown-opt" style="color:var(--text2)">Nenhuma</div>`;
+  dd.classList.add('open');if(wrap)activeDD=wrap;
+}
+function renderFBEditContaSug(id){
+  const el=document.getElementById('fb-edit-conta-sug-'+id);if(!el)return;
+  const contas=[...new Set(contasSalvas.map(c=>c.apelido))];
+  el.innerHTML=contas.map(u=>`<button class="sug-btn" onclick="document.getElementById('fb-edit-conta-${id}').value='${esc(u)}'">${esc(u)}</button>`).join('');
 }
 function fbEditarConfirmar(id){
   const fb=carteiraFB.find(f=>f.id===id);if(!fb)return;
