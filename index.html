@@ -477,6 +477,16 @@
           </div>
           <div id="retorno-grid"></div>
         </div>
+        <details id="stake-calc" style="margin:10px 0 4px;border-radius:var(--r2);overflow:hidden">
+          <summary style="cursor:pointer;font-size:13px;font-weight:700;color:var(--text2);padding:10px 14px;background:var(--bg3);list-style:none;display:flex;align-items:center;gap:6px">🧮 Calculadora de stakes</summary>
+          <div style="padding:12px 14px 8px;background:var(--bg3);border-top:1px solid var(--border)">
+            <div style="display:flex;gap:8px;align-items:flex-end">
+              <div style="flex:1"><div class="field-label" style="margin-top:0">Investimento total (R$)</div><input type="number" id="calc-total" placeholder="500" min="1" style="margin-bottom:0"></div>
+              <button class="btn-sm" style="padding:10px 18px;margin-bottom:4px" onclick="calcularStakes()">Calcular</button>
+            </div>
+            <div id="calc-result" style="margin-top:8px;font-size:12px"></div>
+          </div>
+        </details>
         <button class="btn-primary" onclick="salvarSB()">Salvar entrada</button>
       </div>
     </div>
@@ -565,6 +575,7 @@
           <button class="fpill" data-f="semana" onclick="setFilter('entradas','semana',this)">Semana</button>
           <button class="fpill" data-f="mes" onclick="setFilter('entradas','mes',this)">Mês</button>
           <button class="fpill" data-f="tudo" onclick="setFilter('entradas','tudo',this)">Tudo</button>
+          <button class="fpill" data-f="aovivo" onclick="setFilter('entradas','aovivo',this)" style="color:var(--red)">🔴 Ao vivo</button>
         </div>
         <div id="lista-entradas"></div>
       </div>
@@ -581,8 +592,7 @@
         </div>
         <div id="hist-lista"></div>
       </div>
-
-
+    </div>
 
     <!-- PAGE RESUMO -->
     <div class="page" id="page-resumo">
@@ -601,6 +611,9 @@
       <div class="metrics-grid">
         <div class="metric"><div class="metric-label">FBs disponíveis</div><div class="metric-val purple" id="m-fb-disp">0</div></div>
         <div class="metric"><div class="metric-label">Valor FBs</div><div class="metric-val purple" id="m-fb-val">R$ 0</div></div>
+      </div>
+      <div class="card" style="padding:14px 16px 10px">
+        <div id="roi-sparkline"></div>
       </div>
       <div class="card">
         <div class="card-title" id="resumo-label">Por entrada — hoje</div>
@@ -732,17 +745,21 @@
 const SK='ap_v1', CK='ap_contas_v1', FBCK='ap_fb_v1';
 const ALL_CASAS=['Bet365','Betano','Superbet','Sportingbet','KTO','Novibet','BetMGM','Betnacional','Blaze','Betsson','Vbet','Pinnacle','Bwin','1xBet','Betboo','Brazino777','BR4bet','Multibet','BetBoom','Vera Bet','Bet7K','Bodog','Betcris','Dafabet','Betfair','Parimatch','Sportsbet.io','888sport','Unibet','William Hill','Betway','22bet','Melbet','Mostbet','Marathonbet','GGbet','BetWarrior','Codere','Galera.bet','Vai de Bet','EstrelaBet','Segurobet','Esporte da Sorte','Pagbet','Onabet','Wazamba','Rivalo','Betpix365','Brbet','Betsul','F12.bet','Lotogreen','Palms Bet','PlacarBet','R7 Bet','Realsbet','SaharaBet','Starda','TáBet','Top Bet','Toro Bet','Veloce Bet','XP Bet','Zebet','Cloudbet','DraftKings','Fonbet','Gigabet','Goldenbet','Ladbrokes','Maxbet','Megapari','Meridianbet','Mozzartbet','Netbet','Olimp','Premierbet','Rabona','Riobet','Rizk','Sportaza','Titanbet','Winbet','Wplay'];
 
+// ── UTILITÁRIOS ────────────────────────────────────────────────────────────
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
 // ── STATE ──────────────────────────────────────────────────────────────────
 let tipoSel='surebet', casaSeq=0, casaIds=[], casaUsers={}, refCasaId=null;
 let anUsers=[];
 let entries=ld(SK), contasSalvas=ld(CK), carteiraFB=ld(FBCK);
-let activeDD=null, filterEntradas='hoje', filterResumo='hoje', compFilter='all', compSel='all', filterHist='tudo';
+let activeDD=null, filterEntradas='semana', filterResumo='hoje', compFilter='all', compSel='all', filterHist='tudo';
+let notifMinutosAntes=parseInt(localStorage.getItem('ap_notif_min')||'10');
 let jogoSelecionado=null, fbFiltro='disp', fbTipoSel='SNR';
 let jogosData=[];
 const periodoLabel={hoje:'hoje',semana:'esta semana',mes:'este mês',tudo:'todos'};
 
 function ld(k){try{return JSON.parse(localStorage.getItem(k)||'[]')}catch{return[]}}
-function sd(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+function sd(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(err){if(err.name==='QuotaExceededError'||err.name==='NS_ERROR_DOM_QUOTA_REACHED'){toast('⚠️ Armazenamento cheio! Exporte e limpe o histórico.','err');}}}
 function ldS(k){return localStorage.getItem(k)||''}
 function sdS(k,v){localStorage.setItem(k,v)}
 
@@ -825,7 +842,7 @@ function renderANSug(){
 }
 function anAddUser(){const v=document.getElementById('an-user-inp').value.trim();if(!v)return;anAddUserDirect(v);document.getElementById('an-user-inp').value=''}
 function anAddUserDirect(u){if(anUsers.includes(u))return;anUsers.push(u);renderANChips()}
-function renderANChips(){const el=document.getElementById('an-chips');if(!el)return;el.innerHTML=anUsers.length?anUsers.map(u=>`<span class="chip">${u}<button class="rm" onclick="anUsers=anUsers.filter(x=>x!=='${u}');renderANChips()">×</button></span>`).join(''):'<span style="font-size:11px;color:var(--text2)">Nenhum usuário</span>'}
+function renderANChips(){const el=document.getElementById('an-chips');if(!el)return;el.innerHTML=anUsers.length?anUsers.map((u,i)=>`<span class="chip">${esc(u)}<button class="rm" onclick="anUsers=anUsers.filter((_,j)=>j!==${i});renderANChips()">×</button></span>`).join(''):'<span style="font-size:11px;color:var(--text2)">Nenhum usuário</span>'}
 function calcAN(){
   const odd=parseFloat(document.getElementById('an-odd').value);
   const stake=parseFloat(document.getElementById('an-stake').value);
@@ -856,7 +873,7 @@ function salvarAN(){
   document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
   document.getElementById('an-casa').value='';document.getElementById('an-odd').value='';document.getElementById('an-stake').value='';
   document.getElementById('an-result').style.display='none';
-  anUsers=[];renderANChips();resetCD();checkAlertas();renderResumo();toast('Aposta salva!');
+  anUsers=[];renderANChips();resetCD();checkAlertas();renderResumo();toast('Aposta salva!','ok');setTimeout(function(){navTo('entradas',document.getElementById('nav-entradas'));},600);
 }
 
 // ── SUREBET: CASAS ─────────────────────────────────────────────────────────
@@ -880,7 +897,7 @@ function setRefCasa(cid){
 // compatibilidade
 
 // mapa: cid -> [{casa, usuario, odd, stake}]
-if(typeof linhasByAposta==='undefined') var linhasByAposta={};
+var linhasByAposta={};
 
 function addCasa(){
   if(casaIds.length>=10){toast('Máximo de 10 apostas');return;}
@@ -1262,8 +1279,8 @@ function selProcTipo(cid,btn){
 }
 function addU(cid,ap){if(!casaUsers[cid])casaUsers[cid]=[];if(casaUsers[cid].includes(ap))return;casaUsers[cid].push(ap);renderChips(cid)}
 function remU(cid,ap){casaUsers[cid]=casaUsers[cid].filter(u=>u!==ap);renderChips(cid)}
-function renderChips(cid){const el=document.getElementById('user-chips-'+cid);if(!el)return;const u=casaUsers[cid]||[];el.innerHTML=u.length?u.map(x=>`<span class="chip">${x}<button class="rm" onclick="remU(${cid},'${x}')">×</button></span>`).join(''):'<span style="font-size:11px;color:var(--text2)">Nenhum usuário</span>'}
-function renderUserSug(cid){const el=document.getElementById('user-sug-'+cid);if(!el)return;const todos=[...new Set(contasSalvas.map(c=>c.apelido))];el.innerHTML=todos.map(u=>`<button class="sug-btn" onclick="addU(${cid},'${u}')">${u}</button>`).join('')}
+function renderChips(cid){const el=document.getElementById('user-chips-'+cid);if(!el)return;const u=casaUsers[cid]||[];el.innerHTML=u.length?u.map(x=>`<span class="chip">${esc(x)}<button class="rm" data-u="${esc(x)}" onclick="remU(${cid},this.dataset.u)">×</button></span>`).join(''):'<span style="font-size:11px;color:var(--text2)">Nenhum usuário</span>'}
+function renderUserSug(cid){const el=document.getElementById('user-sug-'+cid);if(!el)return;const todos=[...new Set(contasSalvas.map(c=>c.apelido))];el.innerHTML=todos.map(u=>`<button class="sug-btn" data-u="${esc(u)}" onclick="addU(${cid},this.dataset.u)">${esc(u)}</button>`).join('')}
 function removeCasa(cid){
   if(casaIds.length<=2){toast('Mínimo de 2 apostas');return;}
   document.getElementById('cb-'+cid)?.remove();
@@ -1312,9 +1329,9 @@ function calcLucro(){
   var rg = document.getElementById('retorno-grid');
   if(apostasValidas.length < 2){ if(pv) pv.style.display='none'; return; }
 
-  // stakeGlobal = soma dos stakes de CADA aposta do conjunto
+  // stakeGlobal = só stakes reais (exclui freebets SNR que não são dinheiro real)
   var stakeGlobal = apostasValidas.reduce(function(a,ap){
-    return a + ap.r.stakeAposta;
+    return a + (ap.r.isFB ? 0 : ap.r.stakeAposta);
   }, 0);
 
   // lucro de cada aposta = retornoTotal_desta - stakeGlobal
@@ -1383,16 +1400,18 @@ function salvarSB(){
     if(!validas.length){ok=false;return;}
     var odds=validas.map(function(l){return parseFloat(l.odd);});
     var stakes=validas.map(function(l){return parseFloat(l.stake);});
-    var oddMedia=odds.reduce(function(a,b){return a+b;},0)/odds.length;
     var totalStake=stakes.reduce(function(a,b){return a+b;},0);
+    var oddMedia=totalStake>0?validas.reduce(function(a,l){return a+parseFloat(l.odd)*parseFloat(l.stake);},0)/totalStake:0;
     var isFB=document.getElementById('fb-chk-'+cid)?.checked;
     var isProc=document.getElementById('proc-chk-'+cid)?.checked;
     var isRef=cid===refCasaId;
     var nomeCasas=validas.map(function(l){return l.casa+(l.usuario?' ('+l.usuario+')':'');}).join(' + ');
-    casas.push({nome:nomeCasas,linhas:validas,usuarios:validas.map(function(l){return l.usuario;}).filter(Boolean),odd:oddMedia,stake:totalStake,freebet:isFB,proc:isProc,ref:isRef});
-    if(!isFB)ts+=stake;
-    retornos.push(isFB?(odd-1)*stake:odd*stake);
-    if(isProc){const v=parseFloat(document.getElementById('proc-valor-'+cid)?.value);if(v){const tb=document.getElementById('proc-tipo-'+cid)?.querySelector('.btn-sm.active');fbsEsp.push({casa:nome,usuarios,valor:v,tipo:tb?.dataset.v||'SNR',validade:document.getElementById('proc-val-'+cid)?.value||''})}}
+    var usrs=validas.map(function(l){return l.usuario;}).filter(Boolean);
+    var rCalc=calcLinhas(cid);
+    casas.push({nome:nomeCasas,linhas:validas,usuarios:usrs,odd:oddMedia,stake:totalStake,freebet:isFB,proc:isProc,ref:isRef});
+    if(!isFB)ts+=totalStake;
+    retornos.push(rCalc?rCalc.retornoTotal:isFB?(oddMedia-1)*totalStake:oddMedia*totalStake);
+    if(isProc){const v=parseFloat(document.getElementById('proc-valor-'+cid)?.value);if(v){const tb=document.getElementById('proc-tipo-'+cid)?.querySelector('.btn-sm.active');fbsEsp.push({casa:nomeCasas,usuarios:usrs,valor:v,tipo:tb?.dataset.v||'SNR',validade:document.getElementById('proc-val-'+cid)?.value||''})}}
   });
   if(!ok||casas.length<2){toast('Preencha ao menos 2 casas');return}
   const lucro=Math.min(...retornos)-ts,roi=ts>0?lucro/ts*100:0;
@@ -1420,7 +1439,7 @@ function salvarSB(){
   });
   refCasaId=null;document.getElementById('retorno-panel').style.display='none';
   document.getElementById('jogo-banner').style.display='none';jogoSelecionado=null;
-  resetCD();checkAlertas();renderResumo();toast('Entrada salva!');
+  resetCD();checkAlertas();renderResumo();toast('Entrada salva!','ok');setTimeout(function(){navTo('entradas',document.getElementById('nav-entradas'));},600);
 }
 
 
@@ -1761,7 +1780,7 @@ function setupFBCasaDrop(){
   function r(f){const m=ALL_CASAS.filter(c=>!f||c.toLowerCase().includes(f.toLowerCase())).slice(0,12);dd.innerHTML=m.map(n=>`<div class="dropdown-opt" onclick="event.stopPropagation();document.getElementById('fb-cart-casa').value='${n}';document.getElementById('dd-fb-casa').classList.remove('open');activeDD=null;renderFBSug()">${n}</div>`).join('')||`<div class="dropdown-opt" style="color:var(--text2)">Nenhuma</div>`}
   inp.addEventListener('input',()=>{r(inp.value);dd.classList.add('open');activeDD=wrap});inp.addEventListener('focus',()=>{r(inp.value);dd.classList.add('open');activeDD=wrap});
 }
-function renderFBSug(){const el=document.getElementById('fb-sug-row');if(!el)return;const todos=[...new Set(contasSalvas.map(c=>c.apelido))];el.innerHTML=todos.map(u=>`<button class="sug-btn" onclick="document.getElementById('fb-cart-conta').value='${u}'">${u}</button>`).join('')}
+function renderFBSug(){const el=document.getElementById('fb-sug-row');if(!el)return;const todos=[...new Set(contasSalvas.map(c=>c.apelido))];el.innerHTML=todos.map(u=>`<button class="sug-btn" data-u="${esc(u)}" onclick="document.getElementById('fb-cart-conta').value=this.dataset.u">${esc(u)}</button>`).join('')}
 function adicionarFB(){
   const casa=document.getElementById('fb-cart-casa').value.trim();
   const conta=document.getElementById('fb-cart-conta').value.trim();
@@ -1809,6 +1828,15 @@ function filterE(arr,f){
   if(f==='hoje')return arr.filter(e=>e.data===todayStr());
   if(f==='semana'){const n=new Date();n.setHours(0,0,0,0);const s=new Date(n);s.setDate(n.getDate()-n.getDay());return arr.filter(e=>{const p=e.data.split('/');const d=new Date(p[2],p[1]-1,p[0]);return d>=s})}
   if(f==='mes'){const n=new Date();return arr.filter(e=>{const p=e.data.split('/');return parseInt(p[1])===n.getMonth()+1&&parseInt(p[2])===n.getFullYear()})}
+  if(f==='aovivo'){
+    const now=new Date(),em4h=new Date(now.getTime()+4*3600000);
+    return arr.filter(e=>{
+      if(e.resultado!=='pendente'||!e.eventoData||!e.eventoHora)return false;
+      const p=e.eventoData.split('-'),hp=e.eventoHora.split(':');
+      const d=new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]),parseInt(hp[0]),parseInt(hp[1]),0,0);
+      return d>=now&&d<=em4h;
+    });
+  }
   return arr;
 }
 function setFilter(page,f,btn){
@@ -1829,13 +1857,24 @@ function calcRPC(casas){
 function renderEntradas(){
   var el = document.getElementById('lista-entradas');
   var f  = filterE(entries, filterEntradas);
+  var isLive = filterEntradas === 'aovivo';
   // Só mostra pendentes na aba Entradas
-  var pendentes = f.filter(function(e){ return e.resultado==='pendente'; });
+  var pendentes = isLive ? f : f.filter(function(e){ return e.resultado==='pendente'; });
   if(!pendentes.length){
-    el.innerHTML='<div class="empty"><div class="empty-icon">📋</div>Nenhuma entrada pendente neste período.<br><span style="font-size:12px;color:var(--text2)">Apostas concluídas ficam no Histórico</span></div>';
+    var msg = isLive
+      ? '<div class="empty"><div class="empty-icon">🔴</div>Nenhuma aposta nas próximas 4 horas.</div>'
+      : '<div class="empty"><div class="empty-icon">📋</div>Nenhuma entrada pendente neste período.<br><span style="font-size:12px;color:var(--text2)">Apostas concluídas ficam no Histórico</span><br><button class="btn-primary" style="margin-top:12px;max-width:220px;display:inline-block" onclick="navTo(\'nova\',document.getElementById(\'nav-nova\'))">+ Nova entrada</button></div>';
+    el.innerHTML = msg;
     return;
   }
-  el.innerHTML = pendentes.slice().reverse().map(function(e){ return buildCard(e,true); }).join('');
+  var sorted = isLive
+    ? pendentes.slice().sort(function(a,b){
+        var ta=a.eventoHora?a.eventoHora:'99:99',tb=b.eventoHora?b.eventoHora:'99:99';
+        return ta.localeCompare(tb);
+      })
+    : pendentes.slice().reverse();
+  el.innerHTML = (isLive ? '<div style="font-size:11px;color:var(--red);font-weight:700;margin-bottom:8px;letter-spacing:.03em">🔴 AO VIVO — próximas 4 horas · ordenado por horário</div>' : '')
+    + sorted.map(function(e){ return buildCard(e,true); }).join('');
 }
 
 function renderHistorico(){
@@ -2055,9 +2094,7 @@ function buildCard(e, isPend){
       : '🔔';
     h += '<button class="btn-sm" style="'+notifBtnStyle+'" title="Configurar notificação"'
       +' onclick="abrirNotifModal('+e.id+')">'+notifBtnTitle+'</button>';
-    if(ag.length>0){
-      h += '<button class="btn-sm green-c" style="font-weight:700;flex:1" onclick="concluirEntrada('+e.id+',\'ganho\')">✓ Ganho</button>';
-    }
+    h += '<button class="btn-sm green-c" style="font-weight:700;flex:1;'+(ag.length===0?'opacity:.55':'')+'" onclick="concluirGanho('+e.id+')">✓ Ganho</button>';
     h += '<button class="btn-sm red" onclick="concluirEntrada('+e.id+',\'perdido\')">✗ Perdido</button>';
   } else {
     h += '<button class="btn-sm" style="font-size:11px" onclick="reabrirEntrada('+e.id+')">↩ Reabrir</button>';
@@ -2095,6 +2132,16 @@ function toggleApostaGanhadora(entradaId, idx){
   else e.apostasGanhadoras.push(idx);
   sd(SK,entries);
   renderEntradas();
+}
+
+function concluirGanho(entradaId){
+  var e=entries.find(function(x){return x.id===entradaId;});
+  if(!e)return;
+  if(!e.apostasGanhadoras||!e.apostasGanhadoras.length){
+    toast('Marque qual aposta bateu (coluna ✓) antes de confirmar ganho','err');
+    return;
+  }
+  concluirEntrada(entradaId,'ganho');
 }
 
 function concluirEntrada(entradaId, resultado){
@@ -2148,9 +2195,93 @@ function initConfig(){
   // nada a inicializar — config é estática
 }
 
+function renderSparkline(){
+  const el=document.getElementById('roi-sparkline');if(!el)return;
+  const now=new Date();
+  const weeks=[];
+  for(let i=7;i>=0;i--){
+    const d=new Date(now);d.setDate(d.getDate()-i*7);
+    const day=d.getDay()===0?7:d.getDay();d.setDate(d.getDate()-day+1);d.setHours(0,0,0,0);
+    weeks.push({start:new Date(d),inv:0,lucro:0});
+  }
+  entries.forEach(e=>{
+    if(!e.data)return;
+    const p=e.data.split('/');if(p.length!==3)return;
+    const ed=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));
+    for(let i=weeks.length-1;i>=0;i--){
+      const we=new Date(weeks[i].start);we.setDate(we.getDate()+7);
+      if(ed>=weeks[i].start&&ed<we){
+        weeks[i].inv+=(e.total||0);
+        weeks[i].lucro+=(e.lucroReal!==undefined?e.lucroReal:(e.resultado==='perdido'?-(e.total||0):(e.lucro||0)));
+        break;
+      }
+    }
+  });
+  const rois=weeks.map(w=>w.inv>0?(w.lucro/w.inv*100):null);
+  const valid=rois.filter(r=>r!==null);
+  if(valid.length<2){el.innerHTML='<div style="text-align:center;color:var(--text2);font-size:12px;padding:16px 0">Dados insuficientes para o gráfico.</div>';return;}
+  const W=300,H=64,px=20,py=10;
+  const minR=Math.min(0,...valid),maxR=Math.max(0,...valid),range=(maxR-minR)||1;
+  const xStep=(W-px*2)/Math.max(weeks.length-1,1);
+  const zeroY=py+(1-(0-minR)/range)*(H-py*2);
+  const pts=rois.map((r,i)=>r===null?null:{x:px+i*xStep,y:py+(1-(r-minR)/range)*(H-py*2),r});
+  const pp=pts.filter(Boolean);
+  const pathD=pp.map((p,i)=>`${i===0?'M':'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const areaD=pathD+` L${pp[pp.length-1].x.toFixed(1)},${Math.min(zeroY,H-py).toFixed(1)} L${pp[0].x.toFixed(1)},${Math.min(zeroY,H-py).toFixed(1)} Z`;
+  const last=valid[valid.length-1];
+  const lc=last>=0?'var(--green)':'var(--red)';
+  const fl=weeks[0].start,ll=weeks[weeks.length-1].start;
+  const fmt=d=>`${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}`;
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+    <span style="font-size:11px;color:var(--text2);font-weight:600">ROI — últimas 8 semanas</span>
+    <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:${lc}">${last>=0?'+':''}${last.toFixed(1)}%</span>
+  </div>
+  <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${lc}" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="${lc}" stop-opacity="0"/>
+    </linearGradient></defs>
+    <line x1="${px}" y1="${zeroY.toFixed(1)}" x2="${W-px}" y2="${zeroY.toFixed(1)}" stroke="var(--border2)" stroke-width="1" stroke-dasharray="2,3"/>
+    <path d="${areaD}" fill="url(#sg)" stroke="none"/>
+    <path d="${pathD}" fill="none" stroke="${lc}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${pp.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="${p.r>=0?'var(--green)':'var(--red)'}" stroke="var(--bg)" stroke-width="1.5"/>`).join('')}
+    <text x="${px}" y="${H}" font-size="8" fill="var(--text2)" text-anchor="middle">${fmt(fl)}</text>
+    <text x="${W-px}" y="${H}" font-size="8" fill="var(--text2)" text-anchor="middle">${fmt(ll)}</text>
+  </svg>`;
+}
+
+function calcularStakes(){
+  const T=parseFloat(document.getElementById('calc-total').value);
+  const res=document.getElementById('calc-result');
+  if(!T||T<=0){toast('Informe o investimento total','err');return;}
+  const apostas=casaIds.map(cid=>{
+    const linhas=(linhasByAposta[cid]||[]).filter(l=>parseFloat(l.odd)>1);
+    if(!linhas.length)return null;
+    const isFB=document.getElementById('fb-chk-'+cid)?.checked||false;
+    const avgOdd=linhas.reduce((a,l)=>a+parseFloat(l.odd),0)/linhas.length;
+    return{cid,odd:avgOdd,isFB};
+  }).filter(Boolean);
+  if(!apostas.length){res.innerHTML='<span style="color:var(--red)">Preencha as odds primeiro.</span>';return;}
+  const effOdds=apostas.map(ap=>ap.isFB?ap.odd-1:ap.odd);
+  const invProbSum=effOdds.reduce((a,o)=>a+1/o,0);
+  if(invProbSum>=1){
+    res.innerHTML=`<span style="color:var(--red)">Sem surebet (margem ${((invProbSum-1)*100).toFixed(2)}%)</span>`;return;
+  }
+  const lucro=T/invProbSum-T,roi=lucro/T*100;
+  apostas.forEach((ap,i)=>{
+    const stake=T/(effOdds[i]*invProbSum);
+    linhasByAposta[ap.cid].forEach(l=>{l.stake=stake.toFixed(2);});
+    renderLinhas(ap.cid);
+  });
+  calcLucro();
+  res.innerHTML=`<span style="color:var(--green)">✓ Lucro garantido: <b style="font-family:var(--mono)">+R$ ${lucro.toFixed(2)}</b> (ROI ${roi.toFixed(2)}%)</span>`;
+}
+
 function renderResumo(){
   const f=filterE(entries,filterResumo);
-  const count=f.length,inv=f.reduce((a,e)=>a+e.total,0),lucro=f.reduce((a,e)=>a+e.lucro,0),roi=count&&inv?lucro/inv*100:0;
+  const count=f.length,inv=f.reduce((a,e)=>a+(e.total||0),0);
+  const lucro=f.reduce((a,e)=>{if(e.lucroReal!==undefined)return a+e.lucroReal;if(e.resultado==='perdido')return a+(-(e.total||0));return a+(e.lucro||0);},0);
+  const roi=count&&inv?lucro/inv*100:0;
   document.getElementById('m-count').textContent=count;
   document.getElementById('m-inv').textContent=`R$ ${inv.toFixed(0)}`;
   const ml=document.getElementById('m-lucro');ml.textContent=`R$ ${lucro.toFixed(2)}`;ml.className=`metric-val ${lucro>=0?'green':'red'}`;
@@ -2166,38 +2297,80 @@ function renderResumo(){
     const luc=e.lucro>=0?`+R$ ${e.lucro.toFixed(2)}`:`-R$ ${Math.abs(e.lucro).toFixed(2)}`;
     return `<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border)">
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:700">${e.tipo==='surebet'?'🔵':'🟠'} ${e.evento}</div>
-        <div style="font-size:11px;color:var(--text2);margin-top:2px">${e.data} · ${cs}</div>
+        <div style="font-size:13px;font-weight:700">${e.tipo==='surebet'?'🔵':'🟠'} ${esc(e.evento)}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">${e.data} · ${esc(cs)}</div>
       </div>
       <div style="font-family:var(--mono);font-size:14px;font-weight:700;color:${e.lucro>=0?'var(--green)':'var(--red)'};flex-shrink:0;margin-left:8px">${luc}</div>
     </div>`;
   }).join('');
+  renderSparkline();
 }
 
 // ── USUÁRIOS ───────────────────────────────────────────────────────────────
 function salvarConta(){const ap=document.getElementById('mgr-apelido').value.trim();if(!ap){toast('Informe o apelido');return}if(contasSalvas.some(c=>c.apelido===ap)){toast('Usuário já existe');return}contasSalvas.push({id:Date.now(),apelido:ap});sd(CK,contasSalvas);document.getElementById('mgr-apelido').value='';toast('Usuário adicionado!');renderContas();casaIds.forEach(cid=>renderUserSug(cid));renderANSug();renderFBSug()}
-function deleteConta(id){contasSalvas=contasSalvas.filter(c=>c.id!==id);sd(CK,contasSalvas);renderContas();casaIds.forEach(cid=>renderUserSug(cid))}
+function deleteConta(id){if(!confirm('Remover este usuário? Esta ação não pode ser desfeita.'))return;contasSalvas=contasSalvas.filter(c=>c.id!==id);sd(CK,contasSalvas);renderContas();casaIds.forEach(cid=>renderUserSug(cid))}
 function renderContas(){
   const el=document.getElementById('contas-lista');
   const busca=(document.getElementById('busca-user')?.value||'').toLowerCase();
   const f=contasSalvas.filter(c=>!busca||c.apelido.toLowerCase().includes(busca));
   document.getElementById('users-title').textContent=`Usuários cadastrados (${contasSalvas.length})`;
   if(!f.length){el.innerHTML='<div class="empty">Nenhum usuário cadastrado.</div>';return}
-  el.innerHTML=f.map(u=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border)"><span style="font-size:14px;font-weight:700">${u.apelido}</span><button class="btn-sm red" onclick="deleteConta(${u.id})">Remover</button></div>`).join('');
+  el.innerHTML=f.map(u=>{
+    const ap=u.apelido;
+    const pendentes=entries.filter(e=>e.resultado==='pendente'&&e.casas&&e.casas.some(c=>(c.usuarios||[]).includes(ap)||(c.linhas||[]).some(l=>l.usuario===ap)));
+    const totalStaked=pendentes.reduce((a,e)=>{
+      return a+e.casas.reduce((b,c)=>{
+        const linhas=c.linhas||[];
+        const userLinhas=linhas.filter(l=>l.usuario===ap);
+        if(userLinhas.length)return b+userLinhas.reduce((s,l)=>s+(l.isFB?0:parseFloat(l.stake||0)),0);
+        if((c.usuarios||[]).includes(ap))return b+(c.freebet?0:parseFloat(c.stake||0));
+        return b;
+      },0);
+    },0);
+    const fbs=carteiraFB.filter(fb=>fb.conta===ap&&fb.status==='disponivel');
+    const fbVal=fbs.reduce((a,fb)=>a+fb.valor,0);
+    return `<div style="padding:12px 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${pendentes.length||fbs.length?'8':'0'}px">
+        <span style="font-size:14px;font-weight:700">${esc(ap)}</span>
+        <button class="btn-sm red" onclick="deleteConta(${u.id})">Remover</button>
+      </div>
+      ${(pendentes.length||fbs.length)?`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+        <div style="background:var(--bg3);border-radius:var(--r2);padding:7px 10px">
+          <div style="font-size:9px;color:var(--text2);font-weight:600;text-transform:uppercase;margin-bottom:2px">Apostas ativas</div>
+          <div style="font-size:15px;font-weight:700;font-family:var(--mono)">${pendentes.length}</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:var(--r2);padding:7px 10px">
+          <div style="font-size:9px;color:var(--text2);font-weight:600;text-transform:uppercase;margin-bottom:2px">Em apostas</div>
+          <div style="font-size:15px;font-weight:700;font-family:var(--mono)">R$ ${totalStaked.toFixed(0)}</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:var(--r2);padding:7px 10px">
+          <div style="font-size:9px;color:var(--purple);font-weight:600;text-transform:uppercase;margin-bottom:2px">FBs disp.</div>
+          <div style="font-size:15px;font-weight:700;font-family:var(--mono);color:var(--purple)">${fbs.length>0?'R$ '+fbVal.toFixed(0):'—'}</div>
+        </div>
+      </div>`:''}
+    </div>`;
+  }).join('');
 }
 
 // ── ALERTAS ────────────────────────────────────────────────────────────────
 function checkAlertas(){
   const c=document.getElementById('alertas-container');if(!c)return;
   const now=new Date();let html='';
+  // Freebets expirando em ≤3 dias
+  const em3dias=new Date(now);em3dias.setDate(now.getDate()+3);
+  carteiraFB.filter(fb=>fb.status==='disponivel'&&fb.validade).forEach(fb=>{
+    const [y,m,d]=fb.validade.split('-');const dtFB=new Date(y,m-1,d);dtFB.setHours(23,59,0,0);
+    if(dtFB>=now&&dtFB<=em3dias){const diff=Math.ceil((dtFB-now)/86400000);html+=`<div class="alert warn"><span style="font-size:18px">💜</span><div class="alert-text">Freebet expirando: <b>${esc(fb.casa)}</b> R$${fb.valor.toFixed(2)} (${fb.conta}) · ${diff===0?'hoje':'em '+diff+' dia(s)'}</div></div>`;}
+  });
   entries.filter(e=>e.resultado==='pendente'&&e.eventoData&&e.eventoHora).forEach(e=>{
     const p=e.eventoData.split('-');const d=new Date(p[0],p[1]-1,p[2]);const hp=e.eventoHora.split(':');
     d.setHours(parseInt(hp[0]),parseInt(hp[1]),0,0);const diff=Math.round((d-now)/60000);
-    if(diff>=0&&diff<=120){const urg=diff<=30;html+=`<div class="alert ${urg?'danger':'warn'}"><span style="font-size:18px">${urg?'🔴':'🟡'}</span><div class="alert-text"><b>${e.evento}</b><br>Evento ${diff===0?'AGORA':'em '+diff+' min'}</div></div>`}
+    if(diff>=0&&diff<=120){const urg=diff<=30;html+=`<div class="alert ${urg?'danger':'warn'}"><span style="font-size:18px">${urg?'🔴':'🟡'}</span><div class="alert-text"><b>${esc(e.evento)}</b><br>Evento ${diff===0?'AGORA':'em '+diff+' min'}</div></div>`}
   });
   c.innerHTML=html;
 }
 setInterval(checkAlertas,30000);setTimeout(checkAlertas,500);
+setInterval(function(){if(filterEntradas==='aovivo')renderEntradas();},60000);
 
 
 // ── NOTIFICAÇÕES & CHANCE PARA DUPLO ────────────────────────────────────────
@@ -2237,10 +2410,9 @@ function dispararNotificacao(e, forcado=false){
 }
 
 
-// ── TIMER NOTIFICAÇÕES
-function checkNotificacoesCD10min(){ /* deprecated */ }
-setInterval(checkNotificacoesCD10min,30000);
-setTimeout(checkNotificacoesCD10min,2000);
+// ── NOTIF ENVIADAS — persistência entre sessões ──────────────────────────
+function notifJaEnviada(chave){const s=JSON.parse(localStorage.getItem('ap_notif_sent')||'{}');return!!s[chave];}
+function marcarNotifEnviada(chave){const s=JSON.parse(localStorage.getItem('ap_notif_sent')||'{}');const now=Date.now();s[chave]=now;Object.keys(s).forEach(k=>{if(now-s[k]>86400000)delete s[k];});localStorage.setItem('ap_notif_sent',JSON.stringify(s));}
 
 // ── EMAIL RESUMO ─────────────────────────────────────────────────────────────
 function enviarResumoEmail(){
@@ -2433,8 +2605,8 @@ function checkNotificacoesPorEntrada(){
     var diff=Math.round((dt-now)/60000);
     var min=e.notifConfig.minutos||10;
     var chave=String(e.id)+'_notif_'+min;
-    if(diff>=(min-2) && diff<=(min+2) && !notifEnviadas.has(chave)){
-      notifEnviadas.add(chave);
+    if(diff>=(min-2) && diff<=(min+2) && !notifEnviadas.has(chave) && !notifJaEnviada(chave)){
+      notifEnviadas.add(chave);marcarNotifEnviada(chave);
       var stakeTotal = e.total||0;
       var cdStr  = (e.chanceDuplo&&e.chanceDuplo!=='N/A') ? e.chanceDuplo : '';
       var casasN = e.casas ? e.casas.map(function(c){ return c.nome+' @'+parseFloat(c.odd).toFixed(2); }).join(' · ') : '';
@@ -2463,13 +2635,13 @@ function exportCSV(){
 }
 
 // ── TOAST ──────────────────────────────────────────────────────────────────
-function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+function toast(msg,tipo){const t=document.getElementById('toast');t.textContent=msg;t.style.borderColor=tipo==='ok'?'rgba(0,230,118,.5)':tipo==='err'?'rgba(255,78,106,.5)':'var(--border2)';t.style.color=tipo==='ok'?'var(--green)':tipo==='err'?'var(--red)':'var(--text)';t.classList.add('show');setTimeout(()=>{t.classList.remove('show');t.style.borderColor='';t.style.color='';},2200);}
 
 // ── DROPDOWN GLOBAL ────────────────────────────────────────────────────────
 document.addEventListener('click',e=>{if(activeDD&&!activeDD.contains(e.target)){activeDD.querySelector('.dropdown')?.classList.remove('open');activeDD=null}});
 
 // ── INIT ───────────────────────────────────────────────────────────────────
-addCasa();addCasa();addCasa();
+addCasa();addCasa();
 atualizarBotaoAddAposta();
 document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
 // inicializa status API
