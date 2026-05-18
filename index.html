@@ -368,6 +368,10 @@
   @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
   #notif-modal { display: none; }
   #notif-modal.open { display: flex !important; }
+  .modal-overlay{display:none;position:fixed;inset:0;z-index:9100;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);align-items:flex-end;justify-content:center}
+  .modal-overlay.open{display:flex!important}
+  .modal-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r) var(--r) 0 0;padding:20px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto}
+  @media(min-width:520px){.modal-overlay{align-items:center}.modal-box{border-radius:var(--r)}}
 </style>
 </head>
 <body>
@@ -763,6 +767,69 @@
     </button>
   </nav>
 </div>
+  <!-- MODAL TRANSAÇÃO -->
+<div class="modal-overlay" id="transacao-modal">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <span style="font-size:15px;font-weight:700" id="transacao-titulo">Transação</span>
+      <button onclick="fecharTransacaoModal()" style="background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer">×</button>
+    </div>
+    <div id="transacao-subtitulo" style="font-size:12px;color:var(--text2);margin-bottom:14px"></div>
+    <div style="background:var(--bg3);border-radius:var(--r2);padding:12px;margin-bottom:14px;text-align:center">
+      <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Saldo atual</div>
+      <div id="transacao-saldo-atual" style="font-size:22px;font-weight:800;font-family:var(--mono)">R$ 0,00</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px" id="transacao-tipo-grid">
+      <button id="trans-btn-add" class="btn-sm active" onclick="selTransacaoTipo('add')" style="padding:10px;font-size:13px;font-weight:700;border-color:var(--green);color:var(--green);background:var(--green-bg)">↑ Depositar</button>
+      <button id="trans-btn-rem" class="btn-sm" onclick="selTransacaoTipo('rem')" style="padding:10px;font-size:13px;font-weight:700">↓ Sacar</button>
+    </div>
+    <div class="field-label" style="margin-top:0">Valor (R$)</div>
+    <input type="number" step="0.01" id="transacao-valor" placeholder="0,00" style="font-size:20px;font-weight:700;text-align:center;margin-bottom:8px" oninput="atualizarPreviewTransacao()">
+    <div id="transacao-preview" style="display:none;padding:10px;border-radius:var(--r2);margin-bottom:14px;text-align:center">
+      <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Novo saldo</div>
+      <div id="transacao-novo-saldo" style="font-size:20px;font-weight:800;font-family:var(--mono)"></div>
+    </div>
+    <button class="btn-primary" style="margin-top:0" onclick="confirmarTransacao()">✓ Confirmar</button>
+  </div>
+</div>
+
+<!-- MODAL TRANSFERÊNCIA -->
+<div class="modal-overlay" id="transf-modal">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <span style="font-size:15px;font-weight:700">⇄ Transferir entre bancas</span>
+      <button onclick="fecharTransferenciaModal()" style="background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer">×</button>
+    </div>
+    <div id="transf-subtitulo" style="font-size:12px;color:var(--text2);margin-bottom:14px"></div>
+    <div style="background:rgba(108,99,255,.08);border:1px solid rgba(108,99,255,.25);border-radius:var(--r2);padding:12px;margin-bottom:10px">
+      <div style="font-size:10px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">De</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div id="transf-de-nome" style="font-size:14px;font-weight:700"></div>
+        <div><div style="font-size:10px;color:var(--text2);text-align:right">Saldo banco</div><div id="transf-de-saldo" style="font-size:18px;font-weight:800;font-family:var(--mono);color:var(--accent2)"></div></div>
+      </div>
+    </div>
+    <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);padding:12px;margin-bottom:14px">
+      <div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Para</div>
+      <div id="transf-para-lista"></div>
+    </div>
+    <div class="field-label" style="margin-top:0">Valor a transferir (R$)</div>
+    <input type="number" step="0.01" id="transf-valor" placeholder="0,00" style="font-size:20px;font-weight:700;text-align:center;margin-bottom:8px" oninput="atualizarPreviewTransf()">
+    <div id="transf-preview" style="display:none;border-radius:var(--r2);overflow:hidden;margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border)">
+        <div style="background:var(--bg3);padding:10px;text-align:center">
+          <div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:3px">Saldo após envio</div>
+          <div id="transf-preview-de" style="font-size:16px;font-weight:800;font-family:var(--mono)"></div>
+        </div>
+        <div style="background:var(--bg3);padding:10px;text-align:center">
+          <div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:3px">Saldo após receber</div>
+          <div id="transf-preview-para" style="font-size:16px;font-weight:800;font-family:var(--mono)"></div>
+        </div>
+      </div>
+    </div>
+    <button class="btn-primary" style="margin-top:0" onclick="confirmarTransferencia()">⇄ Confirmar transferência</button>
+  </div>
+</div>
+
   <!-- MODAL SELEÇÃO FREEBET -->
   <div id="fb-sel-modal" style="display:none;position:fixed;inset:0;z-index:9100;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);align-items:center;justify-content:center">
     <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:20px;width:calc(100% - 32px);max-width:460px;max-height:80vh;overflow-y:auto">
@@ -1686,6 +1753,7 @@ function salvarSB(){
     hora:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),data:now.toLocaleDateString('pt-BR'),
     eventoData:document.getElementById('f-data').value||'',eventoHora:document.getElementById('f-hora').value||'',
     chanceDuplo:cdValue,fbsEsperadas:fbsEsp,fbAdicionadas:[]});
+  descontarStakeUsuarios(entries[entries.length-1]);
   // descontar freebets parcialmente usadas
   casaIds.forEach(function(cid){
     var sel=fbSelecionadaByCid[cid];
@@ -3031,49 +3099,475 @@ function renderResumo(){
 }
 
 // ── USUÁRIOS ───────────────────────────────────────────────────────────────
-function salvarConta(){const ap=document.getElementById('mgr-apelido').value.trim();if(!ap){toast('Informe o apelido');return}if(contasSalvas.some(c=>c.apelido===ap)){toast('Usuário já existe');return}contasSalvas.push({id:Date.now(),apelido:ap});sd(CK,contasSalvas);document.getElementById('mgr-apelido').value='';toast('Usuário adicionado!');renderContas();casaIds.forEach(cid=>renderUserSug(cid));renderANSug();renderFBSug()}
-function deleteConta(id){if(!confirm('Remover este usuário? Esta ação não pode ser desfeita.'))return;contasSalvas=contasSalvas.filter(c=>c.id!==id);sd(CK,contasSalvas);renderContas();casaIds.forEach(cid=>renderUserSug(cid))}
+
+// Migração: garante que todos os usuários tenham casas e banco
+(function migrarContasSalvas(){
+  var alterou=false;
+  contasSalvas.forEach(function(c){
+    if(!c.casas){
+      c.casas=ALL_CASAS.map(function(n){return{nome:n,saldo:0};});
+      alterou=true;
+    } else {
+      var nomesExist=c.casas.map(function(x){return x.nome;});
+      ALL_CASAS.forEach(function(n){
+        if(nomesExist.indexOf(n)<0){c.casas.push({nome:n,saldo:0});alterou=true;}
+      });
+    }
+    if(c.banco===undefined){c.banco=0;alterou=true;}
+  });
+  if(alterou)sd(CK,contasSalvas);
+})();
+
+var showAllCasas={};
+var _buscaCasa={};
+
+function salvarConta(){
+  var ap=document.getElementById('mgr-apelido').value.trim();
+  if(!ap){toast('Informe o apelido');return}
+  if(contasSalvas.some(function(c){return c.apelido===ap;})){toast('Usuário já existe');return}
+  var casas=ALL_CASAS.map(function(n){return{nome:n,saldo:0};});
+  contasSalvas.push({id:Date.now(),apelido:ap,casas:casas,banco:0});
+  sd(CK,contasSalvas);
+  document.getElementById('mgr-apelido').value='';
+  toast('Usuário adicionado com '+casas.length+' casas!');
+  renderContas();
+  casaIds.forEach(function(cid){renderUserSug(cid);});
+  renderANSug();renderFBSug();
+}
+
+function deleteConta(id){
+  if(!confirm('Remover este usuário?'))return;
+  contasSalvas=contasSalvas.filter(function(c){return c.id!==id;});
+  sd(CK,contasSalvas);
+  renderContas();
+  casaIds.forEach(function(cid){renderUserSug(cid);});
+  toast('Usuário removido');
+}
+
 function renderContas(){
-  const el=document.getElementById('contas-lista');
-  const busca=(document.getElementById('busca-user')?.value||'').toLowerCase();
-  const f=contasSalvas.filter(c=>!busca||c.apelido.toLowerCase().includes(busca));
-  document.getElementById('users-title').textContent=`Usuários cadastrados (${contasSalvas.length})`;
+  var el=document.getElementById('contas-lista');
+  var busca=(document.getElementById('busca-user')?.value||'').toLowerCase();
+  var f=contasSalvas.filter(function(c){return !busca||c.apelido.toLowerCase().includes(busca);});
+  document.getElementById('users-title').textContent='Usuários ('+contasSalvas.length+')';
   if(!f.length){el.innerHTML='<div class="empty">Nenhum usuário cadastrado.</div>';return}
-  el.innerHTML=f.map(u=>{
-    const ap=u.apelido;
-    const pendentes=entries.filter(e=>e.resultado==='pendente'&&e.casas&&e.casas.some(c=>(c.usuarios||[]).includes(ap)||(c.linhas||[]).some(l=>l.usuario===ap)));
-    const totalStaked=pendentes.reduce((a,e)=>{
-      return a+e.casas.reduce((b,c)=>{
-        const linhas=c.linhas||[];
-        const userLinhas=linhas.filter(l=>l.usuario===ap);
-        if(userLinhas.length)return b+userLinhas.reduce((s,l)=>s+(l.isFB?0:parseFloat(l.stake||0)),0);
-        if((c.usuarios||[]).includes(ap))return b+(c.freebet?0:parseFloat(c.stake||0));
-        return b;
-      },0);
-    },0);
-    const fbs=carteiraFB.filter(fb=>fb.conta===ap&&fb.status==='disponivel');
-    const fbVal=fbs.reduce((a,fb)=>a+fb.valor,0);
-    return `<div style="padding:12px 0;border-bottom:1px solid var(--border)">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${pendentes.length||fbs.length?'8':'0'}px">
-        <span style="font-size:14px;font-weight:700">${esc(ap)}</span>
-        <button class="btn-sm red" onclick="deleteConta(${u.id})">Remover</button>
-      </div>
-      ${(pendentes.length||fbs.length)?`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
-        <div style="background:var(--bg3);border-radius:var(--r2);padding:7px 10px">
-          <div style="font-size:9px;color:var(--text2);font-weight:600;text-transform:uppercase;margin-bottom:2px">Apostas ativas</div>
-          <div style="font-size:15px;font-weight:700;font-family:var(--mono)">${pendentes.length}</div>
-        </div>
-        <div style="background:var(--bg3);border-radius:var(--r2);padding:7px 10px">
-          <div style="font-size:9px;color:var(--text2);font-weight:600;text-transform:uppercase;margin-bottom:2px">Em apostas</div>
-          <div style="font-size:15px;font-weight:700;font-family:var(--mono)">R$ ${totalStaked.toFixed(0)}</div>
-        </div>
-        <div style="background:var(--bg3);border-radius:var(--r2);padding:7px 10px">
-          <div style="font-size:9px;color:var(--purple);font-weight:600;text-transform:uppercase;margin-bottom:2px">FBs disp.</div>
-          <div style="font-size:15px;font-weight:700;font-family:var(--mono);color:var(--purple)">${fbs.length>0?'R$ '+fbVal.toFixed(0):'—'}</div>
-        </div>
-      </div>`:''}
-    </div>`;
+  el.innerHTML=f.map(function(c){
+    var casasDoUser=c.casas||[];
+    var somasCasas=casasDoUser.reduce(function(a,x){return a+(parseFloat(x.saldo)||0);},0);
+    var totalBanco=parseFloat(c.banco||0);
+    var totalGeral=somasCasas+totalBanco;
+    var cor=totalGeral>0?'var(--green)':totalGeral<0?'var(--red)':'var(--text2)';
+    var comSaldo=casasDoUser.filter(function(x){return parseFloat(x.saldo||0)!==0;}).length;
+    return '<div style="border:1px solid var(--border);border-radius:var(--r2);margin-bottom:6px;overflow:hidden">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;cursor:pointer;background:var(--bg2)" onclick="toggleUserDetail('+c.id+')">'
+      +'<div>'
+      +'<div style="font-size:14px;font-weight:700">👤 '+esc(c.apelido)+'</div>'
+      +(comSaldo?'<div style="font-size:11px;color:var(--text2)">'+comSaldo+' casa(s) com saldo</div>':'')
+      +'</div>'
+      +'<div style="display:flex;align-items:center;gap:10px">'
+      +'<div style="text-align:right">'
+      +'<div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em">Total geral</div>'
+      +'<div style="font-size:16px;font-weight:800;font-family:var(--mono);color:'+cor+'">R$ '+totalGeral.toFixed(2)+'</div>'
+      +'</div>'
+      +'<span style="color:var(--text2);font-size:20px" id="arrow-'+c.id+'">›</span>'
+      +'<button class="btn-sm red" style="padding:2px 8px" onclick="event.stopPropagation();deleteConta('+c.id+')">×</button>'
+      +'</div></div>'
+      +'<div id="user-detail-'+c.id+'" style="display:none;padding:10px 12px;background:var(--bg3);border-top:1px solid var(--border)">'
+      +'<div id="casas-wrapper-'+c.id+'">'+buildUserCasas(c)+'</div>'
+      +'</div></div>';
   }).join('');
+}
+
+function toggleUserDetail(id){
+  var el=document.getElementById('user-detail-'+id);
+  var arrow=document.getElementById('arrow-'+id);
+  if(!el)return;
+  var isOpen=el.style.display==='block';
+  el.style.display=isOpen?'none':'block';
+  if(arrow)arrow.textContent=isOpen?'›':'⌄';
+  if(!isOpen){
+    var c=contasSalvas.find(function(x){return x.id===id;});
+    if(c){var w=document.getElementById('casas-wrapper-'+id);if(w)w.innerHTML=buildUserCasas(c);}
+  }
+}
+
+function buildUserCasas(c){
+  var casas=(c.casas||[]).slice().sort(function(a,b){return a.nome.localeCompare(b.nome);});
+  var totalCasas=casas.reduce(function(a,x){return a+(parseFloat(x.saldo)||0);},0);
+  var totalBanco=parseFloat(c.banco||0);
+  var totalGeral=totalCasas+totalBanco;
+  var comSaldo=casas.filter(function(x){return parseFloat(x.saldo||0)!==0;}).length;
+  var mostrarTodas=showAllCasas[c.id];
+  var buscaAtual=(_buscaCasa[c.id]||'').toLowerCase();
+
+  var h='';
+
+  // Resumo
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">';
+  h+='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:10px;text-align:center">';
+  h+='<div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Casas</div>';
+  h+='<div style="font-size:16px;font-weight:700;font-family:var(--mono);color:'+(totalCasas>0?'var(--green)':totalCasas<0?'var(--red)':'var(--text)')+'">R$ '+totalCasas.toFixed(2)+'</div>';
+  h+='</div>';
+  h+='<div style="background:rgba(108,99,255,.08);border:1px solid rgba(108,99,255,.3);border-radius:var(--r2);padding:10px;text-align:center">';
+  h+='<div style="font-size:10px;font-weight:700;color:var(--accent2);text-transform:uppercase;margin-bottom:4px">Banco</div>';
+  h+='<div style="font-size:16px;font-weight:700;font-family:var(--mono);color:var(--accent2)">R$ '+totalBanco.toFixed(2)+'</div>';
+  h+='</div>';
+  h+='<div style="background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.2);border-radius:var(--r2);padding:10px;text-align:center">';
+  h+='<div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;margin-bottom:4px">Total</div>';
+  h+='<div style="font-size:16px;font-weight:700;font-family:var(--mono);color:'+(totalGeral>0?'var(--green)':totalGeral<0?'var(--red)':'var(--text)')+'">R$ '+totalGeral.toFixed(2)+'</div>';
+  h+='</div>';
+  h+='</div>';
+
+  // Banco
+  h+='<div style="background:rgba(108,99,255,.06);border:1px solid rgba(108,99,255,.25);border-radius:var(--r2);padding:12px;margin-bottom:12px">';
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';
+  h+='<div style="font-size:12px;font-weight:700;color:var(--accent2)">🏛️ Banco / Banca</div>';
+  h+='<div style="font-size:18px;font-weight:800;font-family:var(--mono);color:'+(totalBanco>=0?'var(--accent2)':'var(--red)')+'">R$ '+totalBanco.toFixed(2)+'</div>';
+  h+='</div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">';
+  h+='<button class="btn-sm" style="padding:10px;font-size:12px;font-weight:700;border-color:var(--green);color:var(--green);background:var(--green-bg)" onclick="abrirTransacaoBanco('+c.id+',\'add\')">↑ Adicionar</button>';
+  h+='<button class="btn-sm" style="padding:10px;font-size:12px;font-weight:700;border-color:var(--red);color:var(--red)" onclick="abrirTransacaoBanco('+c.id+',\'rem\')">↓ Retirar</button>';
+  h+='<button class="btn-sm" style="padding:10px;font-size:12px;font-weight:700;border-color:var(--accent);color:var(--accent2)" onclick="abrirTransferencia('+c.id+')">⇄ Transferir</button>';
+  h+='</div></div>';
+
+  // Cabeçalho casas
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+  h+='<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em">Casas ('+comSaldo+' com saldo / '+casas.length+')</div>';
+  h+='<button class="btn-sm" onclick="toggleTodasCasas('+c.id+')" style="font-size:11px">'+(mostrarTodas?'Só com saldo':'Ver todas')+'</button>';
+  h+='</div>';
+
+  // Campo adicionar casa
+  h+='<div style="display:flex;gap:6px;margin-bottom:8px">';
+  h+='<input type="text" placeholder="Adicionar nova casa..." id="nova-casa-'+c.id+'" style="flex:1;padding:7px 10px;font-size:13px">';
+  h+='<button class="btn-sm" style="padding:7px 12px;border-color:var(--green);color:var(--green)" onclick="addCasaUsuario('+c.id+')">+ Add</button>';
+  h+='</div>';
+
+  // Busca de casas
+  h+='<div style="margin-bottom:8px">';
+  h+='<input type="text" id="busca-casa-'+c.id+'" placeholder="🔍 Buscar casa..." value="'+esc(_buscaCasa[c.id]||'')+'" style="width:100%;padding:7px 10px;font-size:13px" oninput="filtrarCasasUser('+c.id+',this.value)">';
+  h+='</div>';
+
+  // Lista de casas
+  var visiveis=mostrarTodas?casas:casas.filter(function(x){return parseFloat(x.saldo||0)!==0;});
+  if(buscaAtual)visiveis=casas.filter(function(x){return x.nome.toLowerCase().includes(buscaAtual);});
+  if(!visiveis.length){
+    h+='<div style="text-align:center;padding:16px;color:var(--text2);font-size:13px">'
+      +(casas.length?'Nenhuma casa com saldo. <br><small>Clique em "Ver todas" para lançar saldos.</small>':'Nenhuma casa.')
+      +'</div>';
+  } else {
+    h+='<div style="border:1px solid var(--border);border-radius:var(--r2);overflow:hidden">';
+    h+='<div style="display:grid;grid-template-columns:1fr 72px 72px 72px 22px;gap:0;background:var(--bg2);padding:7px 12px">';
+    h+='<div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase">Casa</div>';
+    h+='<div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;text-align:center">Total</div>';
+    h+='<div style="font-size:10px;font-weight:700;color:#4fc3f7;text-transform:uppercase;text-align:center">Apostas</div>';
+    h+='<div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;text-align:center">Livre</div>';
+    h+='<div></div>';
+    h+='</div>';
+    visiveis.forEach(function(casa){
+      var idx=(c.casas||[]).findIndex(function(x){return x.nome===casa.nome;});
+      var saldo=parseFloat(casa.saldo||0);
+      var cor=saldo>0?'var(--green)':saldo<0?'var(--red)':'var(--text2)';
+      var emAp=0;
+      if(c.apostasAtivas){c.apostasAtivas.forEach(function(ap){if((ap.casa||'').toLowerCase()===casa.nome.toLowerCase())emAp+=(parseFloat(ap.stake)||0);});}
+      var disp=saldo-emAp;
+      var corDisp=disp>0?'var(--green)':disp<0?'var(--red)':'var(--text2)';
+      var bgDisp=disp>0?'var(--green-bg)':disp<0?'rgba(255,78,106,.08)':'var(--bg3)';
+      var bdDisp=disp>0?'rgba(0,230,118,.35)':disp<0?'rgba(255,78,106,.35)':'var(--border2)';
+      var safeNome=esc(casa.nome);
+      h+='<div style="padding:8px 12px;border-top:1px solid var(--border)">';
+      h+='<div style="display:grid;grid-template-columns:1fr 72px 72px 72px 22px;gap:4px;align-items:center">';
+      h+='<span style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+safeNome+'</span>';
+      h+='<div style="text-align:center;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);padding:4px 2px">';
+      h+='<div style="font-size:9px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.03em">Total</div>';
+      h+='<div style="font-size:13px;font-weight:800;font-family:var(--mono);color:'+cor+'">'+saldo.toFixed(0)+'</div>';
+      h+='</div>';
+      h+='<div style="text-align:center;background:rgba(79,195,247,.08);border:1px solid rgba(79,195,247,'+(emAp>0?'.35':'.12')+');border-radius:var(--r2);padding:4px 2px">';
+      h+='<div style="font-size:9px;font-weight:700;color:#4fc3f7;text-transform:uppercase;letter-spacing:.03em">Aposta</div>';
+      h+='<div style="font-size:13px;font-weight:800;font-family:var(--mono);color:'+(emAp>0?'#4fc3f7':'var(--text2)')+'">'+emAp.toFixed(0)+'</div>';
+      h+='</div>';
+      h+='<div style="text-align:center;background:'+bgDisp+';border:1px solid '+bdDisp+';border-radius:var(--r2);padding:4px 2px">';
+      h+='<div style="font-size:9px;font-weight:700;color:'+corDisp+';text-transform:uppercase;letter-spacing:.03em">Livre</div>';
+      h+='<div style="font-size:13px;font-weight:800;font-family:var(--mono);color:'+corDisp+'">'+disp.toFixed(0)+'</div>';
+      h+='</div>';
+      h+='<button style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:14px;padding:0;opacity:.4" onclick="removCasaUsuario('+c.id+',\''+casa.nome.replace(/'/g,"\\'")+'\')" title="Remover">×</button>';
+      h+='</div>';
+      h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px">';
+      h+='<button class="btn-sm" style="font-size:11px;padding:5px;border-color:rgba(0,230,118,.4);color:var(--green)" onclick="abrirTransacaoCasa('+c.id+','+idx+',\'add\')">↑ Depositar</button>';
+      h+='<button class="btn-sm" style="font-size:11px;padding:5px;border-color:rgba(255,78,106,.4);color:var(--red)" onclick="abrirTransacaoCasa('+c.id+','+idx+',\'rem\')">↓ Sacar</button>';
+      h+='</div>';
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+  return h;
+}
+
+function toggleTodasCasas(uid){
+  showAllCasas[uid]=!showAllCasas[uid];
+  var c=contasSalvas.find(function(x){return x.id===uid;});
+  if(!c)return;
+  var w=document.getElementById('casas-wrapper-'+uid);
+  if(w)w.innerHTML=buildUserCasas(c);
+}
+
+function filtrarCasasUser(uid,val){
+  _buscaCasa[uid]=val;
+  var c=contasSalvas.find(function(x){return x.id===uid;});
+  if(!c)return;
+  var w=document.getElementById('casas-wrapper-'+uid);
+  if(w)w.innerHTML=buildUserCasas(c);
+  setTimeout(function(){
+    var inp=document.getElementById('busca-casa-'+uid);
+    if(inp){inp.focus();inp.setSelectionRange(val.length,val.length);}
+  },30);
+}
+
+function addCasaUsuario(uid){
+  var inpEl=document.getElementById('nova-casa-'+uid);if(!inpEl)return;
+  var nome=inpEl.value.trim();if(!nome){toast('Informe o nome da casa');return;}
+  var jaExiste=ALL_CASAS.some(function(x){return x.toLowerCase()===nome.toLowerCase();});
+  if(jaExiste){toast('"'+nome+'" já existe no catálogo');return;}
+  contasSalvas.forEach(function(c){
+    if(!c.casas)c.casas=[];
+    c.casas.push({nome:nome,saldo:0});
+  });
+  ALL_CASAS.push(nome);ALL_CASAS.sort();
+  sd(CK,contasSalvas);inpEl.value='';
+  toast('"'+nome+'" adicionada a todos os usuários!');
+  var w=document.getElementById('casas-wrapper-'+uid);
+  var c=contasSalvas.find(function(x){return x.id===uid;});
+  if(w&&c)w.innerHTML=buildUserCasas(c);
+}
+
+function removCasaUsuario(uid,nomeCasa){
+  if(!confirm('Remover "'+nomeCasa+'" de TODAS as contas?'))return;
+  contasSalvas.forEach(function(c){
+    if(c.casas)c.casas=c.casas.filter(function(x){return x.nome.toLowerCase()!==nomeCasa.toLowerCase();});
+  });
+  var idx=ALL_CASAS.findIndex(function(x){return x.toLowerCase()===nomeCasa.toLowerCase();});
+  if(idx>=0)ALL_CASAS.splice(idx,1);
+  sd(CK,contasSalvas);
+  toast('"'+nomeCasa+'" removida de todos!');
+  renderContas();
+  setTimeout(function(){
+    var det=document.getElementById('user-detail-'+uid);
+    if(det){det.style.display='block';var c=contasSalvas.find(function(x){return x.id===uid;});var w=document.getElementById('casas-wrapper-'+uid);if(c&&w)w.innerHTML=buildUserCasas(c);}
+  },80);
+}
+
+// ── MODAL TRANSAÇÃO ───────────────────────────────────────────────────────
+var _transacaoCtx=null;
+
+function abrirTransacaoBanco(uid,tipoOp){
+  var c=contasSalvas.find(function(x){return x.id===uid;});if(!c)return;
+  _transacaoCtx={uid:uid,tipo:'banco',tipoOp:tipoOp||'add'};
+  var saldo=parseFloat(c.banco||0);
+  document.getElementById('transacao-titulo').textContent=tipoOp==='add'?'↑ Adicionar ao banco':'↓ Retirar do banco';
+  document.getElementById('transacao-subtitulo').textContent='🏛️ Banco/Banca — '+esc(c.apelido);
+  document.getElementById('transacao-saldo-atual').textContent='R$ '+saldo.toFixed(2);
+  document.getElementById('transacao-saldo-atual').style.color=saldo>=0?'var(--accent2)':'var(--red)';
+  document.getElementById('transacao-valor').value='';
+  document.getElementById('transacao-preview').style.display='none';
+  selTransacaoTipo(tipoOp||'add');
+  document.getElementById('transacao-modal').classList.add('open');
+  setTimeout(function(){document.getElementById('transacao-valor').focus();},200);
+}
+
+function abrirTransacaoCasa(uid,casaIdx,tipoOp){
+  var c=contasSalvas.find(function(x){return x.id===uid;});if(!c||!c.casas||!c.casas[casaIdx])return;
+  var casa=c.casas[casaIdx];
+  _transacaoCtx={uid:uid,tipo:'casa',casaIdx:casaIdx,tipoOp:tipoOp||'add'};
+  var saldo=parseFloat(casa.saldo||0);
+  document.getElementById('transacao-titulo').textContent=tipoOp==='add'?'↑ Depositar':'↓ Sacar';
+  document.getElementById('transacao-subtitulo').textContent=esc(c.apelido)+' · '+esc(casa.nome);
+  document.getElementById('transacao-saldo-atual').textContent='R$ '+saldo.toFixed(2);
+  document.getElementById('transacao-saldo-atual').style.color=saldo>0?'var(--green)':saldo<0?'var(--red)':'';
+  document.getElementById('transacao-valor').value='';
+  document.getElementById('transacao-preview').style.display='none';
+  selTransacaoTipo(tipoOp||'add');
+  document.getElementById('transacao-modal').classList.add('open');
+  setTimeout(function(){document.getElementById('transacao-valor').focus();},200);
+}
+
+function selTransacaoTipo(tipo){
+  _transacaoCtx&&(_transacaoCtx.tipoOp=tipo);
+  var btnA=document.getElementById('trans-btn-add'),btnR=document.getElementById('trans-btn-rem');
+  if(!btnA||!btnR)return;
+  btnA.classList.toggle('active',tipo==='add');
+  btnA.style.background=tipo==='add'?'var(--green-bg)':'';
+  btnA.style.borderColor=tipo==='add'?'var(--green)':'';
+  btnA.style.color=tipo==='add'?'var(--green)':'';
+  btnR.classList.toggle('active',tipo==='rem');
+  btnR.style.background=tipo==='rem'?'rgba(255,78,106,.08)':'';
+  btnR.style.borderColor=tipo==='rem'?'rgba(255,78,106,.5)':'';
+  btnR.style.color=tipo==='rem'?'var(--red)':'';
+  atualizarPreviewTransacao();
+}
+
+function atualizarPreviewTransacao(){
+  if(!_transacaoCtx)return;
+  var val=parseFloat(document.getElementById('transacao-valor').value)||0;
+  if(!val){document.getElementById('transacao-preview').style.display='none';return;}
+  var c=contasSalvas.find(function(x){return x.id===_transacaoCtx.uid;});if(!c)return;
+  var saldoAtual=_transacaoCtx.tipo==='banco'?parseFloat(c.banco||0):parseFloat((c.casas||[])[_transacaoCtx.casaIdx]?.saldo||0);
+  var novoSaldo=_transacaoCtx.tipoOp==='add'?saldoAtual+val:saldoAtual-val;
+  var el=document.getElementById('transacao-novo-saldo');
+  el.textContent='R$ '+novoSaldo.toFixed(2);
+  el.style.color=novoSaldo>0?'var(--green)':novoSaldo<0?'var(--red)':'var(--text)';
+  var prev=document.getElementById('transacao-preview');
+  prev.style.display='block';
+  prev.style.background=novoSaldo>=0?'var(--green-bg)':'rgba(255,78,106,.06)';
+  prev.style.border='1px solid '+(novoSaldo>=0?'rgba(0,230,118,.2)':'rgba(255,78,106,.3)');
+}
+
+function confirmarTransacao(){
+  if(!_transacaoCtx)return;
+  var val=parseFloat(document.getElementById('transacao-valor').value)||0;
+  if(!val){toast('Informe um valor');return;}
+  var c=contasSalvas.find(function(x){return x.id===_transacaoCtx.uid;});if(!c)return;
+  var delta=_transacaoCtx.tipoOp==='add'?val:-val;
+  if(_transacaoCtx.tipo==='banco'){
+    c.banco=(parseFloat(c.banco||0)+delta);
+  } else {
+    var casa=(c.casas||[])[_transacaoCtx.casaIdx];
+    if(casa)casa.saldo=(parseFloat(casa.saldo||0)+delta);
+  }
+  sd(CK,contasSalvas);
+  fecharTransacaoModal();
+  var w=document.getElementById('casas-wrapper-'+_transacaoCtx?.uid);
+  var cu=contasSalvas.find(function(x){return x.id===(_transacaoCtx?.uid);});
+  if(w&&cu)w.innerHTML=buildUserCasas(cu);
+  renderContas();
+  toast((_transacaoCtx?.tipoOp==='add'?'↑ Depositado':'↓ Sacado')+' R$ '+val.toFixed(2),'ok');
+}
+
+function fecharTransacaoModal(){
+  document.getElementById('transacao-modal').classList.remove('open');
+  _transacaoCtx=null;
+}
+
+// ── MODAL TRANSFERÊNCIA ───────────────────────────────────────────────────
+var _transfDeUid=null,_transfParaUid=null;
+
+function abrirTransferencia(uid){
+  var c=contasSalvas.find(function(x){return x.id===uid;});if(!c)return;
+  _transfDeUid=uid;_transfParaUid=null;
+  document.getElementById('transf-de-nome').textContent=c.apelido;
+  var banco=parseFloat(c.banco||0);
+  document.getElementById('transf-de-saldo').textContent='R$ '+banco.toFixed(2);
+  document.getElementById('transf-subtitulo').textContent='Transfere do banco de '+esc(c.apelido)+' para outro usuário';
+  document.getElementById('transf-valor').value='';
+  document.getElementById('transf-preview').style.display='none';
+  var outros=contasSalvas.filter(function(x){return x.id!==uid;});
+  var lista=document.getElementById('transf-para-lista');
+  if(!outros.length){lista.innerHTML='<div style="color:var(--text2);font-size:13px;padding:8px 0">Nenhum outro usuário cadastrado.</div>';
+  } else {
+    lista.innerHTML=outros.map(function(o){
+      var b=parseFloat(o.banco||0);
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="selTransfPara('+o.id+')" id="transf-opt-'+o.id+'">'
+        +'<div style="font-size:13px;font-weight:600">'+esc(o.apelido)+'</div>'
+        +'<div style="font-size:13px;font-family:var(--mono);color:var(--accent2)">R$ '+b.toFixed(2)+'</div>'
+        +'</div>';
+    }).join('');
+  }
+  document.getElementById('transf-modal').classList.add('open');
+}
+
+function selTransfPara(uid){
+  _transfParaUid=uid;
+  document.querySelectorAll('[id^="transf-opt-"]').forEach(function(el){
+    el.style.background=el.id==='transf-opt-'+uid?'rgba(108,99,255,.1)':'';
+    el.style.borderRadius=el.id==='transf-opt-'+uid?'var(--r2)':'';
+  });
+  atualizarPreviewTransf();
+}
+
+function atualizarPreviewTransf(){
+  if(!_transfDeUid||!_transfParaUid){document.getElementById('transf-preview').style.display='none';return;}
+  var val=parseFloat(document.getElementById('transf-valor').value)||0;
+  if(!val){document.getElementById('transf-preview').style.display='none';return;}
+  var de=contasSalvas.find(function(x){return x.id===_transfDeUid;});
+  var para=contasSalvas.find(function(x){return x.id===_transfParaUid;});
+  if(!de||!para)return;
+  var novoDe=parseFloat(de.banco||0)-val;
+  var novoPara=parseFloat(para.banco||0)+val;
+  var elDe=document.getElementById('transf-preview-de');
+  var elPara=document.getElementById('transf-preview-para');
+  elDe.textContent='R$ '+novoDe.toFixed(2);elDe.style.color=novoDe>=0?'var(--accent2)':'var(--red)';
+  elPara.textContent='R$ '+novoPara.toFixed(2);elPara.style.color='var(--accent2)';
+  document.getElementById('transf-preview').style.display='block';
+}
+
+function confirmarTransferencia(){
+  var val=parseFloat(document.getElementById('transf-valor').value)||0;
+  if(!val){toast('Informe o valor');return;}
+  if(!_transfParaUid){toast('Selecione o destino');return;}
+  var de=contasSalvas.find(function(x){return x.id===_transfDeUid;});
+  var para=contasSalvas.find(function(x){return x.id===_transfParaUid;});
+  if(!de||!para)return;
+  de.banco=(parseFloat(de.banco||0)-val);
+  para.banco=(parseFloat(para.banco||0)+val);
+  sd(CK,contasSalvas);
+  fecharTransferenciaModal();
+  renderContas();
+  toast('⇄ Transferido R$ '+val.toFixed(2)+' para '+esc(para.apelido),'ok');
+}
+
+function fecharTransferenciaModal(){
+  document.getElementById('transf-modal').classList.remove('open');
+  _transfDeUid=null;_transfParaUid=null;
+}
+
+// ── INTEGRAÇÃO APOSTAS ↔ USUÁRIOS ────────────────────────────────────────
+function descontarStakeUsuarios(entry){
+  if(!entry.casas)return;
+  var alterou=false;
+  entry.casas.forEach(function(c){
+    var linhas=c.linhas||[];
+    if(!linhas.length&&c.usuarios&&c.usuarios.length){
+      linhas=[{casa:c.nome,usuario:c.usuarios[0],stake:c.stake,isFreebet:c.freebet}];
+    }
+    linhas.forEach(function(l){
+      if(l.isFreebet||l.isFB)return;
+      var stakeVal=parseFloat(l.stake)||0;if(!stakeVal)return;
+      var usuario=(l.usuario||'').trim();
+      var casaNome=(l.casa||c.nome||'').trim();if(!casaNome)return;
+      var conta=usuario?contasSalvas.find(function(ct){return ct.apelido===usuario;}):null;
+      if(!conta&&contasSalvas.length===1)conta=contasSalvas[0];
+      if(!conta)return;
+      var casaObj=(conta.casas||[]).find(function(x){return x.nome.toLowerCase()===casaNome.toLowerCase();});
+      if(casaObj){casaObj.saldo=(parseFloat(casaObj.saldo)||0)-stakeVal;alterou=true;}
+      if(!conta.apostasAtivas)conta.apostasAtivas=[];
+      conta.apostasAtivas.push({entradaId:entry.id,casa:casaNome,stake:stakeVal});
+      alterou=true;
+    });
+  });
+  if(alterou)sd(CK,contasSalvas);
+}
+
+function reverterStakeUsuarios(entry){
+  if(!entry.casas)return;
+  var alterou=false;
+  entry.casas.forEach(function(c){
+    var linhas=c.linhas||[];
+    if(!linhas.length&&c.usuarios&&c.usuarios.length){
+      linhas=[{casa:c.nome,usuario:c.usuarios[0],stake:c.stake,isFreebet:c.freebet}];
+    }
+    linhas.forEach(function(l){
+      if(l.isFreebet||l.isFB)return;
+      var stakeVal=parseFloat(l.stake)||0;if(!stakeVal)return;
+      var usuario=(l.usuario||'').trim();
+      var casaNome=(l.casa||c.nome||'').trim();if(!casaNome)return;
+      var conta=usuario?contasSalvas.find(function(ct){return ct.apelido===usuario;}):null;
+      if(!conta&&contasSalvas.length===1)conta=contasSalvas[0];
+      if(!conta)return;
+      var casaObj=(conta.casas||[]).find(function(x){return x.nome.toLowerCase()===casaNome.toLowerCase();});
+      if(casaObj){casaObj.saldo=(parseFloat(casaObj.saldo)||0)+stakeVal;alterou=true;}
+      if(conta.apostasAtivas){
+        conta.apostasAtivas=conta.apostasAtivas.filter(function(x){return x.entradaId!==entry.id;});
+      }
+    });
+  });
+  if(alterou)sd(CK,contasSalvas);
 }
 
 // ── ALERTAS ────────────────────────────────────────────────────────────────
@@ -3232,6 +3726,13 @@ document.addEventListener('click', function(ev){
   var modal = document.getElementById('notif-modal');
   if(!modal || !modal.classList.contains('open')) return;
   if(ev.target === modal) fecharNotifModal();
+});
+
+document.addEventListener('click',function(ev){
+  ['transacao-modal','transf-modal'].forEach(function(id){
+    var m=document.getElementById(id);
+    if(m&&m.classList.contains('open')&&ev.target===m)m.classList.remove('open');
+  });
 });
 
 function setNotifMin(min, btn){
