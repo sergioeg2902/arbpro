@@ -706,7 +706,10 @@
         <input type="text" id="mgr-apelido" placeholder="Ex: João, Maria, Conta 2...">
         <button class="btn-primary" style="margin-top:10px" onclick="salvarConta()">Adicionar usuário</button>
       </div>
-      <input type="text" id="busca-user" placeholder="Buscar usuário..." oninput="renderContas()" style="margin-bottom:8px">
+      <div style="display:flex;gap:6px;margin-bottom:8px;align-items:center">
+        <input type="text" id="busca-user" placeholder="Buscar usuário..." oninput="renderContas()" style="margin-bottom:0;flex:1">
+        <button class="btn-sm" style="white-space:nowrap;border-color:var(--accent);color:var(--accent2)" onclick="abrirExtratoGeral()">📋 Extrato Geral</button>
+      </div>
       <div class="card">
         <div class="card-title" id="users-title">Usuários cadastrados</div>
         <div id="contas-lista"></div>
@@ -806,6 +809,44 @@
       <div id="transacao-novo-saldo" style="font-size:20px;font-weight:800;font-family:var(--mono)"></div>
     </div>
     <button class="btn-primary" style="margin-top:0" onclick="confirmarTransacao()">✓ Confirmar</button>
+  </div>
+</div>
+
+<!-- MODAL EXTRATO -->
+<div class="modal-overlay" id="extrato-modal">
+  <div class="modal-box" style="max-height:82vh;display:flex;flex-direction:column;padding-bottom:10px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <span style="font-size:15px;font-weight:700" id="extrato-titulo">Extrato</span>
+      <button onclick="fecharExtratoModal()" style="background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;line-height:1">×</button>
+    </div>
+    <div id="extrato-subtitulo" style="font-size:12px;color:var(--text2);margin-bottom:10px"></div>
+    <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+      <select id="extrato-filtro-tipo" onchange="renderExtratoLista()" style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text);padding:5px 8px;font-size:12px">
+        <option value="todos">Todos os tipos</option>
+        <option value="add">Depósitos</option>
+        <option value="rem">Saques</option>
+        <option value="bonus">Ganho Bônus/Slot</option>
+        <option value="sloss">Perca Bônus/Slot</option>
+      </select>
+      <select id="extrato-filtro-user" onchange="renderExtratoLista()" style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text);padding:5px 8px;font-size:12px;display:none" id="extrato-filtro-user">
+      </select>
+    </div>
+    <div id="extrato-lista" style="overflow-y:auto;flex:1;min-height:0"></div>
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <div style="flex:1;background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.2);border-radius:var(--r2);padding:8px;text-align:center">
+        <div style="font-size:9px;text-transform:uppercase;font-weight:700;color:var(--green);letter-spacing:.06em">Entradas</div>
+        <div id="extrato-total-in" style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--green)">R$ 0,00</div>
+      </div>
+      <div style="flex:1;background:rgba(255,78,106,.06);border:1px solid rgba(255,78,106,.2);border-radius:var(--r2);padding:8px;text-align:center">
+        <div style="font-size:9px;text-transform:uppercase;font-weight:700;color:var(--red);letter-spacing:.06em">Saídas</div>
+        <div id="extrato-total-out" style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--red)">R$ 0,00</div>
+      </div>
+      <div style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);padding:8px;text-align:center">
+        <div style="font-size:9px;text-transform:uppercase;font-weight:700;color:var(--text2);letter-spacing:.06em">Saldo mov.</div>
+        <div id="extrato-total-net" style="font-family:var(--mono);font-size:14px;font-weight:700">R$ 0,00</div>
+      </div>
+    </div>
+    <button class="btn-sm" style="margin-top:8px;font-size:12px" onclick="exportExtratoCSV()">⬇ Exportar CSV</button>
   </div>
 </div>
 
@@ -942,6 +983,7 @@
 // ── CONSTANTES ─────────────────────────────────────────────────────────────
 const SK='ap_v1', CK='ap_contas_v1', FBCK='ap_fb_v1';
 const PRTK='ap_protecao_v1', PRUSR='ap_prot_users_v1', PRPAG='ap_prot_pag_v1';
+const MOVK='ap_mov_v1';
 const ALL_CASAS=['Bet365','Betano','Superbet','Sportingbet','KTO','Novibet','BetMGM','Betnacional','Blaze','Betsson','Vbet','Pinnacle','Bwin','1xBet','Betboo','Brazino777','BR4bet','Multibet','BetBoom','Vera Bet','Bet7K','Bodog','Betcris','Dafabet','Betfair','Parimatch','Sportsbet.io','888sport','Unibet','William Hill','Betway','22bet','Melbet','Mostbet','Marathonbet','GGbet','BetWarrior','Codere','Galera.bet','Vai de Bet','EstrelaBet','Segurobet','Esporte da Sorte','Pagbet','Onabet','Wazamba','Rivalo','Betpix365','Brbet','Betsul','F12.bet','Lotogreen','Palms Bet','PlacarBet','R7 Bet','Realsbet','SaharaBet','Starda','TáBet','Top Bet','Toro Bet','Veloce Bet','XP Bet','Zebet','Cloudbet','DraftKings','Fonbet','Gigabet','Goldenbet','Ladbrokes','Maxbet','Megapari','Meridianbet','Mozzartbet','Netbet','Olimp','Premierbet','Rabona','Riobet','Rizk','Sportaza','Titanbet','Winbet','Wplay'];
 
 // ── UTILITÁRIOS ────────────────────────────────────────────────────────────
@@ -952,6 +994,7 @@ let tipoSel='surebet', casaSeq=0, casaIds=[], casaUsers={}, refCasaId=null;
 let anUsers=[];
 let entries=ld(SK), contasSalvas=ld(CK), carteiraFB=ld(FBCK);
 let protecoes=ld(PRTK)||[], amigosProts=ld(PRUSR)||[], pagamentosProts=ld(PRPAG)||[];
+let movimentacoes=ld(MOVK)||[];
 let protDir='fiz';
 var protApostasRows=[], protApostaSeq=0, protDirecao='fiz', protFiltroStatus='todas';
 var amigosSelecionadosByCid={};
@@ -3455,6 +3498,7 @@ function renderContas(){
       +'<div style="font-size:16px;font-weight:800;font-family:var(--mono);color:'+cor+'">R$ '+totalGeral.toFixed(2)+'</div>'
       +'</div>'
       +'<span style="color:var(--text2);font-size:20px" id="arrow-'+c.id+'">›</span>'
+      +'<button class="btn-sm" style="padding:2px 8px;border-color:var(--accent);color:var(--accent2)" onclick="event.stopPropagation();abrirExtrato('+c.id+')">📋</button>'
       +'<button class="btn-sm red" style="padding:2px 8px" onclick="event.stopPropagation();deleteConta('+c.id+')">×</button>'
       +'</div></div>'
       +'<div id="user-detail-'+c.id+'" style="display:none;padding:10px 12px;background:var(--bg3);border-top:1px solid var(--border)">'
@@ -3756,6 +3800,14 @@ function confirmarTransacao(){
     if(casa)casa.saldo=(parseFloat(casa.saldo||0)+delta);
   }
   sd(CK,contasSalvas);
+  var _casaNomeMov=_transacaoCtx.tipo==='casa'?((c.casas||[])[_transacaoCtx.casaIdx]||{}).nome||'':'';
+  var _now=new Date();
+  movimentacoes.push({id:uid(),userId:c.id,userApelido:c.apelido,
+    tipo:_transacaoCtx.tipo,casaNome:_casaNomeMov,tipoOp:_transacaoCtx.tipoOp,
+    valor:val,delta:delta,
+    data:_now.toLocaleDateString('pt-BR'),
+    hora:_now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})});
+  sd(MOVK,movimentacoes);
   fecharTransacaoModal();
   var w=document.getElementById('casas-wrapper-'+_transacaoCtx?.uid);
   var cu=contasSalvas.find(function(x){return x.id===(_transacaoCtx?.uid);});
@@ -3768,6 +3820,102 @@ function confirmarTransacao(){
 function fecharTransacaoModal(){
   document.getElementById('transacao-modal').classList.remove('open');
   _transacaoCtx=null;
+}
+
+// ── EXTRATO DE MOVIMENTAÇÕES ──────────────────────────────────────────────
+var _extratoUid=null; // null = geral
+
+var _movLabels={
+  add: {icon:'↑',label:'Depósito',   cor:'var(--green)'},
+  rem: {icon:'↓',label:'Saque',      cor:'var(--red)'},
+  bonus:{icon:'🎰',label:'Ganho Bônus/Slot', cor:'var(--amber)'},
+  sloss:{icon:'🎰',label:'Perca Slot', cor:'var(--orange)'}
+};
+
+function abrirExtrato(uid){
+  _extratoUid=uid;
+  var c=contasSalvas.find(function(x){return x.id===uid;});
+  document.getElementById('extrato-titulo').textContent='📋 Extrato — '+(c?c.apelido:'');
+  document.getElementById('extrato-subtitulo').textContent='Movimentações desta conta';
+  document.getElementById('extrato-filtro-user').style.display='none';
+  document.getElementById('extrato-filtro-tipo').value='todos';
+  renderExtratoLista();
+  document.getElementById('extrato-modal').classList.add('open');
+}
+
+function abrirExtratoGeral(){
+  _extratoUid=null;
+  document.getElementById('extrato-titulo').textContent='📋 Extrato Geral';
+  document.getElementById('extrato-subtitulo').textContent='Todas as movimentações';
+  // popular filtro de usuário
+  var sel=document.getElementById('extrato-filtro-user');
+  sel.style.display='block';
+  var opcoes='<option value="todos">Todos os usuários</option>'
+    +contasSalvas.map(function(c){return '<option value="'+c.id+'">'+esc(c.apelido)+'</option>';}).join('');
+  sel.innerHTML=opcoes;
+  document.getElementById('extrato-filtro-tipo').value='todos';
+  renderExtratoLista();
+  document.getElementById('extrato-modal').classList.add('open');
+}
+
+function fecharExtratoModal(){
+  document.getElementById('extrato-modal').classList.remove('open');
+  _extratoUid=null;
+}
+
+function renderExtratoLista(){
+  var tipoFiltro=document.getElementById('extrato-filtro-tipo').value;
+  var userFiltro=document.getElementById('extrato-filtro-user');
+  var uidFiltro=_extratoUid!==null?_extratoUid:(userFiltro&&userFiltro.style.display!=='none'?parseInt(userFiltro.value)||'todos':'todos');
+  var lista=movimentacoes.slice().reverse();
+  if(uidFiltro!=='todos')lista=lista.filter(function(m){return m.userId===uidFiltro;});
+  if(tipoFiltro!=='todos')lista=lista.filter(function(m){return m.tipoOp===tipoFiltro;});
+  var totalIn=0,totalOut=0;
+  lista.forEach(function(m){if(m.delta>0)totalIn+=m.valor;else totalOut+=m.valor;});
+  var net=totalIn-totalOut;
+  document.getElementById('extrato-total-in').textContent='R$ '+totalIn.toFixed(2);
+  document.getElementById('extrato-total-out').textContent='R$ '+totalOut.toFixed(2);
+  var elNet=document.getElementById('extrato-total-net');
+  elNet.textContent='R$ '+net.toFixed(2);
+  elNet.style.color=net>0?'var(--green)':net<0?'var(--red)':'var(--text)';
+  var el=document.getElementById('extrato-lista');
+  if(!lista.length){el.innerHTML='<div class="empty">Nenhuma movimentação encontrada.</div>';return;}
+  el.innerHTML=lista.map(function(m){
+    var meta=_movLabels[m.tipoOp]||{icon:'·',label:m.tipoOp,cor:'var(--text)'};
+    var onde=m.tipo==='banco'?'Banco':esc(m.casaNome||'');
+    var userBadge=_extratoUid===null?'<span style="font-size:10px;background:var(--bg3);border:1px solid var(--border2);border-radius:99px;padding:1px 7px;margin-right:4px">'+esc(m.userApelido)+'</span>':'';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">'
+      +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:12px;font-weight:700;color:'+meta.cor+'">'+meta.icon+' '+meta.label+'</div>'
+        +'<div style="font-size:11px;color:var(--text2);margin-top:1px">'+userBadge+onde+' · '+m.data+' '+m.hora+'</div>'
+      +'</div>'
+      +'<div style="font-family:var(--mono);font-size:13px;font-weight:700;color:'+meta.cor+';flex-shrink:0;margin-left:10px">'
+        +(m.delta>0?'+':'−')+' R$ '+m.valor.toFixed(2)
+      +'</div>'
+    +'</div>';
+  }).join('');
+}
+
+function exportExtratoCSV(){
+  var tipoFiltro=document.getElementById('extrato-filtro-tipo').value;
+  var userFiltro=document.getElementById('extrato-filtro-user');
+  var uidFiltro=_extratoUid!==null?_extratoUid:(userFiltro&&userFiltro.style.display!=='none'?parseInt(userFiltro.value)||'todos':'todos');
+  var lista=movimentacoes.slice().reverse();
+  if(uidFiltro!=='todos')lista=lista.filter(function(m){return m.userId===uidFiltro;});
+  if(tipoFiltro!=='todos')lista=lista.filter(function(m){return m.tipoOp===tipoFiltro;});
+  if(!lista.length){toast('Nenhuma movimentação para exportar','err');return;}
+  var rows=[['Data','Hora','Usuário','Tipo','Conta/Banco','Casa','Valor','Direção']];
+  lista.forEach(function(m){
+    var meta=_movLabels[m.tipoOp]||{label:m.tipoOp};
+    rows.push([m.data,m.hora,m.userApelido,meta.label,m.tipo==='banco'?'Banco':'Casa',m.casaNome||'',m.valor.toFixed(2),m.delta>0?'Entrada':'Saída']);
+  });
+  var csv=rows.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(';');}).join('\n');
+  var blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='extrato_'+(uidFiltro==='todos'?'geral':contasSalvas.find(function(c){return c.id===uidFiltro;})?.apelido||'')+'_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  toast('CSV exportado!','ok');
 }
 
 // ── MODAL TRANSFERÊNCIA ───────────────────────────────────────────────────
@@ -4159,9 +4307,12 @@ document.addEventListener('click', function(ev){
 });
 
 document.addEventListener('click',function(ev){
-  ['transacao-modal','transf-modal','prot-edit-modal'].forEach(function(id){
+  ['transacao-modal','transf-modal','prot-edit-modal','extrato-modal'].forEach(function(id){
     var m=document.getElementById(id);
-    if(m&&m.classList.contains('open')&&ev.target===m)m.classList.remove('open');
+    if(m&&m.classList.contains('open')&&ev.target===m){
+      m.classList.remove('open');
+      if(id==='extrato-modal')_extratoUid=null;
+    }
   });
 });
 
