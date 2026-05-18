@@ -673,6 +673,11 @@
             <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">❌ Se perdeu</span><span id="prot-prev-perdeu" style="font-weight:700"></span></div>
           </div>
         </div>
+        <div class="field-label" style="margin-top:10px">Direção</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px">
+          <button id="prot-dir-fiz" class="btn-sm active" onclick="selProtDirecao('fiz')" style="padding:10px;font-weight:700;border-color:var(--accent);color:var(--accent2);background:rgba(108,99,255,.1)">➡️ Fiz para ele</button>
+          <button id="prot-dir-rec" class="btn-sm" onclick="selProtDirecao('rec')" style="padding:10px;font-weight:700">⬅️ Ele fez pra mim</button>
+        </div>
         <button class="btn-primary" style="margin-top:12px" onclick="salvarProtecao()">Salvar proteção</button>
       </div>
 
@@ -842,6 +847,35 @@
   </div>
 </div>
 
+  <!-- MODAL EDIÇÃO PROTEÇÃO -->
+  <div class="modal-overlay" id="prot-edit-modal">
+    <div class="modal-box" style="max-height:90vh;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <span style="font-size:15px;font-weight:700">✏️ Editar proteção</span>
+        <button onclick="fecharEditProt()" style="background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer">×</button>
+      </div>
+      <div class="field-label" style="margin-top:0">Amigo</div>
+      <input type="text" id="pe-amigo" placeholder="Nome do amigo...">
+      <div class="field-label">Evento</div>
+      <input type="text" id="pe-evento" placeholder="Ex: Flamengo x Corinthians">
+      <div class="row2" style="margin-top:0"><input type="date" id="pe-data"><input type="time" id="pe-hora"></div>
+      <div class="field-label">Direção</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <button id="pe-dir-fiz" class="btn-sm" onclick="selEditPDir('fiz')" style="padding:10px;font-weight:700">➡️ Fiz para ele</button>
+        <button id="pe-dir-rec" class="btn-sm" onclick="selEditPDir('rec')" style="padding:10px;font-weight:700">⬅️ Ele fez pra mim</button>
+      </div>
+      <div class="field-label">Resultado</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+        <button id="pe-res-pendente" class="btn-sm" onclick="selEditPRes('pendente')" style="padding:9px;font-weight:700">⏳ Pendente</button>
+        <button id="pe-res-ganhou" class="btn-sm" onclick="selEditPRes('ganhou')" style="padding:9px;font-weight:700">✅ Ganhou</button>
+        <button id="pe-res-perdeu" class="btn-sm" onclick="selEditPRes('perdeu')" style="padding:9px;font-weight:700">❌ Perdeu</button>
+      </div>
+      <div class="field-label">Apostas</div>
+      <div id="pe-apostas-lista" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px"></div>
+      <button class="btn-primary" style="margin-top:0" onclick="salvarEditProt()">✓ Salvar alterações</button>
+    </div>
+  </div>
+
   <!-- MODAL SELEÇÃO FREEBET -->
   <div id="fb-sel-modal" style="display:none;position:fixed;inset:0;z-index:9100;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);align-items:center;justify-content:center">
     <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:20px;width:calc(100% - 32px);max-width:460px;max-height:80vh;overflow-y:auto">
@@ -916,7 +950,7 @@ let anUsers=[];
 let entries=ld(SK), contasSalvas=ld(CK), carteiraFB=ld(FBCK);
 let protecoes=ld(PRTK)||[], amigosProts=ld(PRUSR)||[], pagamentosProts=ld(PRPAG)||[];
 let protDir='fiz';
-var protApostasRows=[], protApostaSeq=0;
+var protApostasRows=[], protApostaSeq=0, protDirecao='fiz';
 var amigosSelecionadosByCid={};
 var fbSelecionadaByCid={};
 let activeDD=null, filterEntradas='semana', filterResumo='hoje', compFilter='all', compSel='all', filterHist='tudo';
@@ -2858,6 +2892,14 @@ function calcProt(){
   document.getElementById('prot-prev-ganhou').innerHTML=`<span style="color:var(--red)">Eu devo ao ${esc(amigo)}: R$ ${lucro.toFixed(2)}</span>`;
   document.getElementById('prot-prev-perdeu').innerHTML=`<span style="color:var(--green)">${esc(amigo)} deve a mim: R$ ${stake.toFixed(2)}</span>`;
 }
+function selProtDirecao(d){
+  protDirecao=d;
+  var btnFiz=document.getElementById('prot-dir-fiz');
+  var btnRec=document.getElementById('prot-dir-rec');
+  if(btnFiz){btnFiz.style.borderColor=d==='fiz'?'var(--accent)':'';btnFiz.style.color=d==='fiz'?'var(--accent2)':'';btnFiz.style.background=d==='fiz'?'rgba(108,99,255,.1)':'';}
+  if(btnRec){btnRec.style.borderColor=d==='rec'?'var(--orange)':'';btnRec.style.color=d==='rec'?'var(--orange)':'';btnRec.style.background=d==='rec'?'var(--orange-bg)':'';}
+}
+
 function salvarProtecao(){
   const amigo=document.getElementById('prot-amigo-inp').value.trim();
   const evento=document.getElementById('prot-evento').value.trim();
@@ -2878,7 +2920,7 @@ function salvarProtecao(){
   const first=apostas[0];
   const totalStake=apostas.reduce(function(s,a){return s+a.stake;},0);
   const totalLucro=apostas.reduce(function(s,a){return s+(a.odd-1)*a.stake;},0);
-  protecoes.push({id:Date.now(),amigo,direcao:'fiz',evento,eventoData:data,eventoHora:hora,
+  protecoes.push({id:Date.now(),amigo,direcao:protDirecao,evento,eventoData:data,eventoHora:hora,
     apostas,odd:first.odd,stake:totalStake,casa:first.casa,
     retorno:first.odd*first.stake,lucro:totalLucro,resultado:'pendente',
     data:new Date().toLocaleDateString('pt-BR')});
@@ -2890,6 +2932,7 @@ function salvarProtecao(){
   document.getElementById('prot-preview-total').style.display='none';
   document.getElementById('prot-apostas-container').innerHTML='';
   protApostasRows=[];protApostaSeq=0;addProtAposta();
+  selProtDirecao('fiz');
   toast('Proteção salva!','ok');
   atualizarFiltroAmigos();renderSaldos();renderProtecoes();
 }
@@ -2958,6 +3001,87 @@ function deletarProtecao(id){
   if(!confirm('Remover esta proteção?'))return;
   protecoes=protecoes.filter(p=>p.id!==id);sd(PRTK,protecoes);renderSaldos();renderProtecoes();
 }
+
+// ── EDIÇÃO DE PROTEÇÃO ────────────────────────────────────────────────────
+var _peId=null,_peDirecao='fiz',_peResultado='pendente';
+
+function abrirEditProt(id){
+  var p=protecoes.find(function(x){return x.id===id;});if(!p)return;
+  _peId=id;_peDirecao=p.direcao||'fiz';_peResultado=p.resultado||'pendente';
+  document.getElementById('pe-amigo').value=p.amigo||'';
+  document.getElementById('pe-evento').value=p.evento||'';
+  document.getElementById('pe-data').value=p.eventoData||'';
+  document.getElementById('pe-hora').value=p.eventoHora||'';
+  selEditPDir(_peDirecao);
+  selEditPRes(_peResultado);
+  var apostas=p.apostas&&p.apostas.length?p.apostas:[{casa:p.casa||'',conta:'',odd:p.odd||'',stake:p.stake||''}];
+  var inp='background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text);padding:5px 8px;font-size:12px;width:100%';
+  document.getElementById('pe-apostas-lista').innerHTML=apostas.map(function(a,i){
+    return '<div style="display:grid;grid-template-columns:1fr 1fr 60px 70px;gap:5px;align-items:center">'
+      +'<input type="text" id="pe-a-casa-'+i+'" value="'+esc(a.casa||'')+'" placeholder="Casa" style="'+inp+'">'
+      +'<input type="text" id="pe-a-conta-'+i+'" value="'+esc(a.conta||'')+'" placeholder="Conta" style="'+inp+'">'
+      +'<input type="number" id="pe-a-odd-'+i+'" value="'+(a.odd||'')+'" placeholder="Odd" step="0.01" style="'+inp+';font-family:var(--mono)">'
+      +'<input type="number" id="pe-a-stake-'+i+'" value="'+(a.stake||'')+'" placeholder="Stake" step="0.01" style="'+inp+';font-family:var(--mono)">'
+      +'</div>';
+  }).join('');
+  document.getElementById('prot-edit-modal').classList.add('open');
+}
+
+function selEditPDir(d){
+  _peDirecao=d;
+  var bF=document.getElementById('pe-dir-fiz'),bR=document.getElementById('pe-dir-rec');
+  if(bF){bF.style.borderColor=d==='fiz'?'var(--accent)':'';bF.style.color=d==='fiz'?'var(--accent2)':'';bF.style.background=d==='fiz'?'rgba(108,99,255,.1)':'';}
+  if(bR){bR.style.borderColor=d==='rec'?'var(--orange)':'';bR.style.color=d==='rec'?'var(--orange)':'';bR.style.background=d==='rec'?'var(--orange-bg)':'';}
+}
+
+function selEditPRes(r){
+  _peResultado=r;
+  var cores={pendente:'var(--text2)',ganhou:'var(--green)',perdeu:'var(--red)'};
+  var bgs={pendente:'',ganhou:'rgba(0,230,118,.08)',perdeu:'rgba(255,78,106,.08)'};
+  ['pendente','ganhou','perdeu'].forEach(function(x){
+    var el=document.getElementById('pe-res-'+x);if(!el)return;
+    var sel=x===r;
+    el.style.borderColor=sel?cores[x]:'';
+    el.style.color=sel?cores[x]:'';
+    el.style.background=sel?bgs[x]:'';
+  });
+}
+
+function salvarEditProt(){
+  if(!_peId)return;
+  var p=protecoes.find(function(x){return x.id===_peId;});if(!p)return;
+  p.amigo=document.getElementById('pe-amigo').value.trim()||p.amigo;
+  p.evento=document.getElementById('pe-evento').value.trim()||p.evento;
+  p.eventoData=document.getElementById('pe-data').value;
+  p.eventoHora=document.getElementById('pe-hora').value;
+  p.direcao=_peDirecao;
+  p.resultado=_peResultado;
+  var apostasAtual=p.apostas&&p.apostas.length?p.apostas:[{casa:p.casa,conta:'',odd:p.odd,stake:p.stake}];
+  var novas=[];
+  apostasAtual.forEach(function(_,i){
+    var casa=document.getElementById('pe-a-casa-'+i)?.value.trim()||'';
+    var conta=document.getElementById('pe-a-conta-'+i)?.value.trim()||'';
+    var odd=parseFloat(document.getElementById('pe-a-odd-'+i)?.value);
+    var stake=parseFloat(document.getElementById('pe-a-stake-'+i)?.value);
+    if(odd>0&&stake>0)novas.push({casa,conta,odd,stake});
+  });
+  if(novas.length){
+    p.apostas=novas;
+    var first=novas[0];
+    p.odd=first.odd;p.stake=novas.reduce(function(s,a){return s+a.stake;},0);
+    p.casa=first.casa;p.lucro=novas.reduce(function(s,a){return s+(a.odd-1)*a.stake;},0);
+    p.retorno=first.odd*first.stake;
+  }
+  sd(PRTK,protecoes);
+  fecharEditProt();
+  renderSaldos();renderProtecoes();
+  toast('Proteção atualizada!','ok');
+}
+
+function fecharEditProt(){
+  document.getElementById('prot-edit-modal').classList.remove('open');
+  _peId=null;
+}
 function atualizarFiltroAmigos(){
   const sel=document.getElementById('prot-filtro-amigo');if(!sel)return;
   const cur=sel.value;
@@ -3006,11 +3130,14 @@ function renderProtecoes(){
           +'</div>'
       )}
       ${deveHtml}
-      ${p.resultado==='pendente'?`<div style="display:flex;gap:6px;margin-top:8px">
-        <button class="btn-sm green-c" style="flex:1" onclick="concluirProtecao(${p.id},'ganhou')">✅ Ganhou</button>
-        <button class="btn-sm red" style="flex:1" onclick="concluirProtecao(${p.id},'perdeu')">❌ Perdeu</button>
-        <button class="btn-sm" onclick="deletarProtecao(${p.id})">🗑</button>
-      </div>`:`<button class="btn-sm" style="margin-top:6px" onclick="deletarProtecao(${p.id})">🗑 Remover</button>`}
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+        ${p.resultado==='pendente'
+          ?`<button class="btn-sm green-c" style="flex:1" onclick="concluirProtecao(${p.id},'ganhou')">✅ Ganhou</button>
+             <button class="btn-sm red" style="flex:1" onclick="concluirProtecao(${p.id},'perdeu')">❌ Perdeu</button>`
+          :`<button class="btn-sm" style="font-size:11px" onclick="concluirProtecao(${p.id},'pendente')">↩ Reabrir</button>`}
+        <button class="btn-sm" style="border-color:var(--blue);color:var(--blue)" onclick="abrirEditProt(${p.id})">✏️ Editar</button>
+        <button class="btn-sm" style="color:var(--red);border-color:rgba(255,78,106,.35)" onclick="deletarProtecao(${p.id})">🗑</button>
+      </div>
     </div>`;
   }).join('');
 }
@@ -3873,7 +4000,7 @@ document.addEventListener('click', function(ev){
 });
 
 document.addEventListener('click',function(ev){
-  ['transacao-modal','transf-modal'].forEach(function(id){
+  ['transacao-modal','transf-modal','prot-edit-modal'].forEach(function(id){
     var m=document.getElementById(id);
     if(m&&m.classList.contains('open')&&ev.target===m)m.classList.remove('open');
   });
