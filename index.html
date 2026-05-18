@@ -717,6 +717,14 @@
           Brasileirão Série A · Brasileirão Série B · Copa do Brasil
         </div>
         <div class="divider"></div>
+        <div class="card-title" style="margin-top:8px">💾 Backup de Dados</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Exporte todos os seus dados (entradas, usuários, freebets, proteções) e importe em outro dispositivo ou navegador.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <button class="btn-sm" onclick="exportarDados()" style="padding:10px;border-radius:var(--r);background:rgba(100,181,246,.15);border-color:var(--blue);color:var(--blue)">⬇️ Exportar dados</button>
+          <button class="btn-sm" onclick="document.getElementById('import-file').click()" style="padding:10px;border-radius:var(--r);background:rgba(0,230,118,.1);border-color:var(--green);color:var(--green)">⬆️ Importar dados</button>
+        </div>
+        <input type="file" id="import-file" accept=".json" style="display:none" onchange="importarDados(this)">
+        <div class="divider"></div>
         <button class="btn-sm red" onclick="if(confirm('Apagar todos os dados?')){localStorage.clear();location.reload()}" style="width:100%;padding:12px;border-radius:var(--r)">⚠️ Limpar todos os dados</button>
       </div>
     </div>
@@ -3116,6 +3124,38 @@ function checkNotificacoesPorEntrada(){
 }
 setInterval(checkNotificacoesPorEntrada, 30000);
 setTimeout(checkNotificacoesPorEntrada, 3000);
+
+// ── BACKUP COMPLETO ─────────────────────────────────────────────────────────
+function exportarDados(){
+  const keys=[SK,CK,FBCK,PRTK,PRUSR,PRPAG];
+  const dados={};
+  keys.forEach(function(k){ dados[k]=localStorage.getItem(k)||'[]'; });
+  dados._exportado=new Date().toISOString();
+  const json=JSON.stringify(dados,null,2);
+  const a=document.createElement('a');
+  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(json);
+  a.download='arbpro_backup_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  toast('Backup exportado!','ok');
+}
+function importarDados(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const dados=JSON.parse(e.target.result);
+      const keys=[SK,CK,FBCK,PRTK,PRUSR,PRPAG];
+      let count=0;
+      keys.forEach(function(k){ if(dados[k]!==undefined){localStorage.setItem(k,dados[k]);count++;} });
+      toast('Dados importados ('+count+' chaves). Recarregando...','ok');
+      setTimeout(function(){location.reload();},1200);
+    }catch(err){
+      toast('Erro ao importar: arquivo inválido','err');
+    }
+  };
+  reader.readAsText(file);
+  input.value='';
+}
 
 // ── EXPORT ─────────────────────────────────────────────────────────────────
 function exportCSV(){
