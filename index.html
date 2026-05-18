@@ -681,12 +681,18 @@
 
       <!-- Lista -->
       <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
           <span class="card-title" style="margin:0">Histórico</span>
-          <div style="display:flex;gap:6px">
+          <div style="display:flex;gap:6px;align-items:center">
             <select id="prot-filtro-amigo" onchange="renderProtecoes()" style="font-size:12px;padding:5px 8px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text)"><option value="todos">Todos</option></select>
             <button class="btn-sm" onclick="exportProtCSV()">↓ CSV</button>
           </div>
+        </div>
+        <div style="display:flex;gap:5px;margin-bottom:10px">
+          <button id="pf-todas"     class="btn-sm active" onclick="setProtFiltroStatus('todas')">Todas</button>
+          <button id="pf-pendentes" class="btn-sm"        onclick="setProtFiltroStatus('pendentes')">⏳ Pendentes</button>
+          <button id="pf-concluidas" class="btn-sm"       onclick="setProtFiltroStatus('concluidas')">✅ Concluídas</button>
+          <button id="pf-acertadas" class="btn-sm"        onclick="setProtFiltroStatus('acertadas')">🤝 Acertadas</button>
         </div>
         <div id="prot-lista"></div>
       </div>
@@ -945,7 +951,7 @@ let anUsers=[];
 let entries=ld(SK), contasSalvas=ld(CK), carteiraFB=ld(FBCK);
 let protecoes=ld(PRTK)||[], amigosProts=ld(PRUSR)||[], pagamentosProts=ld(PRPAG)||[];
 let protDir='fiz';
-var protApostasRows=[], protApostaSeq=0, protDirecao='fiz';
+var protApostasRows=[], protApostaSeq=0, protDirecao='fiz', protFiltroStatus='todas';
 var amigosSelecionadosByCid={};
 var fbSelecionadaByCid={};
 let activeDD=null, filterEntradas='semana', filterResumo='hoje', compFilter='all', compSel='all', filterHist='tudo';
@@ -3110,22 +3116,45 @@ function fecharEditProt(){
   document.getElementById('prot-edit-modal').classList.remove('open');
   _peId=null;
 }
+function setProtFiltroStatus(f){
+  protFiltroStatus=f;
+  ['todas','pendentes','concluidas','acertadas'].forEach(function(x){
+    var el=document.getElementById('pf-'+x);
+    if(el)el.classList.toggle('active',x===f);
+  });
+  renderProtecoes();
+}
+
+function marcarAcertada(id){
+  var p=protecoes.find(function(x){return x.id===id;});if(!p)return;
+  p.acertada=true;
+  sd(PRTK,protecoes);
+  renderSaldos();renderProtecoes();
+  toast('Marcado como acertado 🤝','ok');
+}
+
 function atualizarFiltroAmigos(){
   const sel=document.getElementById('prot-filtro-amigo');if(!sel)return;
   const cur=sel.value;
   const amigosAtivos=['todos',...new Set(protecoes.map(p=>p.amigo)),...amigosProts].filter((v,i,a)=>a.indexOf(v)===i);
   sel.innerHTML=amigosAtivos.map(a=>`<option value="${esc(a)}" ${a===cur?'selected':''}>${a==='todos'?'Todos':esc(a)}</option>`).join('');
 }
+
 function renderProtecoes(){
   const el=document.getElementById('prot-lista');if(!el)return;
-  const filtro=document.getElementById('prot-filtro-amigo')?.value||'todos';
-  const lista=filtro==='todos'?protecoes:protecoes.filter(p=>p.amigo===filtro);
-  if(!lista.length){el.innerHTML='<div class="empty">Nenhuma proteção cadastrada.</div>';return;}
+  const filtroAmigo=document.getElementById('prot-filtro-amigo')?.value||'todos';
+  let lista=filtroAmigo==='todos'?protecoes:protecoes.filter(p=>p.amigo===filtroAmigo);
+  // filtro de status
+  if(protFiltroStatus==='pendentes')   lista=lista.filter(p=>p.resultado==='pendente');
+  if(protFiltroStatus==='concluidas')  lista=lista.filter(p=>p.resultado!=='pendente'&&!p.acertada);
+  if(protFiltroStatus==='acertadas')   lista=lista.filter(p=>p.acertada);
+  if(!lista.length){el.innerHTML='<div class="empty">Nenhuma proteção nesta categoria.</div>';return;}
   el.innerHTML=[...lista].reverse().map(p=>{
     const d=calcDevidoProt(p);
     const dirLabel=p.direcao==='fiz'?'<span style="color:var(--accent2)">➡️ Fiz para ele</span>':'<span style="color:var(--orange)">⬅️ Ele fez pra mim</span>';
     const resColor=p.resultado==='ganhou'?'var(--green)':p.resultado==='perdeu'?'var(--red)':'var(--text2)';
     const resLabel=p.resultado==='ganhou'?'✅ Ganhou':p.resultado==='perdeu'?'❌ Perdeu':'⏳ Pendente';
+    const acertadaBadge=p.acertada?'<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;background:rgba(0,230,118,.12);border:1px solid rgba(0,230,118,.3);color:var(--green);margin-left:6px">🤝 Acertado</span>':'';
     let deveHtml='';
     if(d){
       const cor=d.quem==='eu'?'var(--red)':'var(--green)';
@@ -3134,10 +3163,10 @@ function renderProtecoes(){
         <span style="font-family:var(--mono);font-weight:700;color:${cor}">R$ ${d.valor.toFixed(2)}</span>
       </div>`;
     }
-    return `<div style="padding:12px 0;border-bottom:1px solid var(--border)">
+    return `<div style="padding:12px 0;border-bottom:1px solid var(--border)${p.acertada?';opacity:.7':''}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
         <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:700;margin-bottom:3px">${esc(p.evento)}</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:3px">${esc(p.evento)}${acertadaBadge}</div>
           <div style="font-size:11px;color:var(--text2)">${p.data}${p.eventoHora?' · '+p.eventoHora:''} · ${esc(p.amigo)} · ${esc(p.casa)}</div>
           <div style="font-size:11px;margin-top:3px">${dirLabel}</div>
         </div>
@@ -3162,22 +3191,32 @@ function renderProtecoes(){
         ${p.resultado==='pendente'
           ?`<button class="btn-sm green-c" style="flex:1" onclick="concluirProtecao(${p.id},'ganhou')">✅ Ganhou</button>
              <button class="btn-sm red" style="flex:1" onclick="concluirProtecao(${p.id},'perdeu')">❌ Perdeu</button>`
-          :`<button class="btn-sm" style="font-size:11px" onclick="concluirProtecao(${p.id},'pendente')">↩ Reabrir</button>`}
+          : (!p.acertada
+              ? `<button class="btn-sm" style="font-size:11px;border-color:rgba(0,230,118,.4);color:var(--green)" onclick="marcarAcertada(${p.id})">🤝 Acertar</button>
+                 <button class="btn-sm" style="font-size:11px" onclick="concluirProtecao(${p.id},'pendente')">↩ Reabrir</button>`
+              : `<button class="btn-sm" style="font-size:11px" onclick="concluirProtecao(${p.id},'pendente')">↩ Reabrir</button>`)
+        }
         <button class="btn-sm" style="border-color:var(--blue);color:var(--blue)" onclick="abrirEditProt(${p.id})">✏️ Editar</button>
         <button class="btn-sm" style="color:var(--red);border-color:rgba(255,78,106,.35)" onclick="deletarProtecao(${p.id})">🗑</button>
       </div>
     </div>`;
   }).join('');
 }
+
 function exportProtCSV(){
-  if(!protecoes.length){toast('Nenhuma proteção para exportar','err');return;}
-  const rows=[['Data','Evento','Hora','Amigo','Direção','Casa','Odd','Stake','Retorno','Lucro','Resultado','Quem deve','Valor devido']];
-  protecoes.forEach(p=>{
+  const filtroAmigo=document.getElementById('prot-filtro-amigo')?.value||'todos';
+  if(filtroAmigo==='todos'){toast('Selecione um amigo no filtro para exportar','err');return;}
+  const lista=protecoes.filter(p=>p.amigo===filtroAmigo);
+  if(!lista.length){toast('Nenhuma proteção para este amigo','err');return;}
+  const rows=[['Data','Evento','Hora','Amigo','Direção','Casa','Odd','Stake','Retorno','Lucro','Resultado','Quem deve','Valor devido','Acertado']];
+  lista.forEach(p=>{
     const d=calcDevidoProt(p);
-    rows.push([p.data,p.evento,p.eventoHora||'',p.amigo,p.direcao==='fiz'?'Fiz para ele':'Ele fez para mim',p.casa,p.odd,p.stake.toFixed(2),p.retorno.toFixed(2),p.lucro.toFixed(2),p.resultado,d?d.label:'Pendente',d?d.valor.toFixed(2):'']);
+    rows.push([p.data,p.evento,p.eventoHora||'',p.amigo,p.direcao==='fiz'?'Fiz para ele':'Ele fez para mim',p.casa,p.odd,p.stake.toFixed(2),p.retorno.toFixed(2),p.lucro.toFixed(2),p.resultado,d?d.label:'Pendente',d?d.valor.toFixed(2):'',p.acertada?'Sim':'Não']);
   });
-  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(';')).join('\n');
-  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,﻿'+encodeURIComponent(csv);a.download='protecoes_'+new Date().toISOString().slice(0,10)+'.csv';a.click();toast('CSV exportado!','ok');
+  const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(';')).join('\n');
+  const nomeArquivo='eu_x_'+filtroAmigo.replace(/[^a-zA-Z0-9À-ú]/g,'_')+'_'+new Date().toISOString().slice(0,10)+'.csv';
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,﻿'+encodeURIComponent(csv);a.download=nomeArquivo;a.click();
+  toast('CSV exportado: '+nomeArquivo,'ok');
 }
 
 function renderSparkline(){
