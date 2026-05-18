@@ -2571,6 +2571,7 @@ function buildCard(e, isPend){
   } else {
     h += '<button class="btn-sm" style="font-size:11px" onclick="reabrirEntrada('+e.id+')">↩ Reabrir</button>';
   }
+  h += '<button class="btn-sm" style="color:var(--red);border-color:rgba(255,78,106,.35);padding:6px 10px" title="Excluir entrada" onclick="delEntry('+e.id+')">🗑</button>';
   h += '</div>';
   h += '</div>';
   return h;
@@ -2659,7 +2660,18 @@ function addFBProc(eid,idx){
   sd(SK,entries);renderEntradas();renderResumo();toast('Freebet adicionada à carteira!');
 }
 function setRes(id,res){entries.forEach(e=>{if(e.id===id)e.resultado=res});sd(SK,entries);checkAlertas();renderEntradas()}
-function delEntry(id){entries=entries.filter(e=>e.id!==id);sd(SK,entries);checkAlertas();renderEntradas()}
+function delEntry(id){
+  if(!confirm('Excluir esta entrada? O saldo dos usuários será revertido.'))return;
+  var entry=entries.find(function(e){return e.id===id;});
+  if(entry)reverterStakeUsuarios(entry);
+  entries=entries.filter(function(e){return e.id!==id;});
+  sd(SK,entries);
+  checkAlertas();
+  renderEntradas();
+  renderHistorico();
+  renderResumo();
+  if(typeof renderContas==='function')renderContas();
+}
 
 // ── RESUMO ─────────────────────────────────────────────────────────────────
 
