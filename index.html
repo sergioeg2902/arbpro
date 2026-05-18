@@ -136,16 +136,16 @@
 
   /* TOGGLES */
   /* OPTION BUTTONS (substituem toggles nas casas) */
-  .opt-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-bottom: 10px; }
+  .opt-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 4px; margin-bottom: 10px; }
   .opt-btn {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 8px 4px; border-radius: var(--r2); border: 1.5px solid var(--border2);
+    padding: 6px 2px; border-radius: var(--r2); border: 1.5px solid var(--border2);
     background: var(--bg3); cursor: pointer; font-family: var(--font);
     transition: all .15s; text-align: center; gap: 2px;
   }
   .opt-btn:active { transform: scale(.96); }
-  .opt-btn-icon { font-size: 16px; line-height: 1; }
-  .opt-btn-label { font-size: 10px; font-weight: 700; color: var(--text2); letter-spacing: .02em; line-height: 1.2; }
+  .opt-btn-icon { font-size: 13px; line-height: 1; }
+  .opt-btn-label { font-size: 9px; font-weight: 700; color: var(--text2); letter-spacing: .01em; line-height: 1.2; }
   /* estados ativos por cor */
   .opt-btn.sel-blue  { border-color: var(--blue);   background: rgba(100,181,246,.18); }
   .opt-btn.sel-blue  .opt-btn-label { color: var(--blue); }
@@ -153,6 +153,8 @@
   .opt-btn.sel-purple .opt-btn-label { color: var(--purple); }
   .opt-btn.sel-green { border-color: var(--green);  background: rgba(0,230,118,.15); }
   .opt-btn.sel-green  .opt-btn-label { color: var(--green); }
+  .opt-btn.sel-amber { border-color: var(--amber);  background: rgba(255,183,77,.15); }
+  .opt-btn.sel-amber  .opt-btn-label { color: var(--amber); }
   .proc-panel {
     background: rgba(0,230,118,.05); border: 1px solid rgba(0,230,118,.2);
     border-radius: var(--r2); padding: 10px; margin-top: 6px; display: none;
@@ -641,34 +643,18 @@
       <!-- Nova proteção -->
       <div class="card">
         <div class="card-title">+ Nova proteção</div>
-        <div class="tipo-grid" style="grid-template-columns:1fr 1fr;margin-bottom:14px">
-          <button class="tipo-btn sel" data-v="fiz" onclick="selProtDir(this)">
-            <span class="tipo-btn-icon">➡️</span>
-            <span class="tipo-btn-label">Fiz para ele</span>
-            <span class="tipo-btn-desc">Eu coloquei o $</span>
-          </button>
-          <button class="tipo-btn" data-v="ele_fez" onclick="selProtDir(this)">
-            <span class="tipo-btn-icon">⬅️</span>
-            <span class="tipo-btn-label">Ele fez para mim</span>
-            <span class="tipo-btn-desc">Ele colocou o $</span>
-          </button>
-        </div>
         <div class="field-label" style="margin-top:0">Amigo</div>
         <div id="prot-sug-row" class="sug-row"></div>
         <input type="text" id="prot-amigo-inp" placeholder="Selecione ou digite...">
         <div class="field-label">Evento</div>
         <input type="text" id="prot-evento" placeholder="Ex: Flamengo x Corinthians">
         <div class="row2" style="margin-top:0"><input type="date" id="prot-data"><input type="time" id="prot-hora"></div>
-        <div class="row2" style="margin-top:8px">
-          <div><div class="field-label" style="margin-top:0">Casa</div><input type="text" id="prot-casa" placeholder="Bet365..."></div>
-          <div><div class="field-label" style="margin-top:0">Odd</div><input type="number" id="prot-odd" placeholder="2.50" step="0.01" oninput="calcProt()"></div>
-        </div>
-        <div class="field-label">Stake (R$)</div>
-        <input type="number" id="prot-stake" placeholder="100.00" step="0.01" oninput="calcProt()">
-        <div id="prot-preview" style="display:none;margin-top:10px;padding:10px 12px;background:var(--bg3);border-radius:var(--r2)">
+        <div id="prot-apostas-container"></div>
+        <button class="add-casa-btn" style="margin:4px 0 8px" onclick="addProtAposta()">+ Adicionar aposta</button>
+        <div id="prot-preview-total" style="display:none;margin-top:4px;padding:10px 12px;background:var(--bg3);border-radius:var(--r2)">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-            <div><div style="font-size:9px;color:var(--text2);font-weight:600;text-transform:uppercase;margin-bottom:2px">Retorno</div><div id="prot-prev-ret" style="font-family:var(--mono);font-weight:700;color:var(--green);font-size:15px">—</div></div>
-            <div><div style="font-size:9px;color:var(--text2);font-weight:600;text-transform:uppercase;margin-bottom:2px">Lucro</div><div id="prot-prev-luc" style="font-family:var(--mono);font-weight:700;color:var(--green);font-size:15px">—</div></div>
+            <div><div style="font-size:9px;color:var(--text2);font-weight:600;text-transform:uppercase;margin-bottom:2px">Stake total</div><div id="prot-tot-stake" style="font-family:var(--mono);font-weight:700;font-size:15px">—</div></div>
+            <div><div style="font-size:9px;color:var(--text2);font-weight:600;text-transform:uppercase;margin-bottom:2px">Lucro total</div><div id="prot-tot-lucro" style="font-family:var(--mono);font-weight:700;color:var(--green);font-size:15px">—</div></div>
           </div>
           <div style="border-top:1px solid var(--border);padding-top:8px;font-size:12px">
             <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--text2)">✅ Se ganhou</span><span id="prot-prev-ganhou" style="font-weight:700"></span></div>
@@ -742,6 +728,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
       Nova
     </button>
+    <button class="nav-btn" id="nav-prot" onclick="navTo('prot',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Proteção
+    </button>
     <button class="nav-btn" id="nav-carteira" onclick="navTo('carteira',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
       FBs
@@ -753,10 +743,6 @@
     <button class="nav-btn" id="nav-resumo" onclick="navTo('resumo',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       Resumo
-    </button>
-    <button class="nav-btn" id="nav-prot" onclick="navTo('prot',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      Proteção
     </button>
     <button class="nav-btn" id="nav-users" onclick="navTo('users',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -828,6 +814,8 @@ let anUsers=[];
 let entries=ld(SK), contasSalvas=ld(CK), carteiraFB=ld(FBCK);
 let protecoes=ld(PRTK)||[], amigosProts=ld(PRUSR)||[], pagamentosProts=ld(PRPAG)||[];
 let protDir='fiz';
+var protApostasRows=[], protApostaSeq=0;
+var amigosSelecionadosByCid={};
 let activeDD=null, filterEntradas='semana', filterResumo='hoje', compFilter='all', compSel='all', filterHist='tudo';
 let notifMinutosAntes=parseInt(localStorage.getItem('ap_notif_min')||'10');
 let jogosSelected=[], fbFiltro='disp', fbTipoSel='SNR';
@@ -868,7 +856,7 @@ function navTo(page, btn){
   if(page==='users')   { renderContas(); }
   if(page==='carteira'){ renderCarteira(); setTimeout(setupFBCasaDrop,50); }
   if(page==='nova')    { renderJogos(); }
-  if(page==='prot')    { renderAmigosChips();renderProtSug();renderSaldos();renderProtecoes(); }
+  if(page==='prot')    { renderAmigosChips();renderProtSug();renderSaldos();renderProtecoes();if(!protApostasRows.length)addProtAposta(); }
   if(page==='config')  { initConfig(); }
   checkAlertas();
 }
@@ -1003,7 +991,7 @@ function addCasa(){
   var tg=document.createElement('div');tg.className='opt-grid';
 
   var bRef=document.createElement('button');bRef.type='button';bRef.className='opt-btn';bRef.id='opt-ref-'+cid;
-  bRef.innerHTML='<span class="opt-btn-icon">🔵</span><span class="opt-btn-label">Aposta Referência</span>';
+  bRef.innerHTML='<span class="opt-btn-icon">🔵</span><span class="opt-btn-label">Referência</span>';
   bRef.addEventListener('click',(function(c,b){return function(){
     var wasOn=b.classList.contains('sel-blue');
     b.classList.toggle('sel-blue',!wasOn);
@@ -1017,12 +1005,15 @@ function addCasa(){
   bSnr.addEventListener('click',(function(c,b){return function(){
     b.classList.toggle('sel-purple');
     var ch=document.getElementById('fb-chk-'+c);if(!ch){ch=document.createElement('input');ch.type='checkbox';ch.id='fb-chk-'+c;ch.style.display='none';document.getElementById('cb-'+c).appendChild(ch);}
-    ch.checked=b.classList.contains('sel-purple'); calcLucro();
+    var isOn=b.classList.contains('sel-purple');
+    ch.checked=isOn;
+    var fbp=document.getElementById('fb-panel-'+c);if(fbp){fbp.style.display=isOn?'block':'none';if(isOn)renderFBPanel(c);}
+    calcLucro();
   }})(cid,bSnr));
   tg.appendChild(bSnr);
 
   var bProc=document.createElement('button');bProc.type='button';bProc.className='opt-btn';bProc.id='opt-proc-'+cid;
-  bProc.innerHTML='<span class="opt-btn-icon">🟢</span><span class="opt-btn-label">Proc. Freebet</span>';
+  bProc.innerHTML='<span class="opt-btn-icon">🟢</span><span class="opt-btn-label">Proc. FB</span>';
   bProc.addEventListener('click',(function(c,b){return function(){
     b.classList.toggle('sel-green');
     var isOn=b.classList.contains('sel-green');
@@ -1032,6 +1023,17 @@ function addCasa(){
     document.getElementById('cb-'+c).classList.toggle('has-proc',isOn);
   }})(cid,bProc));
   tg.appendChild(bProc);
+
+  var bAmigo=document.createElement('button');bAmigo.type='button';bAmigo.className='opt-btn';bAmigo.id='opt-amigo-'+cid;
+  bAmigo.innerHTML='<span class="opt-btn-icon">🛡️</span><span class="opt-btn-label">Coberto amigo</span>';
+  bAmigo.addEventListener('click',(function(c,b){return function(){
+    b.classList.toggle('sel-amber');
+    var isOn=b.classList.contains('sel-amber');
+    var ch=document.getElementById('amigo-chk-'+c);if(!ch){ch=document.createElement('input');ch.type='checkbox';ch.id='amigo-chk-'+c;ch.style.display='none';document.getElementById('cb-'+c).appendChild(ch);}
+    ch.checked=isOn;
+    var ap=document.getElementById('amigo-panel-'+c);if(ap)ap.style.display=isOn?'block':'none';
+  }})(cid,bAmigo));
+  tg.appendChild(bAmigo);
   div.appendChild(tg);
 
   // ── Proc panel ──
@@ -1046,6 +1048,21 @@ function addCasa(){
     +'<div class="field-label" style="color:var(--green)">Validade</div>'
     +'<input type="date" id="proc-val-'+cid+'">';
   div.appendChild(pp);
+
+  // ── Painel de freebets SNR disponíveis ──
+  var fbp=document.createElement('div');fbp.id='fb-panel-'+cid;
+  fbp.style.cssText='background:rgba(206,147,216,.05);border:1px solid rgba(206,147,216,.2);border-radius:var(--r2);padding:10px;margin-top:6px;display:none';
+  fbp.innerHTML='<div class="field-label" style="margin-top:0;color:var(--purple)">Freebets SNR disponíveis</div>'
+    +'<div id="fb-panel-list-'+cid+'"></div>';
+  div.appendChild(fbp);
+
+  // ── Painel de amigo que cobriu ──
+  var ap=document.createElement('div');ap.id='amigo-panel-'+cid;
+  ap.style.cssText='background:rgba(255,183,77,.05);border:1px solid rgba(255,183,77,.25);border-radius:var(--r2);padding:10px;margin-top:6px;display:none';
+  ap.innerHTML='<div class="field-label" style="margin-top:0;color:var(--amber)">Amigos que cobriram esta aposta</div>'
+    +'<div class="sug-row" id="amigo-sug-'+cid+'"></div>';
+  div.appendChild(ap);
+  setTimeout(function(){ renderAmigoProtSug(cid); },0);
 
   // ── Tabela de linhas (Casa > Usuário > Odd > Stake) ──
   var tabelaLabel=document.createElement('div');tabelaLabel.className='field-label';tabelaLabel.style.marginTop='8px';tabelaLabel.textContent='Casas e usuários desta aposta';
@@ -1121,6 +1138,7 @@ function removerLinha(cid, idx){
   if(!linhasByAposta[cid]) return;
   linhasByAposta[cid].splice(idx,1);
   renderLinhas(cid);
+  verificarDesativarAmigo(cid);
   calcLucro();
 }
 
@@ -1129,6 +1147,51 @@ function atualizarLinha(cid, idx, campo, val){
   linhasByAposta[cid][idx][campo]=val;
   atualizarResumoAposta(cid);
   calcLucro();
+}
+function renderFBPanel(cid){
+  var list=document.getElementById('fb-panel-list-'+cid);if(!list)return;
+  var disponiveis=carteiraFB.filter(function(f){return f.status==='disponivel'&&f.tipo==='SNR';});
+  if(!disponiveis.length){
+    list.innerHTML='<div style="color:var(--text2);font-size:12px;padding:4px 0">Nenhuma freebet SNR disponível na carteira</div>';
+    return;
+  }
+  list.innerHTML=disponiveis.map(function(f){
+    return '<div style="display:flex;align-items:center;gap:8px;padding:5px 6px;margin-top:4px;background:rgba(206,147,216,.07);border-radius:var(--r2)">'
+      +'<span style="font-size:13px">💜</span>'
+      +'<div style="flex:1;min-width:0">'
+      +'<span style="font-size:12px;font-weight:600">'+esc(f.casa)+'</span>'
+      +' <span style="font-size:11px;color:var(--text2)">'+esc(f.conta)+'</span>'
+      +'</div>'
+      +'<span style="font-size:12px;font-weight:700;color:var(--purple)">R$ '+parseFloat(f.valor).toFixed(2)+'</span>'
+      +(f.validade?'<span style="font-size:10px;color:var(--text2)">val: '+esc(f.validade)+'</span>':'')
+      +'</div>';
+  }).join('');
+}
+function verificarDesativarAmigo(cid){
+  var temAmigo=(linhasByAposta[cid]||[]).some(function(l){return l.isAmigo;});
+  if(!temAmigo){
+    var btn=document.getElementById('opt-amigo-'+cid);if(btn)btn.classList.remove('sel-amber');
+    var ch=document.getElementById('amigo-chk-'+cid);if(ch)ch.checked=false;
+    var ap=document.getElementById('amigo-panel-'+cid);if(ap)ap.style.display='none';
+    amigosSelecionadosByCid[cid]=[];
+    renderAmigoProtSug(cid);
+  }
+}
+function ativarLinhaAmigo(cid, idx, nome){
+  if(!linhasByAposta[cid]||!linhasByAposta[cid][idx]) return;
+  linhasByAposta[cid][idx].isAmigo=true;
+  renderLinhas(cid);
+  var btn=document.getElementById('opt-amigo-'+cid);
+  if(btn&&!btn.classList.contains('sel-amber')){
+    btn.classList.add('sel-amber');
+    var ch=document.getElementById('amigo-chk-'+cid);
+    if(!ch){ch=document.createElement('input');ch.type='checkbox';ch.id='amigo-chk-'+cid;ch.style.display='none';document.getElementById('cb-'+cid).appendChild(ch);}
+    ch.checked=true;
+    var ap=document.getElementById('amigo-panel-'+cid);if(ap)ap.style.display='block';
+  }
+  if(!amigosSelecionadosByCid[cid]) amigosSelecionadosByCid[cid]=[];
+  if(!amigosSelecionadosByCid[cid].includes(nome)) amigosSelecionadosByCid[cid].push(nome);
+  renderAmigoProtSug(cid);
 }
 
 function renderLinhas(cid){
@@ -1153,7 +1216,8 @@ function renderLinhas(cid){
     var hasRet = o>0&&s>0;
     var ret=hasRet?o*s:0, lucro=hasRet?ret-s:0;
 
-    html+='<div style="margin-bottom:'+(hasRet?'2':'5')+'px">';
+    var amberRow=l.isAmigo?'background:rgba(255,183,77,.07);border-left:3px solid var(--amber);border-radius:var(--r2);padding:4px 4px 4px 8px;':'';
+    html+='<div style="margin-bottom:'+(hasRet?'2':'5')+'px;'+amberRow+'">';
     html+='<div class="linha-aposta">';
 
     // Casa — input com autocomplete
@@ -1228,11 +1292,20 @@ function liUserInput(cid, idx, inp){
   var dd=document.getElementById('li-dd-user-'+cid+'-'+idx);
   if(!dd) return;
   var todos=contasSalvas.map(function(c){return c.apelido;}).filter(function(v,i,a){return a.indexOf(v)===i;});
-  var m=todos.filter(function(u){return !f||u.toLowerCase().includes(f);}).slice(0,8);
-  dd.innerHTML=m.map(function(u){
-    return '<div class="linha-dd-opt" onmousedown="event.preventDefault();atualizarLinha('+cid+','+idx+',\'usuario\',\''+u.replace(/'/g,"\\'")+'\');document.getElementById(\'li-user-'+cid+'-'+idx+'\').value=\''+u.replace(/'/g,"\\'")+'\';document.getElementById(\'li-dd-user-'+cid+'-'+idx+'\').classList.remove(\'open\')">'+u+'</div>';
-  }).join('')||'<div class="linha-dd-opt" style="color:var(--text2)">Nenhum cadastrado</div>';
-  if(m.length>0||f.length===0) dd.classList.add('open'); else dd.classList.remove('open');
+  var mUsers=todos.filter(function(u){return !f||u.toLowerCase().includes(f);}).slice(0,8);
+  var mAmigos=amigosProts.filter(function(a){return !f||a.toLowerCase().includes(f);}).slice(0,5);
+  var html=mUsers.map(function(u){
+    return '<div class="linha-dd-opt" onmousedown="event.preventDefault();linhasByAposta['+cid+']['+idx+'].isAmigo=false;atualizarLinha('+cid+','+idx+',\'usuario\',\''+u.replace(/'/g,"\\'")+'\');renderLinhas('+cid+');verificarDesativarAmigo('+cid+');document.getElementById(\'li-user-'+cid+'-'+idx+'\').value=\''+u.replace(/'/g,"\\'")+'\';document.getElementById(\'li-dd-user-'+cid+'-'+idx+'\').classList.remove(\'open\')">'+u+'</div>';
+  }).join('');
+  if(mAmigos.length){
+    html+='<div style="padding:3px 8px;font-size:9px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.06em;background:rgba(255,183,77,.06);border-top:1px solid rgba(255,183,77,.2)">🛡️ Amigos de proteção</div>';
+    html+=mAmigos.map(function(a){
+      return '<div class="linha-dd-opt" style="color:var(--amber)" onmousedown="event.preventDefault();atualizarLinha('+cid+','+idx+',\'usuario\',\''+a.replace(/'/g,"\\'")+'\');ativarLinhaAmigo('+cid+','+idx+',\''+a.replace(/'/g,"\\'")+'\');document.getElementById(\'li-user-'+cid+'-'+idx+'\').value=\''+a.replace(/'/g,"\\'")+'\';document.getElementById(\'li-dd-user-'+cid+'-'+idx+'\').classList.remove(\'open\')">🛡️ '+esc(a)+'</div>';
+    }).join('');
+  }
+  if(!html)html='<div class="linha-dd-opt" style="color:var(--text2)">Nenhum cadastrado</div>';
+  dd.innerHTML=html;
+  if(mUsers.length>0||mAmigos.length>0||f.length===0) dd.classList.add('open'); else dd.classList.remove('open');
   atualizarLinha(cid, idx, 'usuario', inp.value);
 }
 
@@ -1483,10 +1556,12 @@ function salvarSB(){
     var isFB=document.getElementById('fb-chk-'+cid)?.checked;
     var isProc=document.getElementById('proc-chk-'+cid)?.checked;
     var isRef=cid===refCasaId;
+    var isAmigo=document.getElementById('amigo-chk-'+cid)?.checked;
+    var protAmigo=isAmigo&&(amigosSelecionadosByCid[cid]||[]).length?(amigosSelecionadosByCid[cid].slice()):null;
     var nomeCasas=validas.map(function(l){return l.casa+(l.usuario?' ('+l.usuario+')':'');}).join(' + ');
     var usrs=validas.map(function(l){return l.usuario;}).filter(Boolean);
     var rCalc=calcLinhas(cid);
-    casas.push({nome:nomeCasas,linhas:validas,usuarios:usrs,odd:oddMedia,stake:totalStake,freebet:isFB,proc:isProc,ref:isRef});
+    casas.push({nome:nomeCasas,linhas:validas,usuarios:usrs,odd:oddMedia,stake:totalStake,freebet:isFB,proc:isProc,ref:isRef,protegidoPor:protAmigo});
     if(!isFB)ts+=totalStake;
     retornos.push(rCalc?rCalc.retornoTotal:isFB?(oddMedia-1)*totalStake:oddMedia*totalStake);
     if(isProc){const v=parseFloat(document.getElementById('proc-valor-'+cid)?.value);if(v){const tb=document.getElementById('proc-tipo-'+cid)?.querySelector('.btn-sm.active');fbsEsp.push({casa:nomeCasas,usuarios:usrs,valor:v,tipo:tb?.dataset.v||'SNR',validade:document.getElementById('proc-val-'+cid)?.value||''})}}
@@ -1504,16 +1579,20 @@ function salvarSB(){
   document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
   casaIds.forEach(cid=>{
     document.getElementById('nome-'+cid).value='';document.getElementById('odd-'+cid).value='';document.getElementById('stake-'+cid).value='';
-    ['fb-chk-','proc-chk-','ref-chk-'].forEach(p=>{const el=document.getElementById(p+cid);if(el)el.checked=false});
+    ['fb-chk-','proc-chk-','ref-chk-','amigo-chk-'].forEach(p=>{const el=document.getElementById(p+cid);if(el)el.checked=false});
     const pp=document.getElementById('proc-panel-'+cid);if(pp)pp.style.display='none';
+    const fp=document.getElementById('fb-panel-'+cid);if(fp)fp.style.display='none';
+    const ap=document.getElementById('amigo-panel-'+cid);if(ap)ap.style.display='none';
     document.getElementById('cb-'+cid)?.classList.remove('is-ref','has-proc');
     const pv=document.getElementById('proc-valor-'+cid);if(pv)pv.value='';
+    amigosSelecionadosByCid[cid]=[];
     const ss=document.getElementById('stake-sug-'+cid);if(ss)ss.style.display='none';
     casaUsers[cid]=[];linhasByAposta[cid]=[];renderLinhas(cid);
     // reset botões visuais opt-btn
     document.getElementById('opt-ref-'+cid)?.classList.remove('sel-blue');
     document.getElementById('opt-snr-'+cid)?.classList.remove('sel-purple');
     document.getElementById('opt-proc-'+cid)?.classList.remove('sel-green');
+    document.getElementById('opt-amigo-'+cid)?.classList.remove('sel-amber');
   });
   refCasaId=null;document.getElementById('retorno-panel').style.display='none';
   jogosSelected=[];document.getElementById('jogo-banner').style.display='none';
@@ -2133,6 +2212,7 @@ function buildCard(e, isPend){
       // Nome + odd + stake
       h += '<div style="padding:7px 8px;min-width:0">'
         +'<div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+c.nome+'</div>'
+        +(c.protegidoPor?'<div style="margin-top:3px;display:flex;flex-wrap:wrap;gap:3px">'+(Array.isArray(c.protegidoPor)?c.protegidoPor:[c.protegidoPor]).map(function(n){return '<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:1px 7px;border-radius:99px;background:rgba(255,183,77,.12);border:1px solid rgba(255,183,77,.3);color:var(--amber)">🛡️ '+esc(n)+'</span>';}).join('')+'</div>':'')
         +'<div style="font-size:10px;color:var(--text2);font-family:var(--mono)">@'+o.toFixed(2)+' · R$'+s.toFixed(2)+'</div>'
         +'</div>';
 
@@ -2287,6 +2367,117 @@ function initConfig(){
   // nada a inicializar — config é estática
 }
 
+function addProtAposta(){
+  protApostaSeq++;
+  var pid=protApostaSeq;
+  protApostasRows.push(pid);
+  var row=document.createElement('div');
+  row.id='pr-row-'+pid;
+  row.style.cssText='background:var(--bg3);border-radius:var(--r2);padding:10px;margin-bottom:6px;position:relative';
+  var hdr=document.createElement('div');
+  hdr.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:6px';
+  var lbl=document.createElement('span');
+  lbl.style.cssText='font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em';
+  lbl.textContent='Aposta '+protApostasRows.length;
+  hdr.appendChild(lbl);
+  if(protApostasRows.length>1){
+    var rb=document.createElement('button');rb.className='btn-sm red';rb.textContent='×';
+    rb.style.cssText='padding:2px 8px;font-size:14px;line-height:1';
+    rb.onclick=(function(p){return function(){removeProtAposta(p)}})(pid);
+    hdr.appendChild(rb);
+  }
+  row.appendChild(hdr);
+  // Casa com dropdown
+  // Casa + Conta na mesma linha
+  var casaContaRow=document.createElement('div');casaContaRow.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px';
+  var casaDiv=document.createElement('div');
+  var casaLbl=document.createElement('div');casaLbl.className='field-label';casaLbl.style.marginTop='0';casaLbl.textContent='Casa';
+  casaDiv.appendChild(casaLbl);
+  var wrap=document.createElement('div');wrap.className='search-wrap';wrap.id='pr-wrap-'+pid;
+  var casaInp=document.createElement('input');casaInp.type='text';casaInp.id='pr-casa-'+pid;casaInp.placeholder='Bet365...';casaInp.autocomplete='off';casaInp.style.marginBottom='0';
+  var dd=document.createElement('div');dd.className='dropdown';dd.id='pr-dd-'+pid;
+  wrap.appendChild(casaInp);wrap.appendChild(dd);casaDiv.appendChild(wrap);
+  casaContaRow.appendChild(casaDiv);
+  var contaDiv=document.createElement('div');
+  var contaLbl=document.createElement('div');contaLbl.className='field-label';contaLbl.style.marginTop='0';contaLbl.textContent='Conta';
+  contaDiv.appendChild(contaLbl);
+  var contaInp=document.createElement('input');contaInp.type='text';contaInp.id='pr-conta-'+pid;contaInp.placeholder='Usuário...';contaInp.style.marginBottom='0';
+  contaDiv.appendChild(contaInp);
+  casaContaRow.appendChild(contaDiv);
+  row.appendChild(casaContaRow);
+  // Sugestões de conta (abaixo do par)
+  var sugRow=document.createElement('div');sugRow.className='sug-row';sugRow.id='pr-sug-'+pid;sugRow.style.marginTop='6px';
+  var todos=[...new Set(contasSalvas.map(function(c){return c.apelido;}))];
+  sugRow.innerHTML=todos.map(function(u){return '<button class="sug-btn" onclick="document.getElementById(\'pr-conta-'+pid+'\').value=\''+esc(u)+'\'">'+esc(u)+'</button>';}).join('');
+  row.appendChild(sugRow);
+  // Odd + Stake
+  var r2=document.createElement('div');r2.className='row2';r2.style.marginTop='8px';
+  var oddD=document.createElement('div');
+  var oddL=document.createElement('div');oddL.className='field-label';oddL.style.marginTop='0';oddL.textContent='Odd';
+  var oddI=document.createElement('input');oddI.type='number';oddI.id='pr-odd-'+pid;oddI.placeholder='2.50';oddI.step='0.01';oddI.addEventListener('input',calcProtTotal);
+  oddD.appendChild(oddL);oddD.appendChild(oddI);
+  var stkD=document.createElement('div');
+  var stkL=document.createElement('div');stkL.className='field-label';stkL.style.marginTop='0';stkL.textContent='Stake (R$)';
+  var stkI=document.createElement('input');stkI.type='number';stkI.id='pr-stake-'+pid;stkI.placeholder='100.00';stkI.step='0.01';stkI.addEventListener('input',calcProtTotal);
+  stkD.appendChild(stkL);stkD.appendChild(stkI);
+  r2.appendChild(oddD);r2.appendChild(stkD);row.appendChild(r2);
+  document.getElementById('prot-apostas-container').appendChild(row);
+  // Dropdown de casas
+  function ddProtR(f){
+    var m=ALL_CASAS.filter(function(c){return !f||c.toLowerCase().includes(f.toLowerCase());}).slice(0,12);
+    dd.innerHTML=m.map(function(nome){
+      return '<div class="dropdown-opt" onclick="event.stopPropagation();document.getElementById(\'pr-casa-'+pid+'\').value=\''+nome+'\';document.getElementById(\'pr-dd-'+pid+'\').classList.remove(\'open\');activeDD=null">'+nome+'</div>';
+    }).join('')||'<div class="dropdown-opt" style="color:var(--text2)">Nenhuma encontrada</div>';
+  }
+  casaInp.addEventListener('input',function(){ddProtR(casaInp.value);dd.classList.add('open');activeDD=wrap;});
+  casaInp.addEventListener('focus',function(){ddProtR(casaInp.value);dd.classList.add('open');activeDD=wrap;});
+}
+function removeProtAposta(pid){
+  protApostasRows=protApostasRows.filter(function(p){return p!==pid;});
+  var r=document.getElementById('pr-row-'+pid);if(r)r.remove();
+  // renumerar labels
+  protApostasRows.forEach(function(p,i){
+    var lbl=document.querySelector('#pr-row-'+p+' span');if(lbl&&lbl.textContent.startsWith('Aposta'))lbl.textContent='Aposta '+(i+1);
+  });
+  calcProtTotal();
+}
+function calcProtTotal(){
+  var amigo=document.getElementById('prot-amigo-inp').value.trim()||'amigo';
+  var totalStake=0,totalLucro=0,ok=false;
+  protApostasRows.forEach(function(pid){
+    var odd=parseFloat(document.getElementById('pr-odd-'+pid)?.value);
+    var stk=parseFloat(document.getElementById('pr-stake-'+pid)?.value);
+    if(odd>1&&stk>0){totalStake+=stk;totalLucro+=(odd-1)*stk;ok=true;}
+  });
+  var prev=document.getElementById('prot-preview-total');
+  if(!ok){prev.style.display='none';return;}
+  prev.style.display='block';
+  document.getElementById('prot-tot-stake').textContent='R$ '+totalStake.toFixed(2);
+  document.getElementById('prot-tot-lucro').textContent='R$ '+totalLucro.toFixed(2);
+  document.getElementById('prot-prev-ganhou').innerHTML='<span style="color:var(--red)">Eu devo ao '+esc(amigo)+': R$ '+totalLucro.toFixed(2)+'</span>';
+  document.getElementById('prot-prev-perdeu').innerHTML='<span style="color:var(--green)">'+esc(amigo)+' deve a mim: R$ '+totalStake.toFixed(2)+'</span>';
+}
+
+function renderAmigoProtSug(cid){
+  var el=document.getElementById('amigo-sug-'+cid);if(!el)return;
+  var sel=amigosSelecionadosByCid[cid]||[];
+  el.innerHTML=amigosProts.map(function(a){
+    var on=sel.includes(a);
+    return '<button class="sug-btn" style="'+(on?'background:rgba(255,183,77,.18);border-color:rgba(255,183,77,.6);color:var(--amber);font-weight:700':'')+'" onclick="toggleAmigoChip('+cid+',\''+esc(a)+'\',this)">'+esc(a)+'</button>';
+  }).join('')||'<span style="font-size:11px;color:var(--text2)">Nenhum amigo cadastrado</span>';
+}
+function toggleAmigoChip(cid, nome, btn){
+  if(!amigosSelecionadosByCid[cid]) amigosSelecionadosByCid[cid]=[];
+  var i=amigosSelecionadosByCid[cid].indexOf(nome);
+  if(i>=0){
+    amigosSelecionadosByCid[cid].splice(i,1);
+    btn.style.cssText='';
+  } else {
+    amigosSelecionadosByCid[cid].push(nome);
+    btn.style.cssText='background:rgba(255,183,77,.18);border-color:rgba(255,183,77,.6);color:var(--amber);font-weight:700';
+  }
+}
+
 // ── PROTEÇÃO ───────────────────────────────────────────────────────────────
 function addAmigoProt(){
   const inp=document.getElementById('prot-novo-amigo');
@@ -2326,42 +2517,57 @@ function calcProt(){
   const retorno=odd*stake, lucro=(odd-1)*stake;
   document.getElementById('prot-prev-ret').textContent='R$ '+retorno.toFixed(2);
   document.getElementById('prot-prev-luc').textContent='R$ '+lucro.toFixed(2);
-  if(protDir==='fiz'){
-    document.getElementById('prot-prev-ganhou').innerHTML=`<span style="color:var(--red)">Eu devo ao ${esc(amigo)}: R$ ${lucro.toFixed(2)}</span>`;
-    document.getElementById('prot-prev-perdeu').innerHTML=`<span style="color:var(--green)">${esc(amigo)} deve a mim: R$ ${stake.toFixed(2)}</span>`;
-  }else{
-    document.getElementById('prot-prev-ganhou').innerHTML=`<span style="color:var(--green)">${esc(amigo)} deve a mim: R$ ${lucro.toFixed(2)}</span>`;
-    document.getElementById('prot-prev-perdeu').innerHTML=`<span style="color:var(--red)">Eu devo ao ${esc(amigo)}: R$ ${stake.toFixed(2)}</span>`;
-  }
+  document.getElementById('prot-prev-ganhou').innerHTML=`<span style="color:var(--red)">Eu devo ao ${esc(amigo)}: R$ ${lucro.toFixed(2)}</span>`;
+  document.getElementById('prot-prev-perdeu').innerHTML=`<span style="color:var(--green)">${esc(amigo)} deve a mim: R$ ${stake.toFixed(2)}</span>`;
 }
 function salvarProtecao(){
   const amigo=document.getElementById('prot-amigo-inp').value.trim();
   const evento=document.getElementById('prot-evento').value.trim();
-  const casa=document.getElementById('prot-casa').value.trim();
-  const odd=parseFloat(document.getElementById('prot-odd').value);
-  const stake=parseFloat(document.getElementById('prot-stake').value);
   const data=document.getElementById('prot-data').value;
   const hora=document.getElementById('prot-hora').value;
-  if(!amigo||!evento||!odd||!stake){toast('Preencha amigo, evento, odd e stake','err');return;}
-  protecoes.push({id:Date.now(),amigo,direcao:protDir,evento,eventoData:data,eventoHora:hora,casa:casa||'—',odd,stake,retorno:odd*stake,lucro:(odd-1)*stake,resultado:'pendente',data:new Date().toLocaleDateString('pt-BR')});
+  if(!amigo||!evento){toast('Preencha amigo e evento','err');return;}
+  const apostas=[];
+  protApostasRows.forEach(function(pid){
+    const odd=parseFloat(document.getElementById('pr-odd-'+pid)?.value);
+    const stk=parseFloat(document.getElementById('pr-stake-'+pid)?.value);
+    if(odd>0&&stk>0){
+      const casa=document.getElementById('pr-casa-'+pid)?.value.trim()||'—';
+      const conta=document.getElementById('pr-conta-'+pid)?.value.trim()||'';
+      apostas.push({casa,conta,odd,stake:stk});
+    }
+  });
+  if(!apostas.length){toast('Preencha ao menos odd e stake','err');return;}
+  const first=apostas[0];
+  const totalStake=apostas.reduce(function(s,a){return s+a.stake;},0);
+  const totalLucro=apostas.reduce(function(s,a){return s+(a.odd-1)*a.stake;},0);
+  protecoes.push({id:Date.now(),amigo,direcao:'fiz',evento,eventoData:data,eventoHora:hora,
+    apostas,odd:first.odd,stake:totalStake,casa:first.casa,
+    retorno:first.odd*first.stake,lucro:totalLucro,resultado:'pendente',
+    data:new Date().toLocaleDateString('pt-BR')});
   sd(PRTK,protecoes);
-  ['prot-amigo-inp','prot-evento','prot-casa','prot-odd','prot-stake','prot-hora'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('prot-amigo-inp').value='';
+  document.getElementById('prot-evento').value='';
+  document.getElementById('prot-hora').value='';
   document.getElementById('prot-data').value=new Date().toISOString().slice(0,10);
-  document.getElementById('prot-preview').style.display='none';
+  document.getElementById('prot-preview-total').style.display='none';
+  document.getElementById('prot-apostas-container').innerHTML='';
+  protApostasRows=[];protApostaSeq=0;addProtAposta();
   toast('Proteção salva!','ok');
   atualizarFiltroAmigos();renderSaldos();renderProtecoes();
 }
 function calcDevidoProt(p){
   if(p.resultado==='pendente')return null;
-  const lucro=(p.odd-1)*p.stake;
+  const apostas=p.apostas||[{odd:p.odd,stake:p.stake}];
+  const totalStake=apostas.reduce(function(s,a){return s+parseFloat(a.stake);},0);
+  const totalLucro=apostas.reduce(function(s,a){return s+(parseFloat(a.odd)-1)*parseFloat(a.stake);},0);
   if(p.resultado==='ganhou'){
     return p.direcao==='fiz'
-      ?{quem:'eu',valor:lucro,label:'Eu devo ao amigo'}
-      :{quem:'amigo',valor:lucro,label:'Amigo deve a mim'};
+      ?{quem:'eu',valor:totalLucro,label:'Eu devo ao amigo'}
+      :{quem:'amigo',valor:totalLucro,label:'Amigo deve a mim'};
   }else{
     return p.direcao==='fiz'
-      ?{quem:'amigo',valor:p.stake,label:'Amigo deve a mim'}
-      :{quem:'eu',valor:p.stake,label:'Eu devo ao amigo'};
+      ?{quem:'amigo',valor:totalStake,label:'Amigo deve a mim'}
+      :{quem:'eu',valor:totalStake,label:'Eu devo ao amigo'};
   }
 }
 function calcSaldoAmigo(amigo){
@@ -2447,11 +2653,20 @@ function renderProtecoes(){
         </div>
         <span style="font-size:11px;font-weight:700;color:${resColor};flex-shrink:0;margin-left:8px">${resLabel}</span>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px;margin-bottom:6px">
-        <div style="background:var(--bg3);border-radius:var(--r2);padding:5px 8px"><div style="color:var(--text2);font-size:9px;text-transform:uppercase;font-weight:600">Odd</div><div style="font-family:var(--mono);font-weight:700">${p.odd}</div></div>
-        <div style="background:var(--bg3);border-radius:var(--r2);padding:5px 8px"><div style="color:var(--text2);font-size:9px;text-transform:uppercase;font-weight:600">Stake</div><div style="font-family:var(--mono);font-weight:700">R$ ${p.stake.toFixed(2)}</div></div>
-        <div style="background:var(--bg3);border-radius:var(--r2);padding:5px 8px"><div style="color:var(--text2);font-size:9px;text-transform:uppercase;font-weight:600">Lucro</div><div style="font-family:var(--mono);font-weight:700;color:var(--green)">R$ ${p.lucro.toFixed(2)}</div></div>
-      </div>
+      ${(p.apostas&&p.apostas.length>1
+        ?'<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:6px">'
+          +p.apostas.map(function(a,i){return '<div style="display:grid;grid-template-columns:1fr 60px 60px;gap:4px;background:var(--bg3);border-radius:var(--r2);padding:5px 8px;font-size:11px">'
+            +'<div style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600">'+(a.casa||'—')+(a.conta?'<span style="font-weight:400;color:var(--text2)"> · '+esc(a.conta)+'</span>':'')+'</div>'
+            +'<div style="font-family:var(--mono);color:var(--text2)">@'+parseFloat(a.odd).toFixed(2)+'</div>'
+            +'<div style="font-family:var(--mono);font-weight:700">R$'+parseFloat(a.stake).toFixed(2)+'</div>'
+            +'</div>';}).join('')
+          +'</div>'
+        :'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px;margin-bottom:6px">'
+          +'<div style="background:var(--bg3);border-radius:var(--r2);padding:5px 8px"><div style="color:var(--text2);font-size:9px;text-transform:uppercase;font-weight:600">Odd</div><div style="font-family:var(--mono);font-weight:700">'+p.odd+'</div></div>'
+          +'<div style="background:var(--bg3);border-radius:var(--r2);padding:5px 8px"><div style="color:var(--text2);font-size:9px;text-transform:uppercase;font-weight:600">Stake</div><div style="font-family:var(--mono);font-weight:700">R$ '+p.stake.toFixed(2)+'</div></div>'
+          +'<div style="background:var(--bg3);border-radius:var(--r2);padding:5px 8px"><div style="color:var(--text2);font-size:9px;text-transform:uppercase;font-weight:600">Lucro</div><div style="font-family:var(--mono);font-weight:700;color:var(--green)">R$ '+p.lucro.toFixed(2)+'</div></div>'
+          +'</div>'
+      )}
       ${deveHtml}
       ${p.resultado==='pendente'?`<div style="display:flex;gap:6px;margin-top:8px">
         <button class="btn-sm green-c" style="flex:1" onclick="concluirProtecao(${p.id},'ganhou')">✅ Ganhou</button>
@@ -2918,7 +3133,7 @@ function toast(msg,tipo){const t=document.getElementById('toast');t.textContent=
 document.addEventListener('click',e=>{if(activeDD&&!activeDD.contains(e.target)){activeDD.querySelector('.dropdown')?.classList.remove('open');activeDD=null}});
 
 // ── INIT ───────────────────────────────────────────────────────────────────
-addCasa();addCasa();
+addCasa();addCasa();addProtAposta();
 atualizarBotaoAddAposta();
 document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
 renderContas();
