@@ -1032,7 +1032,12 @@ function addCasa(){
     var isOn=b.classList.contains('sel-purple');
     ch.checked=isOn;
     if(isOn){ abrirFBModal(c); }
-    else { fbSelecionadaByCid[c]=null; var fp=document.getElementById('fb-panel-'+c);if(fp)fp.style.display='none'; }
+    else {
+      fbSelecionadaByCid[c]=null;
+      if(linhasByAposta[c])linhasByAposta[c]=linhasByAposta[c].filter(function(l){return !l.isFreebet;});
+      renderLinhas(c);
+      var fp=document.getElementById('fb-panel-'+c);if(fp)fp.style.display='none';
+    }
     calcLucro();
   }})(cid,bSnr));
   tg.appendChild(bSnr);
@@ -1243,10 +1248,24 @@ function confirmarFBModal(){
   var v=document.getElementById('fb-modal-val');
   if(v)fbModalSelTemp.valorUsar=parseFloat(v.value)||fbModalSelTemp.valorUsar;
   if(!fbModalSelTemp.valorUsar||fbModalSelTemp.valorUsar<=0){toast('Informe o valor a usar','err');return;}
-  fbSelecionadaByCid[fbModalCid]=Object.assign({},fbModalSelTemp);
-  renderFBPanel(fbModalCid);
+  var cid=fbModalCid;
+  var fb=carteiraFB.find(function(f){return f.id===fbModalSelTemp.fbId;});
+  fbSelecionadaByCid[cid]=Object.assign({},fbModalSelTemp);
+  // inserir como linha na aposta (remove linha fb anterior se houver)
+  if(!linhasByAposta[cid])linhasByAposta[cid]=[];
+  linhasByAposta[cid]=linhasByAposta[cid].filter(function(l){return !l.isFreebet;});
+  linhasByAposta[cid].push({
+    casa: fb?fb.casa:'',
+    usuario: fb&&fb.conta!=='—'?fb.conta:'',
+    odd:'',
+    stake: parseFloat(fbModalSelTemp.valorUsar).toFixed(2),
+    isFreebet:true
+  });
+  renderLinhas(cid);
+  renderFBPanel(cid);
   document.getElementById('fb-sel-modal').style.display='none';
-  var c=fbModalCid;fbModalCid=null;fbModalSelTemp=null;
+  fbModalCid=null;fbModalSelTemp=null;
+  calcLucro();
   toast('Freebet inserida!','ok');
 }
 function verificarDesativarAmigo(cid){
@@ -1298,8 +1317,13 @@ function renderLinhas(cid){
     var hasRet = o>0&&s>0;
     var ret=hasRet?o*s:0, lucro=hasRet?ret-s:0;
 
-    var amberRow=l.isAmigo?'background:rgba(255,183,77,.07);border-left:3px solid var(--amber);border-radius:var(--r2);padding:4px 4px 4px 8px;':'';
-    html+='<div style="margin-bottom:'+(hasRet?'2':'5')+'px;'+amberRow+'">';
+    var rowStyle=l.isFreebet
+      ?'background:rgba(206,147,216,.09);border-left:3px solid var(--purple);border-radius:var(--r2);padding:4px 4px 4px 8px;'
+      :l.isAmigo?'background:rgba(255,183,77,.07);border-left:3px solid var(--amber);border-radius:var(--r2);padding:4px 4px 4px 8px;':'';
+    html+='<div style="margin-bottom:'+(hasRet?'2':'5')+'px;'+rowStyle+'">';
+    if(l.isFreebet){
+      html+='<div style="font-size:10px;color:var(--purple);font-weight:700;margin-bottom:2px">💜 FREEBET</div>';
+    }
     html+='<div class="linha-aposta">';
 
     // Casa — input com autocomplete
@@ -2115,7 +2139,7 @@ function fbSetStatus(id,s){carteiraFB.forEach(f=>{if(f.id===id)f.status=s});sd(F
 function fbRem(id){carteiraFB=carteiraFB.filter(f=>f.id!==id);sd(FBCK,carteiraFB);renderCarteira();renderResumo()}
 function fbEditarPrompt(id){
   const fb=carteiraFB.find(f=>f.id===id);if(!fb)return;
-  document.querySelectorAll('[id^="fb-edit-"],[id^="fb-acum-"]').forEach(e=>e.style.display='none');
+  document.querySelectorAll('div[id^="fb-edit-"],div[id^="fb-acum-"]').forEach(e=>e.style.display='none');
   const el=document.getElementById('fb-edit-'+id);if(!el)return;
   document.getElementById('fb-edit-casa-'+id).value=fb.casa;
   document.getElementById('fb-edit-conta-'+id).value=fb.conta==='—'?'':fb.conta;
