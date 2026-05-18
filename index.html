@@ -625,6 +625,75 @@
       </div>
     </div>
 
+    <!-- PAGE PROTEÇÃO -->
+    <div class="page" id="page-prot">
+
+      <!-- Amigos -->
+      <div class="card">
+        <div class="card-title">Amigos</div>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="prot-novo-amigo" placeholder="Nome do amigo..." style="flex:1;margin-bottom:0">
+          <button class="btn-sm" style="padding:0 16px" onclick="addAmigoProt()">+ Add</button>
+        </div>
+        <div id="prot-amigos-chips" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px"></div>
+      </div>
+
+      <!-- Nova proteção -->
+      <div class="card">
+        <div class="card-title">+ Nova proteção</div>
+        <div class="tipo-grid" style="grid-template-columns:1fr 1fr;margin-bottom:14px">
+          <button class="tipo-btn sel" data-v="fiz" onclick="selProtDir(this)">
+            <span class="tipo-btn-icon">➡️</span>
+            <span class="tipo-btn-label">Fiz para ele</span>
+            <span class="tipo-btn-desc">Eu coloquei o $</span>
+          </button>
+          <button class="tipo-btn" data-v="ele_fez" onclick="selProtDir(this)">
+            <span class="tipo-btn-icon">⬅️</span>
+            <span class="tipo-btn-label">Ele fez para mim</span>
+            <span class="tipo-btn-desc">Ele colocou o $</span>
+          </button>
+        </div>
+        <div class="field-label" style="margin-top:0">Amigo</div>
+        <div id="prot-sug-row" class="sug-row"></div>
+        <input type="text" id="prot-amigo-inp" placeholder="Selecione ou digite...">
+        <div class="field-label">Evento</div>
+        <input type="text" id="prot-evento" placeholder="Ex: Flamengo x Corinthians">
+        <div class="row2" style="margin-top:0"><input type="date" id="prot-data"><input type="time" id="prot-hora"></div>
+        <div class="row2" style="margin-top:8px">
+          <div><div class="field-label" style="margin-top:0">Casa</div><input type="text" id="prot-casa" placeholder="Bet365..."></div>
+          <div><div class="field-label" style="margin-top:0">Odd</div><input type="number" id="prot-odd" placeholder="2.50" step="0.01" oninput="calcProt()"></div>
+        </div>
+        <div class="field-label">Stake (R$)</div>
+        <input type="number" id="prot-stake" placeholder="100.00" step="0.01" oninput="calcProt()">
+        <div id="prot-preview" style="display:none;margin-top:10px;padding:10px 12px;background:var(--bg3);border-radius:var(--r2)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+            <div><div style="font-size:9px;color:var(--text2);font-weight:600;text-transform:uppercase;margin-bottom:2px">Retorno</div><div id="prot-prev-ret" style="font-family:var(--mono);font-weight:700;color:var(--green);font-size:15px">—</div></div>
+            <div><div style="font-size:9px;color:var(--text2);font-weight:600;text-transform:uppercase;margin-bottom:2px">Lucro</div><div id="prot-prev-luc" style="font-family:var(--mono);font-weight:700;color:var(--green);font-size:15px">—</div></div>
+          </div>
+          <div style="border-top:1px solid var(--border);padding-top:8px;font-size:12px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--text2)">✅ Se ganhou</span><span id="prot-prev-ganhou" style="font-weight:700"></span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">❌ Se perdeu</span><span id="prot-prev-perdeu" style="font-weight:700"></span></div>
+          </div>
+        </div>
+        <button class="btn-primary" style="margin-top:12px" onclick="salvarProtecao()">Salvar proteção</button>
+      </div>
+
+      <!-- Saldos por amigo -->
+      <div id="prot-saldos"></div>
+
+      <!-- Lista -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <span class="card-title" style="margin:0">Histórico</span>
+          <div style="display:flex;gap:6px">
+            <select id="prot-filtro-amigo" onchange="renderProtecoes()" style="font-size:12px;padding:5px 8px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text)"><option value="todos">Todos</option></select>
+            <button class="btn-sm" onclick="exportProtCSV()">↓ CSV</button>
+          </div>
+        </div>
+        <div id="prot-lista"></div>
+      </div>
+    </div>
+
     <!-- PAGE USUÁRIOS -->
     <div class="page" id="page-users">
       <div class="card">
@@ -685,6 +754,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       Resumo
     </button>
+    <button class="nav-btn" id="nav-prot" onclick="navTo('prot',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Proteção
+    </button>
     <button class="nav-btn" id="nav-users" onclick="navTo('users',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       Usuários
@@ -743,6 +816,7 @@
 <script>
 // ── CONSTANTES ─────────────────────────────────────────────────────────────
 const SK='ap_v1', CK='ap_contas_v1', FBCK='ap_fb_v1';
+const PRTK='ap_protecao_v1', PRUSR='ap_prot_users_v1', PRPAG='ap_prot_pag_v1';
 const ALL_CASAS=['Bet365','Betano','Superbet','Sportingbet','KTO','Novibet','BetMGM','Betnacional','Blaze','Betsson','Vbet','Pinnacle','Bwin','1xBet','Betboo','Brazino777','BR4bet','Multibet','BetBoom','Vera Bet','Bet7K','Bodog','Betcris','Dafabet','Betfair','Parimatch','Sportsbet.io','888sport','Unibet','William Hill','Betway','22bet','Melbet','Mostbet','Marathonbet','GGbet','BetWarrior','Codere','Galera.bet','Vai de Bet','EstrelaBet','Segurobet','Esporte da Sorte','Pagbet','Onabet','Wazamba','Rivalo','Betpix365','Brbet','Betsul','F12.bet','Lotogreen','Palms Bet','PlacarBet','R7 Bet','Realsbet','SaharaBet','Starda','TáBet','Top Bet','Toro Bet','Veloce Bet','XP Bet','Zebet','Cloudbet','DraftKings','Fonbet','Gigabet','Goldenbet','Ladbrokes','Maxbet','Megapari','Meridianbet','Mozzartbet','Netbet','Olimp','Premierbet','Rabona','Riobet','Rizk','Sportaza','Titanbet','Winbet','Wplay'];
 
 // ── UTILITÁRIOS ────────────────────────────────────────────────────────────
@@ -752,6 +826,8 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 let tipoSel='surebet', casaSeq=0, casaIds=[], casaUsers={}, refCasaId=null;
 let anUsers=[];
 let entries=ld(SK), contasSalvas=ld(CK), carteiraFB=ld(FBCK);
+let protecoes=ld(PRTK)||[], amigosProts=ld(PRUSR)||[], pagamentosProts=ld(PRPAG)||[];
+let protDir='fiz';
 let activeDD=null, filterEntradas='semana', filterResumo='hoje', compFilter='all', compSel='all', filterHist='tudo';
 let notifMinutosAntes=parseInt(localStorage.getItem('ap_notif_min')||'10');
 let jogosSelected=[], fbFiltro='disp', fbTipoSel='SNR';
@@ -792,6 +868,7 @@ function navTo(page, btn){
   if(page==='users')   { renderContas(); }
   if(page==='carteira'){ renderCarteira(); setTimeout(setupFBCasaDrop,50); }
   if(page==='nova')    { renderJogos(); }
+  if(page==='prot')    { renderAmigosChips();renderProtSug();renderSaldos();renderProtecoes(); }
   if(page==='config')  { initConfig(); }
   checkAlertas();
 }
@@ -2210,6 +2287,191 @@ function initConfig(){
   // nada a inicializar — config é estática
 }
 
+// ── PROTEÇÃO ───────────────────────────────────────────────────────────────
+function addAmigoProt(){
+  const inp=document.getElementById('prot-novo-amigo');
+  const nome=inp.value.trim();
+  if(!nome)return;
+  if(amigosProts.includes(nome)){toast('Amigo já existe','err');return;}
+  amigosProts.push(nome);sd(PRUSR,amigosProts);inp.value='';
+  renderAmigosChips();renderProtSug();atualizarFiltroAmigos();
+  toast('Amigo adicionado!','ok');
+}
+function renderAmigosChips(){
+  const el=document.getElementById('prot-amigos-chips');if(!el)return;
+  el.innerHTML=amigosProts.length
+    ?amigosProts.map(a=>`<span class="chip">${esc(a)}<button class="rm" data-a="${esc(a)}" onclick="remAmigoProt(this.dataset.a)">×</button></span>`).join('')
+    :'<span style="font-size:11px;color:var(--text2)">Nenhum amigo cadastrado.</span>';
+}
+function remAmigoProt(nome){
+  if(!confirm('Remover '+nome+'? As proteções dele ficam salvas.'))return;
+  amigosProts=amigosProts.filter(a=>a!==nome);sd(PRUSR,amigosProts);
+  renderAmigosChips();renderProtSug();atualizarFiltroAmigos();renderSaldos();renderProtecoes();
+}
+function renderProtSug(){
+  const el=document.getElementById('prot-sug-row');if(!el)return;
+  el.innerHTML=amigosProts.map(a=>`<button class="sug-btn" data-a="${esc(a)}" onclick="document.getElementById('prot-amigo-inp').value=this.dataset.a">${esc(a)}</button>`).join('');
+}
+function selProtDir(btn){
+  document.querySelectorAll('[data-v]').forEach(b=>{if(b.closest('#page-prot'))b.classList.remove('sel')});
+  btn.classList.add('sel');protDir=btn.dataset.v;calcProt();
+}
+function calcProt(){
+  const odd=parseFloat(document.getElementById('prot-odd').value);
+  const stake=parseFloat(document.getElementById('prot-stake').value);
+  const prev=document.getElementById('prot-preview');
+  const amigo=document.getElementById('prot-amigo-inp').value.trim()||'amigo';
+  if(!odd||!stake||odd<=1){prev.style.display='none';return;}
+  prev.style.display='block';
+  const retorno=odd*stake, lucro=(odd-1)*stake;
+  document.getElementById('prot-prev-ret').textContent='R$ '+retorno.toFixed(2);
+  document.getElementById('prot-prev-luc').textContent='R$ '+lucro.toFixed(2);
+  if(protDir==='fiz'){
+    document.getElementById('prot-prev-ganhou').innerHTML=`<span style="color:var(--red)">Eu devo ao ${esc(amigo)}: R$ ${lucro.toFixed(2)}</span>`;
+    document.getElementById('prot-prev-perdeu').innerHTML=`<span style="color:var(--green)">${esc(amigo)} deve a mim: R$ ${stake.toFixed(2)}</span>`;
+  }else{
+    document.getElementById('prot-prev-ganhou').innerHTML=`<span style="color:var(--green)">${esc(amigo)} deve a mim: R$ ${lucro.toFixed(2)}</span>`;
+    document.getElementById('prot-prev-perdeu').innerHTML=`<span style="color:var(--red)">Eu devo ao ${esc(amigo)}: R$ ${stake.toFixed(2)}</span>`;
+  }
+}
+function salvarProtecao(){
+  const amigo=document.getElementById('prot-amigo-inp').value.trim();
+  const evento=document.getElementById('prot-evento').value.trim();
+  const casa=document.getElementById('prot-casa').value.trim();
+  const odd=parseFloat(document.getElementById('prot-odd').value);
+  const stake=parseFloat(document.getElementById('prot-stake').value);
+  const data=document.getElementById('prot-data').value;
+  const hora=document.getElementById('prot-hora').value;
+  if(!amigo||!evento||!odd||!stake){toast('Preencha amigo, evento, odd e stake','err');return;}
+  protecoes.push({id:Date.now(),amigo,direcao:protDir,evento,eventoData:data,eventoHora:hora,casa:casa||'—',odd,stake,retorno:odd*stake,lucro:(odd-1)*stake,resultado:'pendente',data:new Date().toLocaleDateString('pt-BR')});
+  sd(PRTK,protecoes);
+  ['prot-amigo-inp','prot-evento','prot-casa','prot-odd','prot-stake','prot-hora'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('prot-data').value=new Date().toISOString().slice(0,10);
+  document.getElementById('prot-preview').style.display='none';
+  toast('Proteção salva!','ok');
+  atualizarFiltroAmigos();renderSaldos();renderProtecoes();
+}
+function calcDevidoProt(p){
+  if(p.resultado==='pendente')return null;
+  const lucro=(p.odd-1)*p.stake;
+  if(p.resultado==='ganhou'){
+    return p.direcao==='fiz'
+      ?{quem:'eu',valor:lucro,label:'Eu devo ao amigo'}
+      :{quem:'amigo',valor:lucro,label:'Amigo deve a mim'};
+  }else{
+    return p.direcao==='fiz'
+      ?{quem:'amigo',valor:p.stake,label:'Amigo deve a mim'}
+      :{quem:'eu',valor:p.stake,label:'Eu devo ao amigo'};
+  }
+}
+function calcSaldoAmigo(amigo){
+  let saldo=0;
+  protecoes.filter(p=>p.amigo===amigo&&p.resultado!=='pendente').forEach(p=>{
+    const d=calcDevidoProt(p);if(!d)return;
+    saldo+=d.quem==='amigo'?d.valor:-d.valor;
+  });
+  pagamentosProts.filter(pg=>pg.amigo===amigo).forEach(pg=>{saldo-=pg.valor;});
+  return saldo;
+}
+function renderSaldos(){
+  const el=document.getElementById('prot-saldos');if(!el)return;
+  const amigosAtivos=[...new Set(protecoes.map(p=>p.amigo))];
+  if(!amigosAtivos.length){el.innerHTML='';return;}
+  el.innerHTML='<div style="display:grid;gap:8px;margin-bottom:8px">'
+    +amigosAtivos.map(a=>{
+      const s=calcSaldoAmigo(a);
+      const cor=s>0?'var(--green)':s<0?'var(--red)':'var(--text2)';
+      const txt=s>0?`${esc(a)} deve a mim`:s<0?`Eu devo ao ${esc(a)}`:'Quitado';
+      const val=Math.abs(s);
+      return `<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);padding:12px 14px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-weight:700;font-size:14px">${esc(a)}</div>
+          <div style="font-size:11px;color:${cor};margin-top:2px">${txt}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:var(--mono);font-size:18px;font-weight:700;color:${cor}">${s!==0?'R$ '+val.toFixed(2):'—'}</div>
+          ${s!==0?`<button class="btn-sm" style="margin-top:4px;font-size:11px" onclick="abrirPagamentoModal('${esc(a)}')">Registrar pagamento</button>`:''}
+        </div>
+      </div>`;
+    }).join('')+'</div>';
+}
+function abrirPagamentoModal(amigo){
+  const s=calcSaldoAmigo(amigo);
+  const quem=s>0?`${amigo} te paga`:`Você paga ${amigo}`;
+  const val=window.prompt(`${quem}\nSaldo atual: R$ ${Math.abs(s).toFixed(2)}\n\nValor do pagamento (R$):`);
+  if(!val)return;
+  const v=parseFloat(val.replace(',','.'));
+  if(!v||v<=0){toast('Valor inválido','err');return;}
+  pagamentosProts.push({id:Date.now(),amigo,valor:s>0?v:-v,data:new Date().toLocaleDateString('pt-BR'),obs:''});
+  sd(PRPAG,pagamentosProts);
+  toast('Pagamento registrado!','ok');renderSaldos();renderProtecoes();
+}
+function concluirProtecao(id,resultado){
+  const p=protecoes.find(x=>x.id===id);if(!p)return;
+  p.resultado=resultado;sd(PRTK,protecoes);renderSaldos();renderProtecoes();
+}
+function deletarProtecao(id){
+  if(!confirm('Remover esta proteção?'))return;
+  protecoes=protecoes.filter(p=>p.id!==id);sd(PRTK,protecoes);renderSaldos();renderProtecoes();
+}
+function atualizarFiltroAmigos(){
+  const sel=document.getElementById('prot-filtro-amigo');if(!sel)return;
+  const cur=sel.value;
+  const amigosAtivos=['todos',...new Set(protecoes.map(p=>p.amigo)),...amigosProts].filter((v,i,a)=>a.indexOf(v)===i);
+  sel.innerHTML=amigosAtivos.map(a=>`<option value="${esc(a)}" ${a===cur?'selected':''}>${a==='todos'?'Todos':esc(a)}</option>`).join('');
+}
+function renderProtecoes(){
+  const el=document.getElementById('prot-lista');if(!el)return;
+  const filtro=document.getElementById('prot-filtro-amigo')?.value||'todos';
+  const lista=filtro==='todos'?protecoes:protecoes.filter(p=>p.amigo===filtro);
+  if(!lista.length){el.innerHTML='<div class="empty">Nenhuma proteção cadastrada.</div>';return;}
+  el.innerHTML=[...lista].reverse().map(p=>{
+    const d=calcDevidoProt(p);
+    const dirLabel=p.direcao==='fiz'?'<span style="color:var(--accent2)">➡️ Fiz para ele</span>':'<span style="color:var(--orange)">⬅️ Ele fez pra mim</span>';
+    const resColor=p.resultado==='ganhou'?'var(--green)':p.resultado==='perdeu'?'var(--red)':'var(--text2)';
+    const resLabel=p.resultado==='ganhou'?'✅ Ganhou':p.resultado==='perdeu'?'❌ Perdeu':'⏳ Pendente';
+    let deveHtml='';
+    if(d){
+      const cor=d.quem==='eu'?'var(--red)':'var(--green)';
+      deveHtml=`<div style="margin-top:8px;padding:7px 10px;background:var(--bg3);border-radius:var(--r2);font-size:12px;display:flex;justify-content:space-between">
+        <span style="color:var(--text2)">${d.label}</span>
+        <span style="font-family:var(--mono);font-weight:700;color:${cor}">R$ ${d.valor.toFixed(2)}</span>
+      </div>`;
+    }
+    return `<div style="padding:12px 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700;margin-bottom:3px">${esc(p.evento)}</div>
+          <div style="font-size:11px;color:var(--text2)">${p.data}${p.eventoHora?' · '+p.eventoHora:''} · ${esc(p.amigo)} · ${esc(p.casa)}</div>
+          <div style="font-size:11px;margin-top:3px">${dirLabel}</div>
+        </div>
+        <span style="font-size:11px;font-weight:700;color:${resColor};flex-shrink:0;margin-left:8px">${resLabel}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px;margin-bottom:6px">
+        <div style="background:var(--bg3);border-radius:var(--r2);padding:5px 8px"><div style="color:var(--text2);font-size:9px;text-transform:uppercase;font-weight:600">Odd</div><div style="font-family:var(--mono);font-weight:700">${p.odd}</div></div>
+        <div style="background:var(--bg3);border-radius:var(--r2);padding:5px 8px"><div style="color:var(--text2);font-size:9px;text-transform:uppercase;font-weight:600">Stake</div><div style="font-family:var(--mono);font-weight:700">R$ ${p.stake.toFixed(2)}</div></div>
+        <div style="background:var(--bg3);border-radius:var(--r2);padding:5px 8px"><div style="color:var(--text2);font-size:9px;text-transform:uppercase;font-weight:600">Lucro</div><div style="font-family:var(--mono);font-weight:700;color:var(--green)">R$ ${p.lucro.toFixed(2)}</div></div>
+      </div>
+      ${deveHtml}
+      ${p.resultado==='pendente'?`<div style="display:flex;gap:6px;margin-top:8px">
+        <button class="btn-sm green-c" style="flex:1" onclick="concluirProtecao(${p.id},'ganhou')">✅ Ganhou</button>
+        <button class="btn-sm red" style="flex:1" onclick="concluirProtecao(${p.id},'perdeu')">❌ Perdeu</button>
+        <button class="btn-sm" onclick="deletarProtecao(${p.id})">🗑</button>
+      </div>`:`<button class="btn-sm" style="margin-top:6px" onclick="deletarProtecao(${p.id})">🗑 Remover</button>`}
+    </div>`;
+  }).join('');
+}
+function exportProtCSV(){
+  if(!protecoes.length){toast('Nenhuma proteção para exportar','err');return;}
+  const rows=[['Data','Evento','Hora','Amigo','Direção','Casa','Odd','Stake','Retorno','Lucro','Resultado','Quem deve','Valor devido']];
+  protecoes.forEach(p=>{
+    const d=calcDevidoProt(p);
+    rows.push([p.data,p.evento,p.eventoHora||'',p.amigo,p.direcao==='fiz'?'Fiz para ele':'Ele fez para mim',p.casa,p.odd,p.stake.toFixed(2),p.retorno.toFixed(2),p.lucro.toFixed(2),p.resultado,d?d.label:'Pendente',d?d.valor.toFixed(2):'']);
+  });
+  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(';')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,﻿'+encodeURIComponent(csv);a.download='protecoes_'+new Date().toISOString().slice(0,10)+'.csv';a.click();toast('CSV exportado!','ok');
+}
+
 function renderSparkline(){
   const el=document.getElementById('roi-sparkline');if(!el)return;
   const now=new Date();
@@ -2661,6 +2923,7 @@ atualizarBotaoAddAposta();
 document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
 renderContas();
 renderJogos();
+document.getElementById('prot-data').value=new Date().toISOString().slice(0,10);
 </script>
 </body>
 </html>
