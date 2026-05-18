@@ -958,6 +958,8 @@ let activeDD=null, filterEntradas='semana', filterResumo='hoje', compFilter='all
 let notifMinutosAntes=parseInt(localStorage.getItem('ap_notif_min')||'10');
 let jogosSelected=[], fbFiltro='disp', fbTipoSel='SNR', fbOrdem='padrao';
 let jogosData=[];
+var _uidSeq=0;
+function uid(){return Date.now()*1000+(++_uidSeq);}
 const periodoLabel={hoje:'hoje',semana:'esta semana',mes:'este mês',tudo:'todos'};
 
 function ld(k){try{return JSON.parse(localStorage.getItem(k)||'[]')}catch{return[]}}
@@ -1065,7 +1067,7 @@ function salvarAN(){
   if(!odd||!stake){toast('Informe odd e valor');return}
   const ret=odd*stake, lucro=ret-stake;
   const now=new Date();
-  entries.push({id:Date.now(),tipo:'aposta_normal',evento:ev,
+  entries.push({id:uid(),tipo:'aposta_normal',evento:ev,
     casas:[{nome:casa,usuarios:anUsers.slice(),odd,stake,freebet:false,proc:false}],
     total:stake,lucro,roi:lucro/stake*100,resultado:'pendente',
     hora:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),data:now.toLocaleDateString('pt-BR'),
@@ -1364,6 +1366,7 @@ function confirmarFBModal(){
   if(!fbModalSelTemp.valorUsar||fbModalSelTemp.valorUsar<=0){toast('Informe o valor a usar','err');return;}
   var cid=fbModalCid;
   var fb=carteiraFB.find(function(f){return f.id===fbModalSelTemp.fbId;});
+  if(fb&&fbModalSelTemp.valorUsar>fb.valor){toast('Valor maior que o da freebet (R$ '+fb.valor.toFixed(2)+')','err');return;}
   fbSelecionadaByCid[cid]=Object.assign({},fbModalSelTemp);
   // inserir como linha na aposta (remove linha fb anterior se houver)
   if(!linhasByAposta[cid])linhasByAposta[cid]=[];
@@ -1796,7 +1799,7 @@ function salvarSB(){
   if(!ok||casas.length<2){toast('Preencha ao menos 2 casas');return}
   const lucro=Math.min(...retornos)-ts,roi=ts>0?lucro/ts*100:0;
   const now=new Date();
-  entries.push({id:Date.now(),tipo:'surebet',evento:ev,casas,total:ts,lucro,roi,resultado:'pendente',
+  entries.push({id:uid(),tipo:'surebet',evento:ev,casas,total:ts,lucro,roi,resultado:'pendente',
     hora:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),data:now.toLocaleDateString('pt-BR'),
     eventoData:document.getElementById('f-data').value||'',eventoHora:document.getElementById('f-hora').value||'',
     chanceDuplo:cdValue,fbsEsperadas:fbsEsp,fbAdicionadas:[]});
@@ -1832,12 +1835,12 @@ function salvarSB(){
     var lucroVal=apostas.reduce(function(s,a){return s+(a.odd-1)*a.stake;},0);
     protAmigos.forEach(function(amigo){
       protecoes.push({
-        id:Date.now()+(_protCriadas++),
+        id:uid(),
         amigo:amigo,direcao:'rec',
         evento:_eventoNome,eventoData:_eventoData,eventoHora:_eventoHora,
         apostas:apostas,odd:first.odd,stake:totalStk,casa:first.casa,
         retorno:first.odd*first.stake,lucro:lucroVal,
-        resultado:'pendente',data:new Date().toLocaleDateString('pt-BR'),
+        resultado:'pendente',acertada:false,data:new Date().toLocaleDateString('pt-BR'),
         entradaId:_entradaId
       });
     });
@@ -2234,7 +2237,7 @@ function adicionarFB(){
   const validade=document.getElementById('fb-cart-val').value;
   const obs=document.getElementById('fb-cart-obs').value.trim();
   if(!casa||!valor){toast('Preencha casa e valor');return}
-  carteiraFB.push({id:Date.now(),casa,conta:conta||'—',valor,tipo:fbTipoSel,validade,obs,status:'disponivel',data:new Date().toLocaleDateString('pt-BR')});
+  carteiraFB.push({id:uid(),casa,conta:conta||'—',valor,tipo:fbTipoSel,validade,obs,status:'disponivel',data:new Date().toLocaleDateString('pt-BR')});
   sd(FBCK,carteiraFB);
   ['fb-cart-casa','fb-cart-conta','fb-cart-valor','fb-cart-val','fb-cart-obs'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fb-sug-row').innerHTML='';
@@ -2349,7 +2352,7 @@ function fbEditarConfirmar(id){
   const fb=carteiraFB.find(f=>f.id===id);if(!fb)return;
   const casa=document.getElementById('fb-edit-casa-'+id).value.trim();
   const valor=parseFloat(document.getElementById('fb-edit-valor-'+id).value);
-  if(!casa||!valor){toast('Preencha casa e valor','err');return;}
+  if(!casa||!valor||valor<=0){toast('Preencha casa e valor válido','err');return;}
   fb.casa=casa;
   fb.conta=document.getElementById('fb-edit-conta-'+id).value.trim()||'—';
   fb.valor=valor;
@@ -2750,22 +2753,29 @@ function marcarCG(id,i){entries.forEach(e=>{if(e.id===id)e.casaGanhadora=e.casaG
 function addFBProc(eid,idx){
   const e=entries.find(x=>x.id===eid);if(!e||!e.fbsEsperadas[idx])return;
   const fb=e.fbsEsperadas[idx];
-  carteiraFB.push({id:Date.now(),casa:fb.casa,conta:fb.usuarios?.[0]||'—',valor:fb.valor,tipo:fb.tipo,validade:fb.validade||'',obs:`Proc: ${e.evento}`,status:'disponivel',data:new Date().toLocaleDateString('pt-BR')});
+  carteiraFB.push({id:uid(),casa:fb.casa,conta:fb.usuarios?.[0]||'—',valor:fb.valor,tipo:fb.tipo,validade:fb.validade||'',obs:`Proc: ${e.evento}`,status:'disponivel',data:new Date().toLocaleDateString('pt-BR')});
   sd(FBCK,carteiraFB);if(!e.fbAdicionadas)e.fbAdicionadas=[];e.fbAdicionadas.push(idx);
   sd(SK,entries);renderEntradas();renderResumo();toast('Freebet adicionada à carteira!');
 }
 function setRes(id,res){entries.forEach(e=>{if(e.id===id)e.resultado=res});sd(SK,entries);checkAlertas();renderEntradas()}
 function delEntry(id){
-  if(!confirm('Excluir esta entrada? O saldo dos usuários será revertido.'))return;
+  var protsAssoc=(protecoes||[]).filter(function(p){return p.entradaId===id;});
+  var msgExtra=protsAssoc.length?' e '+protsAssoc.length+' proteção(ões) vinculada(s)':'';
+  if(!confirm('Excluir esta entrada'+msgExtra+'? O saldo dos usuários será revertido.'))return;
   var entry=entries.find(function(e){return e.id===id;});
   if(entry)reverterStakeUsuarios(entry);
   entries=entries.filter(function(e){return e.id!==id;});
   sd(SK,entries);
+  if(protsAssoc.length){
+    protecoes=protecoes.filter(function(p){return p.entradaId!==id;});
+    sd(PRTK,protecoes);
+  }
   checkAlertas();
   renderEntradas();
   renderHistorico();
   renderResumo();
   if(typeof renderContas==='function')renderContas();
+  if(typeof renderProtecoes==='function')renderProtecoes();
 }
 
 // ── RESUMO ─────────────────────────────────────────────────────────────────
@@ -2967,9 +2977,9 @@ function salvarProtecao(){
   const first=apostas[0];
   const totalStake=apostas.reduce(function(s,a){return s+a.stake;},0);
   const totalLucro=apostas.reduce(function(s,a){return s+(a.odd-1)*a.stake;},0);
-  protecoes.push({id:Date.now(),amigo,direcao:protDirecao,evento,eventoData:data,eventoHora:hora,
+  protecoes.push({id:uid(),amigo,direcao:protDirecao,evento,eventoData:data,eventoHora:hora,
     apostas,odd:first.odd,stake:totalStake,casa:first.casa,
-    retorno:first.odd*first.stake,lucro:totalLucro,resultado:'pendente',
+    retorno:first.odd*first.stake,lucro:totalLucro,resultado:'pendente',acertada:false,
     data:new Date().toLocaleDateString('pt-BR')});
   sd(PRTK,protecoes);
   document.getElementById('prot-amigo-inp').value='';
@@ -3011,7 +3021,20 @@ function renderSaldos(){
   const el=document.getElementById('prot-saldos');if(!el)return;
   const amigosAtivos=[...new Set(protecoes.map(p=>p.amigo))];
   if(!amigosAtivos.length){el.innerHTML='';return;}
-  el.innerHTML='<div style="display:grid;gap:8px;margin-bottom:8px">'
+  var totalReceber=0,totalPagar=0;
+  amigosAtivos.forEach(function(a){var s=calcSaldoAmigo(a);if(s>0)totalReceber+=s;else if(s<0)totalPagar+=Math.abs(s);});
+  var resumoHtml=totalReceber+totalPagar>0?
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'
+    +'<div style="background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.2);border-radius:var(--r2);padding:10px 12px;text-align:center">'
+      +'<div style="font-size:10px;text-transform:uppercase;font-weight:700;color:var(--green);letter-spacing:.06em;margin-bottom:2px">A receber</div>'
+      +'<div style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--green)">R$ '+totalReceber.toFixed(2)+'</div>'
+    +'</div>'
+    +'<div style="background:rgba(255,78,106,.06);border:1px solid rgba(255,78,106,.2);border-radius:var(--r2);padding:10px 12px;text-align:center">'
+      +'<div style="font-size:10px;text-transform:uppercase;font-weight:700;color:var(--red);letter-spacing:.06em;margin-bottom:2px">A pagar</div>'
+      +'<div style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--red)">R$ '+totalPagar.toFixed(2)+'</div>'
+    +'</div>'
+    +'</div>':'';
+  el.innerHTML=resumoHtml+'<div style="display:grid;gap:8px;margin-bottom:8px">'
     +amigosAtivos.map(a=>{
       const s=calcSaldoAmigo(a);
       const cor=s>0?'var(--green)':s<0?'var(--red)':'var(--text2)';
@@ -3036,7 +3059,7 @@ function abrirPagamentoModal(amigo){
   if(!val)return;
   const v=parseFloat(val.replace(',','.'));
   if(!v||v<=0){toast('Valor inválido','err');return;}
-  pagamentosProts.push({id:Date.now(),amigo,valor:s>0?v:-v,data:new Date().toLocaleDateString('pt-BR'),obs:''});
+  pagamentosProts.push({id:uid(),amigo,valor:s>0?v:-v,data:new Date().toLocaleDateString('pt-BR'),obs:''});
   sd(PRPAG,pagamentosProts);
   toast('Pagamento registrado!','ok');renderSaldos();renderProtecoes();
 }
@@ -3140,6 +3163,7 @@ function setProtFiltroStatus(f){
 
 function marcarAcertada(id){
   var p=protecoes.find(function(x){return x.id===id;});if(!p)return;
+  if(p.resultado==='pendente'){toast('Defina o resultado antes de acertar','err');return;}
   p.acertada=true;
   sd(PRTK,protecoes);
   renderSaldos();renderProtecoes();
@@ -3170,6 +3194,7 @@ function renderProtecoes(){
     const resColor=p.resultado==='ganhou'?'var(--green)':p.resultado==='perdeu'?'var(--red)':'var(--text2)';
     const resLabel=p.resultado==='ganhou'?'✅ Ganhou':p.resultado==='perdeu'?'❌ Perdeu':'⏳ Pendente';
     const acertadaBadge=p.acertada?'<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;background:rgba(0,230,118,.12);border:1px solid rgba(0,230,118,.3);color:var(--green);margin-left:6px">🤝 Acertado</span>':'';
+    const entradaRef=p.entradaId&&entries.find(function(e){return e.id===p.entradaId;})?'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(108,99,255,.08);border:1px solid rgba(108,99,255,.25);color:var(--accent2);margin-left:4px">🔗 Do Nova</span>':'';
     let deveHtml='';
     if(d){
       const cor=d.quem==='eu'?'var(--red)':'var(--green)';
@@ -3181,7 +3206,7 @@ function renderProtecoes(){
     return `<div style="padding:12px 0;border-bottom:1px solid var(--border)${p.acertada?';opacity:.7':''}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
         <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:700;margin-bottom:3px">${esc(p.evento)}${acertadaBadge}</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:3px">${esc(p.evento)}${acertadaBadge}${entradaRef}</div>
           <div style="font-size:11px;color:var(--text2)">${p.data}${p.eventoHora?' · '+p.eventoHora:''} · ${esc(p.amigo)} · ${esc(p.casa)}</div>
           <div style="font-size:11px;margin-top:3px">${dirLabel}</div>
         </div>
@@ -3373,7 +3398,7 @@ function salvarConta(){
   if(!ap){toast('Informe o apelido');return}
   if(contasSalvas.some(function(c){return c.apelido===ap;})){toast('Usuário já existe');return}
   var casas=ALL_CASAS.map(function(n){return{nome:n,saldo:0};});
-  contasSalvas.push({id:Date.now(),apelido:ap,casas:casas,banco:0});
+  contasSalvas.push({id:uid(),apelido:ap,casas:casas,banco:0});
   sd(CK,contasSalvas);
   document.getElementById('mgr-apelido').value='';
   toast('Usuário adicionado com '+casas.length+' casas!');
@@ -3692,6 +3717,14 @@ function confirmarTransacao(){
   if(!val){toast('Informe um valor');return;}
   var c=contasSalvas.find(function(x){return x.id===_transacaoCtx.uid;});if(!c)return;
   var delta=_transacaoCtx.tipoOp==='add'?val:-val;
+  if(_transacaoCtx.tipoOp==='sub'){
+    var saldoAtual=_transacaoCtx.tipo==='banco'
+      ?parseFloat(c.banco||0)
+      :parseFloat(((c.casas||[])[_transacaoCtx.casaIdx]||{}).saldo||0);
+    if(saldoAtual-val<0){
+      if(!confirm('Saldo ficará negativo (R$ '+(saldoAtual-val).toFixed(2)+'). Continuar?'))return;
+    }
+  }
   if(_transacaoCtx.tipo==='banco'){
     c.banco=(parseFloat(c.banco||0)+delta);
   } else {
@@ -3886,7 +3919,7 @@ function descontarStakeUsuarios(entry){
       var casaNome=(l.casa||c.nome||'').trim();if(!casaNome)return;
       var conta=usuario?contasSalvas.find(function(ct){return ct.apelido===usuario;}):null;
       if(!conta&&contasSalvas.length===1)conta=contasSalvas[0];
-      if(!conta)return;
+      if(!conta){if(usuario)toast('⚠️ Usuário "'+usuario+'" não encontrado — stake não descontado','err');return;}
       var casaObj=(conta.casas||[]).find(function(x){return x.nome.toLowerCase()===casaNome.toLowerCase();});
       if(casaObj){casaObj.saldo=(parseFloat(casaObj.saldo)||0)-stakeVal;alterou=true;}
       if(!conta.apostasAtivas)conta.apostasAtivas=[];
