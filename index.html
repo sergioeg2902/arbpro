@@ -3501,9 +3501,6 @@ function buildUserCasas(c){
   h+='<button class="btn-sm" style="padding:10px;font-size:12px;font-weight:700;border-color:var(--green);color:var(--green);background:var(--green-bg)" onclick="abrirTransacaoBanco('+c.id+',\'add\')">↑ Adicionar</button>';
   h+='<button class="btn-sm" style="padding:10px;font-size:12px;font-weight:700;border-color:var(--red);color:var(--red)" onclick="abrirTransacaoBanco('+c.id+',\'rem\')">↓ Retirar</button>';
   h+='<button class="btn-sm" style="padding:10px;font-size:12px;font-weight:700;border-color:var(--accent);color:var(--accent2)" onclick="abrirTransferencia('+c.id+')">⇄ Transferir</button>';
-  h+='<button class="btn-sm" style="padding:10px;font-size:12px;font-weight:700;border-color:var(--amber);color:var(--amber);background:var(--amber-bg)" onclick="abrirTransacaoBanco('+c.id+',\'bonus\')">🎰 Ganho Bônus</button>';
-  h+='<button class="btn-sm" style="padding:10px;font-size:12px;font-weight:700;border-color:var(--orange);color:var(--orange);background:var(--orange-bg)" onclick="abrirTransacaoBanco('+c.id+',\'sloss\')">🎰 Perca Slot</button>';
-  h+='<div></div>';
   h+='</div></div>';
 
   // Cabeçalho casas
@@ -3587,11 +3584,11 @@ function buildUserCasas(c){
       h+='</div>';
       h+='<button style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:14px;padding:0;opacity:.4" onclick="removCasaUsuario('+c.id+',\''+casa.nome.replace(/'/g,"\\'")+'\')" title="Remover">×</button>';
       h+='</div>';
-      h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px">';
-      h+='<button class="btn-sm" style="font-size:11px;padding:5px;border-color:rgba(0,230,118,.4);color:var(--green)" onclick="abrirTransacaoCasa('+c.id+','+idx+',\'add\')">↑ Depositar</button>';
-      h+='<button class="btn-sm" style="font-size:11px;padding:5px;border-color:rgba(255,78,106,.4);color:var(--red)" onclick="abrirTransacaoCasa('+c.id+','+idx+',\'rem\')">↓ Sacar</button>';
-      h+='<button class="btn-sm" style="font-size:11px;padding:5px;border-color:rgba(255,183,77,.5);color:var(--amber)" onclick="abrirTransacaoCasa('+c.id+','+idx+',\'bonus\')">🎰 Ganho</button>';
-      h+='<button class="btn-sm" style="font-size:11px;padding:5px;border-color:rgba(255,112,67,.4);color:var(--orange)" onclick="abrirTransacaoCasa('+c.id+','+idx+',\'sloss\')">🎰 Perca</button>';
+      h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;margin-top:6px">';
+      h+='<button class="btn-sm" style="font-size:10px;padding:5px;border-color:rgba(0,230,118,.4);color:var(--green)" onclick="abrirTransacaoCasa('+c.id+','+idx+',\'add\')">↑ Dep.</button>';
+      h+='<button class="btn-sm" style="font-size:10px;padding:5px;border-color:rgba(255,183,77,.5);color:var(--amber)" onclick="abrirTransacaoCasa('+c.id+','+idx+',\'bonus\')">🎰 Ganho</button>';
+      h+='<button class="btn-sm" style="font-size:10px;padding:5px;border-color:rgba(255,112,67,.4);color:var(--orange)" onclick="abrirTransacaoCasa('+c.id+','+idx+',\'sloss\')">🎰 Perca</button>';
+      h+='<button class="btn-sm" style="font-size:10px;padding:5px;border-color:rgba(255,78,106,.4);color:var(--red)" onclick="abrirTransacaoCasa('+c.id+','+idx+',\'rem\')">↓ Sacar</button>';
       h+='</div>';
       h+='</div>';
     });
