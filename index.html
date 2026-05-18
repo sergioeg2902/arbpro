@@ -820,7 +820,7 @@
 <div class="modal-overlay" id="comp-lucro-modal">
   <div class="modal-box">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-      <span style="font-size:15px;font-weight:700">💰 Compartilhar Lucro</span>
+      <span style="font-size:15px;font-weight:700" id="comp-lucro-titulo">💰 Compartilhar Lucro</span>
       <button onclick="fecharCompLucroModal()" style="background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;line-height:1">×</button>
     </div>
     <div id="comp-lucro-evento" style="font-size:12px;color:var(--text2);margin-bottom:12px"></div>
@@ -4014,6 +4014,8 @@ function _abrirCompLucroModal(entradaId,lucroTotal,eventoLabel,editId,preAmigo,p
   }
   var btnConfirm=document.querySelector('#comp-lucro-modal .btn-primary');
   if(btnConfirm)btnConfirm.textContent=editId?'✓ Salvar alterações':'✓ Registrar compartilhamento';
+  var titulo=document.getElementById('comp-lucro-titulo');
+  if(titulo)titulo.textContent=editId?'✏️ Editar Compartilhamento':'💰 Compartilhar Lucro';
   // chips
   var amigos=[...new Set([...amigosProts,...protecoes.map(function(p){return p.amigo;})])].filter(Boolean);
   var el=document.getElementById('comp-lucro-amigos');
@@ -4036,8 +4038,9 @@ function abrirCompLucro(entradaId){
 }
 
 function editarCompLucro(id){
-  var lc=lucrosComp.find(function(x){return x.id===id;});if(!lc)return;
-  _abrirCompLucroModal(lc.entradaId,lc.lucroTotal,lc.evento+' · '+lc.dataEvento,id,lc.amigo,lc.valor);
+  var lc=lucrosComp.find(function(x){return String(x.id)===String(id);});
+  if(!lc){toast('Registro não encontrado','err');return;}
+  _abrirCompLucroModal(lc.entradaId,lc.lucroTotal,lc.evento+' · '+lc.dataEvento,lc.id,lc.amigo,lc.valor);
 }
 
 function selCompAmigo(btn){
@@ -4069,10 +4072,15 @@ function confirmarCompLucro(){
   var v=parseFloat(document.getElementById('comp-lucro-valor').value)||0;
   if(!v||v<=0){toast('Informe o valor a compartilhar','err');return;}
   if(v>_compLucroTotal){toast('Valor maior que o lucro total (R$ '+_compLucroTotal.toFixed(2)+')','err');return;}
-  if(_compLucroEditId){
-    // modo edição — atualizar registro existente
-    var lc=lucrosComp.find(function(x){return x.id===_compLucroEditId;});
-    if(lc){lc.amigo=_compLucroAmigo;lc.valor=v;}
+  // salvar contexto antes de fechar o modal (fechar zera as variáveis)
+  var isEdit=!!_compLucroEditId;
+  var editId=_compLucroEditId;
+  var amigoNome=_compLucroAmigo;
+  if(isEdit){
+    var lc=lucrosComp.find(function(x){return String(x.id)===String(editId);});
+    if(!lc){toast('Registro não encontrado','err');return;}
+    lc.amigo=amigoNome;
+    lc.valor=v;
   } else {
     var e=entries.find(function(x){return x.id===_compLucroEntradaId;});
     var now=new Date();
@@ -4081,14 +4089,14 @@ function confirmarCompLucro(){
       evento:e?e.evento:'',dataEvento:e?e.data:'',
       dataRegistro:now.toLocaleDateString('pt-BR'),
       horaRegistro:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
-      lucroTotal:_compLucroTotal,amigo:_compLucroAmigo,valor:v
+      lucroTotal:_compLucroTotal,amigo:amigoNome,valor:v
     });
   }
   sd(LCOMPK,lucrosComp);
   fecharCompLucroModal();
   renderHistorico();
   renderLucrosComp();
-  toast('💰 R$ '+v.toFixed(2)+(_compLucroEditId?' atualizado para ':' compartilhado com ')+_compLucroAmigo,'ok');
+  toast('💰 R$ '+v.toFixed(2)+(isEdit?' atualizado para ':' compartilhado com ')+amigoNome,'ok');
 }
 
 function fecharCompLucroModal(){
