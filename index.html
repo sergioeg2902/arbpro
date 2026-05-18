@@ -550,7 +550,15 @@
           <button class="btn-sm" id="fb-f-todas" onclick="setFBFiltro('todas')">Todas</button>
         </div>
       </div>
-      <div id="fb-total" style="font-size:12px;color:var(--purple);font-weight:700;margin-bottom:10px;font-family:var(--mono)"></div>
+      <div id="fb-total" style="font-size:12px;color:var(--purple);font-weight:700;margin-bottom:8px;font-family:var(--mono)"></div>
+      <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:10px">
+        <span style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em">Ordenar:</span>
+        <button id="fb-ord-padrao" class="btn-sm active" onclick="setFBOrdem('padrao')">Padrão</button>
+        <button id="fb-ord-validade" class="btn-sm" onclick="setFBOrdem('validade')">Validade</button>
+        <button id="fb-ord-valor" class="btn-sm" onclick="setFBOrdem('valor')">Valor</button>
+        <button id="fb-ord-casa" class="btn-sm" onclick="setFBOrdem('casa')">Casa</button>
+        <button id="fb-ord-conta" class="btn-sm" onclick="setFBOrdem('conta')">Conta</button>
+      </div>
       <div id="carteira-lista"></div>
     </div>
 
@@ -913,7 +921,7 @@ var amigosSelecionadosByCid={};
 var fbSelecionadaByCid={};
 let activeDD=null, filterEntradas='semana', filterResumo='hoje', compFilter='all', compSel='all', filterHist='tudo';
 let notifMinutosAntes=parseInt(localStorage.getItem('ap_notif_min')||'10');
-let jogosSelected=[], fbFiltro='disp', fbTipoSel='SNR';
+let jogosSelected=[], fbFiltro='disp', fbTipoSel='SNR', fbOrdem='padrao';
 let jogosData=[];
 const periodoLabel={hoje:'hoje',semana:'esta semana',mes:'este mês',tudo:'todos'};
 
@@ -2142,6 +2150,7 @@ function atualizarCamposJogos(){
 // ── CARTEIRA ───────────────────────────────────────────────────────────────
 function selFBTipo(btn){document.querySelectorAll('#fb-tipo-btns .btn-sm').forEach(b=>b.classList.remove('active'));btn.classList.add('active');fbTipoSel=btn.dataset.v}
 function setFBFiltro(f){fbFiltro=f;['disp','usada','todas'].forEach(x=>{const el=document.getElementById('fb-f-'+x);if(el)el.classList.toggle('active',x===f)});renderCarteira()}
+function setFBOrdem(o){fbOrdem=o;['padrao','validade','valor','casa','conta'].forEach(x=>{const el=document.getElementById('fb-ord-'+x);if(el)el.classList.toggle('active',x===o)});renderCarteira()}
 function setupFBCasaDrop(){
   const inp=document.getElementById('fb-cart-casa');const dd=document.getElementById('dd-fb-casa');const wrap=document.getElementById('wrap-fb-casa');
   if(!inp||inp._fbReady)return;inp._fbReady=true;
@@ -2164,7 +2173,20 @@ function adicionarFB(){
 }
 function renderCarteira(){
   const el=document.getElementById('carteira-lista');
-  const f=carteiraFB.filter(x=>fbFiltro==='disp'?x.status==='disponivel':fbFiltro==='usada'?x.status==='usada':true);
+  let f=carteiraFB.filter(x=>fbFiltro==='disp'?x.status==='disponivel':fbFiltro==='usada'?x.status==='usada':true);
+  // Ordenação
+  f=f.slice().sort(function(a,b){
+    if(fbOrdem==='validade'){
+      if(!a.validade&&!b.validade)return 0;
+      if(!a.validade)return 1;
+      if(!b.validade)return -1;
+      return a.validade.localeCompare(b.validade);
+    }
+    if(fbOrdem==='valor')return b.valor-a.valor;
+    if(fbOrdem==='casa')return (a.casa||'').localeCompare(b.casa||'');
+    if(fbOrdem==='conta')return (a.conta||'').localeCompare(b.conta||'');
+    return 0;
+  });
   const disp=carteiraFB.filter(x=>x.status==='disponivel');
   const tot=document.getElementById('fb-total');
   if(tot)tot.textContent=`${disp.length} disponível(is) · Total: R$ ${disp.reduce((a,x)=>a+x.valor,0).toFixed(2)}`;
@@ -3482,7 +3504,7 @@ function fecharTransacaoModal(){
 }
 
 // ── MODAL TRANSFERÊNCIA ───────────────────────────────────────────────────
-var _transfDeUid=null,_transfParaUid=null,_transfDestTipo=null,_transfDestCasaIdx=null;
+var _transfDeUid=null,_transfParaUid=null,_transfDestTipo=null,_transfDestCasaIdx=null,_transfDestBusca='';
 
 function abrirTransferencia(uid){
   var c=contasSalvas.find(function(x){return x.id===uid;});if(!c)return;
@@ -3512,41 +3534,67 @@ function abrirTransferencia(uid){
 
 function selTransfPara(uid){
   _transfParaUid=uid;
-  _transfDestTipo=null;_transfDestCasaIdx=null;
+  _transfDestTipo=null;_transfDestCasaIdx=null;_transfDestBusca='';
   document.querySelectorAll('[id^="transf-opt-"]').forEach(function(el){
     el.style.background=el.id==='transf-opt-'+uid?'rgba(108,99,255,.1)':'';
   });
-  // Monta seção de destino
-  var para=contasSalvas.find(function(x){return x.id===uid;});
+  _renderTransfDestino();
+  document.getElementById('transf-preview').style.display='none';
+}
+
+function filtrarTransfDest(val){
+  _transfDestBusca=val;
+  _renderTransfDestino(true);
+}
+
+function _renderTransfDestino(manterSelecao){
+  var para=contasSalvas.find(function(x){return x.id===_transfParaUid;});
   if(!para)return;
   var sec=document.getElementById('transf-destino-section');
   var lista=document.getElementById('transf-destino-lista');
   var banco=parseFloat(para.banco||0);
+  var busca=(_transfDestBusca||'').toLowerCase();
   var casas=(para.casas||[]).slice().sort(function(a,b){return a.nome.localeCompare(b.nome);});
+  var casasFiltradas=busca?casas.filter(function(x){return x.nome.toLowerCase().includes(busca);}):casas;
   var html='';
   // Opção banco
-  html+='<div id="tdest-banco" onclick="selTransfDestino(\'banco\',null)" style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:var(--r2);cursor:pointer;border:1.5px solid rgba(108,99,255,.25);background:rgba(108,99,255,.05);margin-bottom:6px">'
+  html+='<div id="tdest-banco" onclick="selTransfDestino(\'banco\',null)" style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:var(--r2);cursor:pointer;border:1.5px solid rgba(108,99,255,.25);background:rgba(108,99,255,.05);margin-bottom:8px">'
     +'<div style="font-size:13px;font-weight:700">🏛️ Banco/Banca</div>'
     +'<div style="font-size:12px;font-family:var(--mono);color:var(--accent2)">R$ '+banco.toFixed(2)+'</div>'
     +'</div>';
-  // Opções casas
+  // Busca de casas
   if(casas.length){
     html+='<div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">Casas de apostas</div>';
-    html+='<div style="max-height:160px;overflow-y:auto;display:flex;flex-direction:column;gap:4px">';
-    casas.forEach(function(casa,i){
-      var saldo=parseFloat(casa.saldo||0);
-      var cor=saldo>0?'var(--green)':saldo<0?'var(--red)':'var(--text2)';
-      var realIdx=(para.casas||[]).findIndex(function(x){return x.nome===casa.nome;});
-      html+='<div id="tdest-casa-'+realIdx+'" onclick="selTransfDestino(\'casa\','+realIdx+')" style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:var(--r2);cursor:pointer;border:1.5px solid var(--border2);background:var(--bg2)">'
-        +'<div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">'+esc(casa.nome)+'</div>'
-        +'<div style="font-size:12px;font-family:var(--mono);color:'+cor+';flex-shrink:0;margin-left:8px">R$ '+saldo.toFixed(2)+'</div>'
-        +'</div>';
-    });
-    html+='</div>';
+    html+='<input type="text" id="transf-dest-busca" value="'+esc(_transfDestBusca)+'" placeholder="🔍 Buscar casa..." oninput="filtrarTransfDest(this.value)" style="width:100%;padding:7px 10px;font-size:13px;margin-bottom:6px">';
+    if(!casasFiltradas.length){
+      html+='<div style="text-align:center;padding:10px;color:var(--text2);font-size:13px">Nenhuma casa encontrada.</div>';
+    } else {
+      html+='<div style="max-height:150px;overflow-y:auto;display:flex;flex-direction:column;gap:4px">';
+      casasFiltradas.forEach(function(casa){
+        var saldo=parseFloat(casa.saldo||0);
+        var cor=saldo>0?'var(--green)':saldo<0?'var(--red)':'var(--text2)';
+        var realIdx=(para.casas||[]).findIndex(function(x){return x.nome===casa.nome;});
+        var isSel=_transfDestTipo==='casa'&&_transfDestCasaIdx===realIdx;
+        html+='<div id="tdest-casa-'+realIdx+'" onclick="selTransfDestino(\'casa\','+realIdx+')" style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:var(--r2);cursor:pointer;border:1.5px solid '+(isSel?'var(--accent)':'var(--border2)')+';background:'+(isSel?'rgba(108,99,255,.12)':'var(--bg2)')+'">'
+          +'<div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">'+esc(casa.nome)+'</div>'
+          +'<div style="font-size:12px;font-family:var(--mono);color:'+cor+';flex-shrink:0;margin-left:8px">R$ '+saldo.toFixed(2)+'</div>'
+          +'</div>';
+      });
+      html+='</div>';
+    }
   }
   lista.innerHTML=html;
   sec.style.display='block';
-  document.getElementById('transf-preview').style.display='none';
+  // Restore banco highlight
+  var bEl=document.getElementById('tdest-banco');
+  if(bEl&&_transfDestTipo==='banco'){bEl.style.borderColor='var(--accent)';bEl.style.background='rgba(108,99,255,.12)';}
+  // Restore focus no input de busca após re-render
+  if(manterSelecao&&_transfDestBusca){
+    setTimeout(function(){
+      var inp=document.getElementById('transf-dest-busca');
+      if(inp){inp.focus();inp.setSelectionRange(_transfDestBusca.length,_transfDestBusca.length);}
+    },20);
+  }
 }
 
 function selTransfDestino(tipo,casaIdx){
@@ -3610,7 +3658,7 @@ function confirmarTransferencia(){
 
 function fecharTransferenciaModal(){
   document.getElementById('transf-modal').classList.remove('open');
-  _transfDeUid=null;_transfParaUid=null;_transfDestTipo=null;_transfDestCasaIdx=null;
+  _transfDeUid=null;_transfParaUid=null;_transfDestTipo=null;_transfDestCasaIdx=null;_transfDestBusca='';
 }
 
 // ── INTEGRAÇÃO APOSTAS ↔ USUÁRIOS ────────────────────────────────────────
