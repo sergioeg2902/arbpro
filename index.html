@@ -489,18 +489,19 @@
         </details>
         <button class="btn-primary" onclick="salvarSB()">Salvar entrada</button>
       </div>
+
+      <!-- JOGOS INTEGRADO -->
+      <div style="margin-top:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span class="section-title">Próximos jogos</span>
+          <div style="font-size:11px;color:var(--text2)" id="jogos-updated"></div>
+        </div>
+        <input type="text" id="busca-jogo" placeholder="Buscar time ou competição..." style="margin-bottom:10px" oninput="renderJogos()">
+        <div class="comp-bar" id="comp-bar"></div>
+        <div id="jogos-lista"></div>
+      </div>
     </div>
 
-    <!-- PAGE JOGOS -->
-    <div class="page" id="page-jogos">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <span class="section-title">Próximos jogos</span>
-        <div style="font-size:11px;color:var(--text2)" id="jogos-updated"></div>
-      </div>
-      <input type="text" id="busca-jogo" placeholder="Buscar time ou competição..." style="margin-bottom:10px" oninput="renderJogos()">
-      <div class="comp-bar" id="comp-bar"></div>
-      <div id="jogos-lista"></div>
-    </div>
     <!-- PAGE CARTEIRA -->
     <div class="page" id="page-carteira">
       <div class="card">
@@ -669,10 +670,6 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
       Nova
     </button>
-    <button class="nav-btn" id="nav-jogos" onclick="navTo('jogos',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
-      Jogos
-    </button>
     <button class="nav-btn" id="nav-carteira" onclick="navTo('carteira',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
       FBs
@@ -791,7 +788,7 @@ function navTo(page, btn){
   if(page==='resumo')  { renderResumo(); }
   if(page==='users')   { renderContas(); }
   if(page==='carteira'){ renderCarteira(); setTimeout(setupFBCasaDrop,50); }
-  if(page==='jogos')   { renderJogos(); }
+  if(page==='nova')    { renderJogos(); }
   if(page==='config')  { initConfig(); }
   checkAlertas();
 }
@@ -2644,9 +2641,8 @@ document.addEventListener('click',e=>{if(activeDD&&!activeDD.contains(e.target))
 addCasa();addCasa();
 atualizarBotaoAddAposta();
 document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
-// inicializa status API
-// render inicial
 renderContas();
+renderJogos();
 </script>
 </body>
 </html>
