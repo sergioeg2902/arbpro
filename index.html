@@ -656,8 +656,8 @@
       <div class="card">
         <div class="card-title">+ Nova proteção</div>
         <div class="field-label" style="margin-top:0">Amigo</div>
-        <div id="prot-sug-row" class="sug-row"></div>
-        <input type="text" id="prot-amigo-inp" placeholder="Selecione ou digite...">
+        <div id="prot-sug-row" class="sug-row" style="margin-bottom:8px"></div>
+        <input type="text" id="prot-amigo-inp" readonly placeholder="Selecione um amigo acima..." style="cursor:default;background:var(--bg3);color:var(--text)" oninput="calcProtTotal()">
         <div class="field-label">Evento</div>
         <input type="text" id="prot-evento" placeholder="Ex: Flamengo x Corinthians">
         <div class="row2" style="margin-top:0"><input type="date" id="prot-data"><input type="time" id="prot-hora"></div>
@@ -2908,7 +2908,19 @@ function remAmigoProt(nome){
 }
 function renderProtSug(){
   const el=document.getElementById('prot-sug-row');if(!el)return;
-  el.innerHTML=amigosProts.map(a=>`<button class="sug-btn" data-a="${esc(a)}" onclick="document.getElementById('prot-amigo-inp').value=this.dataset.a">${esc(a)}</button>`).join('');
+  if(!amigosProts.length){el.innerHTML='<span style="font-size:11px;color:var(--text2)">Nenhum amigo cadastrado.</span>';return;}
+  const atual=document.getElementById('prot-amigo-inp')?.value||'';
+  el.innerHTML=amigosProts.map(a=>{
+    const sel=a===atual;
+    return `<button class="sug-btn" data-a="${esc(a)}" onclick="selAmigoProtForm('${esc(a)}')" style="${sel?'background:rgba(255,183,77,.18);border-color:rgba(255,183,77,.6);color:var(--amber);font-weight:700':''}">${esc(a)}</button>`;
+  }).join('');
+}
+function selAmigoProtForm(nome){
+  var inp=document.getElementById('prot-amigo-inp');if(!inp)return;
+  // toggle: clicou no mesmo → deseleciona
+  inp.value=(inp.value===nome)?'':nome;
+  renderProtSug();
+  calcProtTotal();
 }
 function selProtDir(btn){
   document.querySelectorAll('[data-v]').forEach(b=>{if(b.closest('#page-prot'))b.classList.remove('sel')});
@@ -2961,6 +2973,7 @@ function salvarProtecao(){
     data:new Date().toLocaleDateString('pt-BR')});
   sd(PRTK,protecoes);
   document.getElementById('prot-amigo-inp').value='';
+  renderProtSug();
   document.getElementById('prot-evento').value='';
   document.getElementById('prot-hora').value='';
   document.getElementById('prot-data').value=new Date().toISOString().slice(0,10);
@@ -3151,7 +3164,9 @@ function renderProtecoes(){
   if(!lista.length){el.innerHTML='<div class="empty">Nenhuma proteção nesta categoria.</div>';return;}
   el.innerHTML=[...lista].reverse().map(p=>{
     const d=calcDevidoProt(p);
-    const dirLabel=p.direcao==='fiz'?'<span style="color:var(--accent2)">➡️ Fiz para ele</span>':'<span style="color:var(--orange)">⬅️ Ele fez pra mim</span>';
+    const dirLabel=p.direcao==='fiz'
+      ?'<span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:4px 12px;border-radius:99px;background:rgba(108,99,255,.14);border:1px solid rgba(108,99,255,.35);color:var(--accent2)">➡️ Eu fiz para ele</span>'
+      :'<span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:4px 12px;border-radius:99px;background:rgba(255,112,67,.1);border:1px solid rgba(255,112,67,.35);color:var(--orange)">⬅️ Ele fez pra mim</span>';
     const resColor=p.resultado==='ganhou'?'var(--green)':p.resultado==='perdeu'?'var(--red)':'var(--text2)';
     const resLabel=p.resultado==='ganhou'?'✅ Ganhou':p.resultado==='perdeu'?'❌ Perdeu':'⏳ Pendente';
     const acertadaBadge=p.acertada?'<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;background:rgba(0,230,118,.12);border:1px solid rgba(0,230,118,.3);color:var(--green);margin-left:6px">🤝 Acertado</span>':'';
