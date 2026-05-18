@@ -190,7 +190,8 @@
 
   /* CHIPS */
   .chips-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; min-height: 22px; }
-  .chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; background: var(--blue-bg); border: 1px solid rgba(100,181,246,.2); border-radius: 99px; font-size: 12px; font-weight: 600; color: var(--blue); }
+  .chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; background: var(--blue-bg); border: 1px solid rgba(100,181,246,.2); border-radius: 99px; font-size: 12px; font-weight: 600; color: var(--blue); cursor: pointer; transition: all .15s; }
+  .chip.active { background: rgba(255,183,77,.18); border-color: var(--amber); color: var(--amber); }
   .chip .rm { background: none; border: none; color: var(--blue); cursor: pointer; font-size: 14px; line-height: 1; padding: 0; opacity: .7; }
   .chip.purple { background: var(--purple-bg); border-color: rgba(206,147,216,.2); color: var(--purple); }
   .chip.green { background: var(--green-bg); border-color: rgba(0,230,118,.2); color: var(--green); }
@@ -1036,7 +1037,7 @@ let entries=ld(SK), contasSalvas=ld(CK), carteiraFB=ld(FBCK);
 let protecoes=ld(PRTK)||[], amigosProts=ld(PRUSR)||[], pagamentosProts=ld(PRPAG)||[];
 let movimentacoes=ld(MOVK)||[];
 let lucrosComp=ld(LCOMPK)||[];
-var _compLucroEntradaId=null,_compLucroAmigo=null,_compLucroTotal=0;
+var _compLucroEntradaId=null,_compLucroAmigo=null,_compLucroTotal=0,_compLucroEditId=null;
 let protDir='fiz';
 var protApostasRows=[], protApostaSeq=0, protDirecao='fiz', protFiltroStatus='todas';
 var amigosSelecionadosByCid={};
@@ -3161,16 +3162,21 @@ function renderLucrosComp(){
     grupo.registros.slice().reverse().forEach(function(lc){
       var restou=lc.lucroTotal-lc.valor;
       h+='<div style="padding:6px 0;border-top:1px solid var(--border)">';
-      h+='<div style="display:flex;justify-content:space-between;align-items:flex-start">';
-      h+='<div style="font-size:12px;font-weight:600;flex:1;min-width:0;margin-right:8px">'+esc(lc.evento)+'</div>';
-      h+='<div style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--amber);flex-shrink:0">R$ '+lc.valor.toFixed(2)+'</div>';
-      h+='</div>';
-      h+='<div style="display:flex;gap:8px;font-size:10px;color:var(--text2);margin-top:2px">';
+      h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px">';
+      h+='<div style="flex:1;min-width:0">';
+      h+='<div style="font-size:12px;font-weight:600">'+esc(lc.evento)+'</div>';
+      h+='<div style="display:flex;flex-wrap:wrap;gap:8px;font-size:10px;color:var(--text2);margin-top:2px">';
       h+='<span>📅 '+lc.dataRegistro+'</span>';
       h+='<span>Lucro total: R$ '+lc.lucroTotal.toFixed(2)+'</span>';
       h+='<span>Você ficou: <b style="color:var(--green)">R$ '+restou.toFixed(2)+'</b></span>';
-      h+='</div>';
-      h+='</div>';
+      h+='</div></div>';
+      h+='<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">';
+      h+='<div style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--amber)">R$ '+lc.valor.toFixed(2)+'</div>';
+      h+='<div style="display:flex;gap:4px">';
+      h+='<button class="btn-sm" style="font-size:10px;padding:2px 7px;border-color:var(--accent);color:var(--accent2)" onclick="editarCompLucro('+lc.id+')">✏️ Editar</button>';
+      h+='<button class="btn-sm" style="font-size:10px;padding:2px 7px;color:var(--red);border-color:rgba(255,78,106,.35)" onclick="deletarCompLucro('+lc.id+')">🗑</button>';
+      h+='</div></div>';
+      h+='</div></div>';
     });
     h+='</div></div>';
   });
@@ -3992,35 +3998,52 @@ function fecharExtratoModal(){
 }
 
 // ── COMPARTILHAR LUCRO ───────────────────────────────────────────────────
-function abrirCompLucro(entradaId){
-  var e=entries.find(function(x){return x.id===entradaId;});if(!e)return;
-  var lucroExibir=(e.lucroReal!==undefined)?e.lucroReal:(e.resultado==='ganho'?e.lucro:-e.total);
-  if(lucroExibir<=0){toast('Sem lucro para compartilhar','err');return;}
+function _abrirCompLucroModal(entradaId,lucroTotal,eventoLabel,editId,preAmigo,preValor){
   _compLucroEntradaId=entradaId;
-  _compLucroAmigo=null;
-  _compLucroTotal=lucroExibir;
-  document.getElementById('comp-lucro-evento').textContent=e.evento+' · '+e.data;
-  document.getElementById('comp-lucro-total').textContent='R$ '+lucroExibir.toFixed(2);
-  document.getElementById('comp-lucro-valor').value='';
-  document.getElementById('comp-lucro-preview').style.display='none';
-  // chips de amigos
+  _compLucroAmigo=preAmigo||null;
+  _compLucroTotal=lucroTotal;
+  _compLucroEditId=editId||null;
+  document.getElementById('comp-lucro-evento').textContent=eventoLabel;
+  document.getElementById('comp-lucro-total').textContent='R$ '+lucroTotal.toFixed(2);
+  document.getElementById('comp-lucro-valor').value=preValor!=null?preValor.toFixed(2):'';
+  document.getElementById('comp-lucro-preview').style.display=preValor?'block':'none';
+  if(preValor){
+    document.getElementById('comp-prev-eu').textContent='R$ '+(lucroTotal-preValor).toFixed(2);
+    document.getElementById('comp-prev-eu').style.color=(lucroTotal-preValor)>=0?'var(--green)':'var(--red)';
+    document.getElementById('comp-prev-amigo').textContent='R$ '+preValor.toFixed(2);
+  }
+  var btnConfirm=document.querySelector('#comp-lucro-modal .btn-primary');
+  if(btnConfirm)btnConfirm.textContent=editId?'✓ Salvar alterações':'✓ Registrar compartilhamento';
+  // chips
   var amigos=[...new Set([...amigosProts,...protecoes.map(function(p){return p.amigo;})])].filter(Boolean);
   var el=document.getElementById('comp-lucro-amigos');
   if(!amigos.length){
     el.innerHTML='<div style="font-size:12px;color:var(--text2)">Nenhum amigo cadastrado em Proteção.</div>';
   } else {
     el.innerHTML=amigos.map(function(a){
-      return '<button class="chip" id="comp-chip-'+esc(a)+'" onclick="selCompAmigo(\''+esc(a)+'\')">'+esc(a)+'</button>';
+      return '<button class="chip'+(preAmigo===a?' active':'')+'" data-amigo="'+esc(a)+'" onclick="selCompAmigo(this)">'+esc(a)+'</button>';
     }).join('');
   }
   document.getElementById('comp-lucro-modal').classList.add('open');
   setTimeout(function(){document.getElementById('comp-lucro-valor').focus();},200);
 }
 
-function selCompAmigo(nome){
-  _compLucroAmigo=nome;
+function abrirCompLucro(entradaId){
+  var e=entries.find(function(x){return x.id===entradaId;});if(!e)return;
+  var lucroExibir=(e.lucroReal!==undefined)?e.lucroReal:(e.resultado==='ganho'?e.lucro:-e.total);
+  if(lucroExibir<=0){toast('Sem lucro para compartilhar','err');return;}
+  _abrirCompLucroModal(entradaId,lucroExibir,e.evento+' · '+e.data,null,null,null);
+}
+
+function editarCompLucro(id){
+  var lc=lucrosComp.find(function(x){return x.id===id;});if(!lc)return;
+  _abrirCompLucroModal(lc.entradaId,lc.lucroTotal,lc.evento+' · '+lc.dataEvento,id,lc.amigo,lc.valor);
+}
+
+function selCompAmigo(btn){
+  _compLucroAmigo=btn.dataset.amigo;
   document.querySelectorAll('#comp-lucro-amigos .chip').forEach(function(c){
-    c.classList.toggle('active',c.textContent===nome);
+    c.classList.toggle('active',c===btn);
   });
 }
 
@@ -4046,25 +4069,40 @@ function confirmarCompLucro(){
   var v=parseFloat(document.getElementById('comp-lucro-valor').value)||0;
   if(!v||v<=0){toast('Informe o valor a compartilhar','err');return;}
   if(v>_compLucroTotal){toast('Valor maior que o lucro total (R$ '+_compLucroTotal.toFixed(2)+')','err');return;}
-  var e=entries.find(function(x){return x.id===_compLucroEntradaId;});
-  var now=new Date();
-  lucrosComp.push({
-    id:uid(),entradaId:_compLucroEntradaId,
-    evento:e?e.evento:'',dataEvento:e?e.data:'',
-    dataRegistro:now.toLocaleDateString('pt-BR'),
-    horaRegistro:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
-    lucroTotal:_compLucroTotal,amigo:_compLucroAmigo,valor:v
-  });
+  if(_compLucroEditId){
+    // modo edição — atualizar registro existente
+    var lc=lucrosComp.find(function(x){return x.id===_compLucroEditId;});
+    if(lc){lc.amigo=_compLucroAmigo;lc.valor=v;}
+  } else {
+    var e=entries.find(function(x){return x.id===_compLucroEntradaId;});
+    var now=new Date();
+    lucrosComp.push({
+      id:uid(),entradaId:_compLucroEntradaId,
+      evento:e?e.evento:'',dataEvento:e?e.data:'',
+      dataRegistro:now.toLocaleDateString('pt-BR'),
+      horaRegistro:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+      lucroTotal:_compLucroTotal,amigo:_compLucroAmigo,valor:v
+    });
+  }
   sd(LCOMPK,lucrosComp);
   fecharCompLucroModal();
   renderHistorico();
-  if(document.getElementById('page-prot')?.style.display!=='none')renderLucrosComp();
-  toast('💰 R$ '+v.toFixed(2)+' compartilhado com '+_compLucroAmigo,'ok');
+  renderLucrosComp();
+  toast('💰 R$ '+v.toFixed(2)+(_compLucroEditId?' atualizado para ':' compartilhado com ')+_compLucroAmigo,'ok');
 }
 
 function fecharCompLucroModal(){
   document.getElementById('comp-lucro-modal').classList.remove('open');
-  _compLucroEntradaId=null;_compLucroAmigo=null;_compLucroTotal=0;
+  _compLucroEntradaId=null;_compLucroAmigo=null;_compLucroTotal=0;_compLucroEditId=null;
+}
+
+function deletarCompLucro(id){
+  if(!confirm('Remover este registro de compartilhamento?'))return;
+  lucrosComp=lucrosComp.filter(function(x){return x.id!==id;});
+  sd(LCOMPK,lucrosComp);
+  renderLucrosComp();
+  renderHistorico();
+  toast('Registro removido','ok');
 }
 
 function renderExtratoLista(){
